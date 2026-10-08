@@ -2,7 +2,7 @@
 
 **One project. Two interfaces. A person asks for help; a responder receives the request and replies—even when internet service is unavailable, provided a usable local communication path exists.**
 
-Working description, not a selected brand. **Documentation, a Figma draft, a Swift/C++ networking probe, and a C++ workflow simulation; no complete rescue application exists yet.**
+Working description, not a selected brand. **A runnable native SwiftUI training demo, shared C++ workflow engine, synthetic networking probe, docs and a Figma draft. Physical offline exchange and durable secure messaging remain unfinished.**
 
 [Public GitHub repository](https://github.com/archiips/offline-rescue-network) · [Editable Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
 
@@ -21,7 +21,12 @@ Nearby participating devices can later relay encrypted messages. A responder mus
 
 - [Connection probe](experiments/network-probe/README.md): iPhone test screen and Mac host; synthetic simulator-to-Mac exchange verified.
 - [C++ workflow model](experiments/workflow-model/README.md): separate requester/responder models, complete synthetic SOS/reply/update/handling walkthrough and failure tests.
-- Both remain experiments: physical networking, endpoint cryptography, durable storage and native rescue screens are unfinished.
+- [Native workflow demo](experiments/rescue-demo/README.md): public/responder SwiftUI views connected to independent C++ models, with SOS, acknowledgments, replies, queued updates and handling actions.
+- These remain experiments: the native demo uses a simulated link; physical networking, endpoint cryptography and durable storage remain unfinished.
+
+## Current focus
+
+Build an impressive, measurable portfolio project first. The immediate sequence is native workflow → durable recovery → real local exchange → relay demonstration and measured results. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
 
 ## First milestone
 

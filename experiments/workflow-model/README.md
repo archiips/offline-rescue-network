@@ -1,6 +1,6 @@
 # C++ synthetic workflow model
 
-Early domain engine prototype for **both** the public and responder workflows. Two independent C++20 instances exchange typed synthetic events in a deterministic command-line demonstration. This is separate from the Swift networking probe and has no radio, encryption, authenticated identity, wire serialization, UI, or durable storage.
+Early domain engine prototype for **both** the public and responder workflows. Two independent C++20 instances exchange typed synthetic events in a deterministic command-line demonstration. This is separate from the Swift networking probe and has no radio, encryption, authenticated identity, wire serialization or durable storage. Its C ABI/Swift package now also powers the [native training demo](../rescue-demo/README.md).
 
 ## Run
 
@@ -27,7 +27,7 @@ For sanitizer checks, configure another directory with `-DRESCUE_SANITIZERS=ON` 
 
 ## Verification and limits
 
-See [implementation plan](../../docs/superpowers/plans/2026-10-07-workflow-model.md). The tests cover the end-to-end synthetic workflow, independent delayed return delivery, late updates, fixture authority, references, storage failure, duplicates/conflicts, arrival order and bounds. This does not close NET-01, SEC-01, ENG-01–05 or M1. Native Swift integration follows after this domain checkpoint; physical connection testing can be done later.
+See [implementation plan](../../docs/superpowers/plans/2026-10-07-workflow-model.md). The tests cover the end-to-end synthetic workflow, independent delayed return delivery, late updates, fixture authority, references, storage failure, duplicates/conflicts, arrival order and bounds. This does not close NET-01, SEC-01, ENG-01–05 or M1. Native Swift integration is available as a synthetic training demo; physical connection testing can be done later.
 
 ### Projection interpretation
 
@@ -36,3 +36,5 @@ Interpret delivery from the **sending model**: requester delivery for public eve
 `lateUpdate` is a **command-local review flag** based partly on acceptance order. The requester can have a different flag while still showing an undelivered correction. Replaying the same event set in a different arrival order may change that flag. Future durable replay must preserve acceptance order or replace this with an explicit causal seen-event contract; do not promote this experiment to a convergent replicated reducer unchanged.
 
 Verified 2026-10-07 on macOS arm64, AppleClang 21 and CMake 4.3.2: 13/13 CTest scenarios pass in Debug, Release and AddressSanitizer/UndefinedBehaviorSanitizer builds. Full demo ran successfully. Claude Code completed two read-only reviews; ordering, per-message and withdrawal regressions were reproduced and fixed. Declared minimum CMake/compiler portability beyond this machine is not validated.
+
+The native-demo checkpoint adds one C++ bridge test (14 CTest checks total) and 5 Swift integration tests. See the native demo README for commands and evidence; the original 13-scenario baseline above remains unchanged.

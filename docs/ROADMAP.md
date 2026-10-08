@@ -15,9 +15,21 @@ Status: evidence-gated roadmap, v0.1 · 2026-10-07
 
 M3 data collection may run alongside M2 after consent and capture design are ready. A partner drill can use manual location before sensor research succeeds. No milestone depends on an LLM.
 
+## Current portfolio sequence
+
+The user prioritized working software and demonstrable résumé evidence on 2026-10-07. Commercial discovery and deployment work are deferred. Preserve both interfaces throughout:
+
+1. Runnable native simulator workflow — [synthetic demo](../experiments/rescue-demo/README.md) now available, with two independent C++ models and a simulated link.
+2. Durable event/outbox storage and restart recovery, including interrupted writes and pending return receipts.
+3. Real local exchange between app instances behind the same engine boundary; physical no-internet/no-common-access-point checks when devices are available.
+4. Controlled relay/disruption demonstration and urgent-message scheduling with measured correctness, latency, throughput and resource use.
+5. Optional on-device language assistance only after message fidelity and measured local inference are established.
+
+Use measured results on the résumé. Device-count and latency goals remain targets until tested. This sequence prepares M1/M2; it does not relax their evidence gates.
+
 ## First engineering checkpoint
 
-Before scaffolding an app, run NET-01 with the available physical devices and finish the security/protocol decisions needed for private exchange. A successful synthetic transport probe is not itself the product. ENG-01 then establishes build/test commands; M1 creates the first complete user workflow.
+Before connecting private data or claiming physical offline operation, run NET-01 with the available physical devices and finish the security/protocol decisions needed for private exchange. A successful synthetic transport probe is not itself the product. Synthetic app experiments may establish their own build/test commands ahead of this gate; M1 still requires durable exchange and physical evidence.
 
 ## Milestone stop/revise rules
 
