@@ -2,7 +2,7 @@
 
 **One project. Two interfaces. A person asks for help; a responder receives the request and replies—even when internet service is unavailable, provided a usable local communication path exists.**
 
-Working description, not a selected brand. **Documentation, a Figma draft, and a synthetic networking probe; no rescue application exists yet.**
+Working description, not a selected brand. **Documentation, a Figma draft, a Swift/C++ networking probe, and a C++ workflow simulation; no complete rescue application exists yet.**
 
 [Public GitHub repository](https://github.com/archiips/offline-rescue-network) · [Editable Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
 
@@ -16,6 +16,12 @@ Working description, not a selected brand. **Documentation, a Figma draft, and a
 | See whether a responder received the request | Acknowledge, reply, and update handling status |
 
 Nearby participating devices can later relay encrypted messages. A responder must become reachable. The app shows when a request is still waiting; a relay receipt does not mean help is dispatched.
+
+## What works today
+
+- [Connection probe](experiments/network-probe/README.md): iPhone test screen and Mac host; synthetic simulator-to-Mac exchange verified.
+- [C++ workflow model](experiments/workflow-model/README.md): separate requester/responder models, complete synthetic SOS/reply/update/handling walkthrough and failure tests.
+- Both remain experiments: physical networking, endpoint cryptography, durable storage and native rescue screens are unfinished.
 
 ## First milestone
 

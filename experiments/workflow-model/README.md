@@ -1,0 +1,38 @@
+# C++ synthetic workflow model
+
+Early domain engine prototype for **both** the public and responder workflows. Two independent C++20 instances exchange typed synthetic events in a deterministic command-line demonstration. This is separate from the Swift networking probe and has no radio, encryption, authenticated identity, wire serialization, UI, or durable storage.
+
+## Run
+
+```sh
+cmake -S experiments/workflow-model -B /private/tmp/rescue-workflow-build -DCMAKE_BUILD_TYPE=Debug
+cmake --build /private/tmp/rescue-workflow-build
+ctest --test-dir /private/tmp/rescue-workflow-build --output-on-failure
+/private/tmp/rescue-workflow-build/workflow_demo
+```
+
+CMake >=3.20, C++20 compiler; no downloaded packages. The walkthrough demonstrates SOS, simulated device receipt, explicit acknowledgment, reply, outage correction, assignment/resolution, late withdrawal, withdrawal disposition and explicit reopen. Every event/actor/building is synthetic. A receipt means **in-memory model acceptance**, not production durable device receipt or a network measurement.
+
+For sanitizer checks, configure another directory with `-DRESCUE_SANITIZERS=ON` and Debug; use Clang/GNU. Release uses the same checks (test assertions do not disappear under NDEBUG).
+
+## Model contract
+
+- `submit`: requires the local fixture author. `receive`: requires the local fixture destination. Neither updates the other model automatically.
+- Events are immutable by ID; exact duplicates are idempotent, changed-content collisions reject. Per-author/request sequence collisions reject. A lower-sequence correction cannot overwrite a newer reported location.
+- Supplied fixture roles, exercise, original requester ownership and exact receipt/acknowledgment reference are checked. **These are policy tests, not cryptographic authentication.** Anyone supplying the fixture data can impersonate a member.
+- `receiptFor`: only for an already accepted inbound non-receipt event. Commit/transport are explicit harness steps; receipts never generate receipt loops. Each return message has independent delivery state. Snapshots expose **all** public messages with delivery per event plus an undelivered count; showing only the latest status can hide an earlier lost correction. Acknowledgment can precede a weaker device receipt without regressing.
+- Single command authority; handling revisions increment by one. Resolution records observed public sequence; late updates, including delayed lower-sequence gaps, remain visible while resolved. Reopen requires an explicit reason. Withdrawal/disposition do not automatically resolve. Each disposition references an exact withdrawal; a later withdrawal has its own pending decision.
+- Default 128 stored events, 64-byte IDs, 2 KiB combined text/location. Configured capacity is bounded at 4096. Full or injected failed store returns an error before mutation. Accepted events remain only in memory and are lost on process exit.
+- Unknown request/reference or future revision returns `MissingDependency`; the caller must retry after the missing event. Persisted pending reconciliation, epochs, retention and reserved queue capacity remain future work. Caller-provided deterministic IDs are not a production random-ID mechanism.
+
+## Verification and limits
+
+See [implementation plan](../../docs/superpowers/plans/2026-10-07-workflow-model.md). The tests cover the end-to-end synthetic workflow, independent delayed return delivery, late updates, fixture authority, references, storage failure, duplicates/conflicts, arrival order and bounds. This does not close NET-01, SEC-01, ENG-01–05 or M1. Native Swift integration follows after this domain checkpoint; physical connection testing can be done later.
+
+### Projection interpretation
+
+Interpret delivery from the **sending model**: requester delivery for public events, command delivery for its replies/handling messages. A receiver's locally created acknowledgment/receipt does not prove its return message reached the sender. The demo and tests keep these views separate.
+
+`lateUpdate` is a **command-local review flag** based partly on acceptance order. The requester can have a different flag while still showing an undelivered correction. Replaying the same event set in a different arrival order may change that flag. Future durable replay must preserve acceptance order or replace this with an explicit causal seen-event contract; do not promote this experiment to a convergent replicated reducer unchanged.
+
+Verified 2026-10-07 on macOS arm64, AppleClang 21 and CMake 4.3.2: 13/13 CTest scenarios pass in Debug, Release and AddressSanitizer/UndefinedBehaviorSanitizer builds. Full demo ran successfully. Claude Code completed two read-only reviews; ordering, per-message and withdrawal regressions were reproduced and fixed. Declared minimum CMake/compiler portability beyond this machine is not validated.

@@ -6,7 +6,7 @@ One offline rescue communication system with a public iPhone interface and a res
 
 ## Current state and source of truth
 
-Documentation, a linked Figma draft and a synthetic-only networking spike; no rescue application. Start with README.md, docs/PRD.md, docs/DECISIONS.md, and docs/TODO.md. Figma identifiers and evidence are recorded in docs/design/figma-state.json and docs/DESIGN_REVIEW.md. Probe build/test commands are in experiments/network-probe/README.md; use the actual manifests. Production build/lint commands remain unestablished. Do not invent successful checks or operational capabilities.
+Documentation, a linked Figma draft and synthetic-only networking and C++ workflow experiments; no rescue application. Start with README.md, docs/PRD.md, docs/DECISIONS.md, and docs/TODO.md. Figma identifiers and evidence are recorded in docs/design/figma-state.json and docs/DESIGN_REVIEW.md. Experiment build/test commands are in experiments/network-probe/README.md and experiments/workflow-model/README.md; use the actual manifests. Production build/lint commands remain unestablished. Do not invent successful checks or operational capabilities.
 
 ## Design constraints
 
