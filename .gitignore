@@ -1,0 +1,31 @@
+# Local credentials and private configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+/.aws/
+/.codex/
+/.agents/
+/.claude/
+/.mcp.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+credentials.json
+secrets.json
+
+# Local evidence containing participant data
+/private-data/
+/local-artifacts/
+*.log
+
+# Generated development artifacts
+.DS_Store
+/build/
+/DerivedData/
+/cmake-build-*/
+xcuserdata/
+*.xcuserstate
