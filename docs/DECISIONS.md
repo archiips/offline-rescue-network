@@ -21,7 +21,7 @@ Read this alongside the [PRD](PRD.md). "Accepted" means established by the conve
 |---|---|---|---|
 | D-07 | Prepared, enrolled participants in a non-emergency drill | Open public launch first | Verified public onboarding and responder-discovery design, abuse tests, and partner readiness |
 | D-08 | iOS/iPadOS 18 minimum for the baseline experiment; capability checks on physical devices | Require iOS 26 for Wi-Fi Aware | Transport matrix demonstrates a material benefit and partner device availability |
-| D-09 | Foreground Multipeer Connectivity adapter for the first no-access-point proof | BLE, Wi-Fi Aware, or local LAN as the sole baseline | NET-01 measures feasibility; revise before building M1 if the baseline is unsuitable |
+| D-09 | Foreground Network framework NW* adapter for the synthetic direct-path probe | BLE, Wi-Fi Aware, or local LAN as the sole baseline | Apple TN3213 supersedes the earlier MPC default; NET-01 still determines the production adapter |
 | D-10 | Core is transport-independent C++20; thin C-compatible bridge | Large directly imported C++ surface | Bridge benchmark/review supports simpler ownership without lifecycle hazards |
 | D-11 | Embedded transactional storage, with SQLite as the candidate | Files or cloud persistence | Storage recovery and integration review justify another solution |
 | D-12 | One command authority per exercise; linear responder handling revisions | Distributed command editing from the start | Partner requires disconnected multiple-command use and conflict policy is designed |
@@ -67,3 +67,7 @@ The user approved proceeding with the first-milestone brief and sharing the five
 ## 2026-10-07 — publication and Figma draft
 
 The user selected Archit Jaiswal's team for Figma and explicitly authorized a public GitHub repo plus ongoing commits/pushes at verified checkpoints. Repository: [archiips/offline-rescue-network](https://github.com/archiips/offline-rescue-network); local default branch: main. The [Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333) and its current evidence/limitations are recorded in DESIGN_REVIEW.md. Figma MCP limits stopped further refinement; no engineering-completion or operational-use claim follows. Physical endpoints remain unconfirmed.
+
+## 2026-10-07 — synthetic probe authorization and transport revision
+
+User approved preparing a small iPhone/Mac synthetic probe while the iPad is unavailable. D-04 describes the original deliverable; this later authorization permits isolated experiment code, not bypassing NET-01/SEC-01. D-09 now favors older Network NW* APIs for the spike because current Apple TN3213 recommends Network framework and documents MPC deprecation in Xcode 27. This is source guidance, not a claim that the user installed iOS 27. D-08 remains provisional. The [probe record](NETWORK_PROBE.md) separates build/loopback evidence from physical radio measurements. [Protocol/security proposal](PROTOCOL_SECURITY_DRAFT.md) prepares SEC-01 but does not freeze cryptography. Both product audiences and C++ ownership remain unchanged.

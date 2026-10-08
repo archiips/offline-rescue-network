@@ -2,7 +2,7 @@
 
 **One project. Two interfaces. A person asks for help; a responder receives the request and replies—even when internet service is unavailable, provided a usable local communication path exists.**
 
-Working description, not a selected brand. **Documentation and design prototypes; no product code exists yet.**
+Working description, not a selected brand. **Documentation, a Figma draft, and a synthetic networking probe; no rescue application exists yet.**
 
 [Public GitHub repository](https://github.com/archiips/offline-rescue-network) · [Editable Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
 
@@ -58,4 +58,4 @@ Read the first milestone for the immediate next steps. The PRD and roadmap expla
 
 ## Repository state
 
-No build/test commands exist yet. The first engineering setup task will establish them.
+The [synthetic networking probe](experiments/network-probe/README.md) has verified build/test commands. Production toolchain setup, physical transport validation and private-message security remain gated. See [probe plan/evidence](docs/NETWORK_PROBE.md) and [protocol/security proposal](docs/PROTOCOL_SECURITY_DRAFT.md).

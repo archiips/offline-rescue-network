@@ -29,3 +29,7 @@ secrets.json
 /cmake-build-*/
 xcuserdata/
 *.xcuserstate
+
+# Swift Package Manager generated state
+.build/
+.swiftpm/

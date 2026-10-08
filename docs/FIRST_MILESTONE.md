@@ -64,3 +64,7 @@ The user approved this direction and sharing the five named project documents wi
 The user selected Archit Jaiswal's team and authorized public publication plus ongoing project commits/pushes. The public repository is [archiips/offline-rescue-network](https://github.com/archiips/offline-rescue-network).
 
 Open input: physical endpoint device/OS inventory. Further Figma refinement is currently limited by the Starter MCP tool-call allowance; the artifact is a draft rather than a completed design-validation checkpoint.
+
+## Current preparation checkpoint
+
+The [synthetic iPhone/Mac probe](../experiments/network-probe/README.md) is prepared while the older iPad is unavailable. [Probe evidence](NETWORK_PROBE.md) records eight passing tests, a simulator build and simulator-to-Mac receipt; physical radio validation is pending. [Product protocol/security proposal](PROTOCOL_SECURITY_DRAFT.md) prepares the private-message gate. These do not complete NET-01, SEC-01 or M1.

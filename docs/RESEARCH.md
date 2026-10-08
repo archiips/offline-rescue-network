@@ -142,3 +142,9 @@ Reports a 125-participant scripted exercise. Movement, obstacles, and grouping a
 ## Research practice
 
 Before implementing an external API, review its current official docs and pin the actual development toolchain. Before claiming a competitor gap, compare its current equivalent workflow. Before a pilot, review partner equipment and intended-use requirements. Record dated evidence in the decision register; never fill gaps with vendor marketing or a single tutorial.
+
+## Transport and security follow-up — accessed 2026-10-07
+
+[Apple TN3213](https://developer.apple.com/documentation/technotes/tn3213-moving-from-multipeer-connectivity-to-network-framework) documents Xcode 27 MPC deprecation and recommends Network framework; older NW* APIs can provide the discussed features. [includePeerToPeer](https://developer.apple.com/documentation/network/nwparameters/includepeertopeer) opts into peer-to-peer technologies. [TN3179](https://developer.apple.com/documentation/technotes/tn3179-understanding-local-network-privacy) covers local-network privacy. Inference/design choice: investigate a foreground NW* listener/browser/client before adding newer hardware-specific APIs. These sources do not establish our physical connectivity, reliable background operation or broad device support.
+
+[Libsodium docs](https://doc.libsodium.org/doc) currently list 1.0.22-stable and ISC licensing; [signature documentation](https://doc.libsodium.org/public-key_cryptography/public-key_signatures) requires a trusted public key and provides no encryption; [sealed boxes](https://doc.libsodium.org/public-key_cryptography/sealed_boxes) provide recipient encryption without sender identity. [RFC 8949](https://www.rfc-editor.org/rfc/rfc8949) specifies CBOR. These inform the [candidate contract](PROTOCOL_SECURITY_DRAFT.md); no library is installed and no full cryptographic composition is approved.
