@@ -8,6 +8,11 @@ typedef struct rc_session rc_session;
 enum rc_action { RC_SOS, RC_FOLLOWUP, RC_CORRECTION, RC_WITHDRAWAL, RC_ACKNOWLEDGE,
                  RC_REPLY, RC_ASSIGN, RC_RESOLVE, RC_REOPEN, RC_DISPOSITION };
 rc_session* rc_create(void);
+/* Absolute local path <=4096 bytes; opens validated saved sample state, or creates it.
+   Existing corrupt/unsupported data is not replaced. Null on failure; no silent fallback. */
+rc_session* rc_open(const char* path);
+/* Atomically clears a sample session; 0 success, 7 save failure, -1 invalid handle. */
+int rc_reset(rc_session*);
 void rc_destroy(rc_session*);
 /* 0 accepted, 1 duplicate, 2 invalid, 3 unauthorized, 4 missing dependency, 5 conflict,
    6 full, 7 store failure; -1 bridge failure before acceptance.

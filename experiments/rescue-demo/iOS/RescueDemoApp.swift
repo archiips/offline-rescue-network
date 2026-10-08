@@ -1,8 +1,9 @@
 import SwiftUI
+import Foundation
 import RescueDemoState
 
 @main struct RescueDemoApp: App {
-    @StateObject private var demo = DemoController()
+    @StateObject private var demo = DemoController(storageURL: URL.applicationSupportDirectory.appendingPathComponent("RescueDemo", isDirectory: true).appendingPathComponent("session.sqlite"))
     var body: some Scene { WindowGroup { DemoShell().environmentObject(demo) } }
 }
 struct DemoShell: View {
@@ -14,10 +15,23 @@ struct DemoShell: View {
             VStack(alignment: .leading, spacing: 6) {
                 Label("Training demo · sample data", systemImage: "shield.lefthalf.filled").font(.headline)
                 Toggle("Simulated connection", isOn: Binding(get: { demo.snapshot?.connected ?? false }, set: { demo.setConnected($0) }))
-                Text("\(demo.snapshot?.pendingTransfers ?? 0) transfers queued · reset starts a new session")
-                    .font(.caption).foregroundStyle(.secondary)
-                if !demo.error.isEmpty { Text(demo.error).font(.callout).foregroundStyle(.red) }
+                    .disabled(demo.snapshot == nil)
+                if let state = demo.snapshot {
+                    Text("\(state.pendingTransfers) transfers queued · \(state.persistent ? "saved on this device" : "sample memory session")")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if !demo.error.isEmpty {
+                    Text(demo.error).font(.callout).foregroundStyle(.red)
+                    if demo.snapshot?.persistent == true { Button("Reopen saved session") { demo.retrySavedSession() } }
+                }
+                if let state = demo.snapshot, state.connected && state.pendingTransfers > 0 {
+                    Button("Retry queued transfers") { demo.setConnected(true) }
+                }
             }.padding().background(.thinMaterial)
+            if demo.snapshot == nil {
+                ContentUnavailableView("Saved session unavailable", systemImage: "externaldrive.badge.exclamationmark", description: Text("Your sample data has not been replaced. Retry opening it when storage is available."))
+                Button("Retry saved session") { demo.retrySavedSession() }.buttonStyle(.borderedProminent).padding()
+            } else {
             HStack {
                 Button { responder = false } label: { Label("Public view", systemImage: "person.fill").frame(maxWidth: .infinity) }
                     .accessibilityAddTraits(responder ? [] : .isSelected)
@@ -29,6 +43,7 @@ struct DemoShell: View {
             } else {
                 NavigationStack { PublicView().toolbar { resetButton } }
             }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
@@ -36,7 +51,7 @@ struct DemoShell: View {
             Button("Reset session", role: .destructive) { demo.reset() }
         }
     }
-    private var resetButton: some View { Button("Reset") { confirmingReset = true } }
+    private var resetButton: some View { Button("Reset") { confirmingReset = true }.disabled(demo.snapshot == nil) }
 }
 func deliveryText(_ value: DemoDelivery, publicSide: Bool) -> String {
     switch value {

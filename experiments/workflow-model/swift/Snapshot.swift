@@ -1,5 +1,6 @@
 import Foundation
 public struct DemoSnapshot: Decodable, Sendable {
+    public let persistent: Bool
     public let connected: Bool
     public let pendingTransfers: Int
     public let error: String

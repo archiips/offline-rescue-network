@@ -6,7 +6,7 @@ let package = Package(
     products: [.library(name: "RescueDemoState", targets: ["RescueDemoState"])],
     targets: [
         .target(name: "RescueDemoBridge", path: ".", exclude: ["CMakeLists.txt", "README.md", "src/demo.cpp", "tests", "swift", "SwiftTests"],
-                sources: ["src/workflow.cpp", "bridge/workflow_bridge.cpp"], publicHeadersPath: "bridge/include", cxxSettings: [.headerSearchPath("include")]),
+                sources: ["src/workflow.cpp", "bridge/workflow_bridge.cpp", "bridge/session_store.cpp"], publicHeadersPath: "bridge/include", cxxSettings: [.headerSearchPath("include")], linkerSettings: [.linkedLibrary("sqlite3")]),
         .target(name: "RescueDemoState", dependencies: ["RescueDemoBridge"], path: "swift"),
         .testTarget(name: "RescueDemoStateTests", dependencies: ["RescueDemoState"], path: "SwiftTests")
     ], cxxLanguageStandard: .cxx20)

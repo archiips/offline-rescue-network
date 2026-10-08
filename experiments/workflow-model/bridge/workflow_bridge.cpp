@@ -1,5 +1,9 @@
 #include "RescueDemoBridge.h"
 #include "workflow.hpp"
+#include "session_store.hpp"
+#include <memory>
+#include <set>
+#include <stdexcept>
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -71,7 +75,7 @@ std::string deviceJSON(const Model& model,const char* local) {
     return out.str()+"]}";
 }
 }
-struct rc_session {
+struct SessionState {
     Model requester{"public","training-demo",members};
     Model responder{"command","training-demo",members};
     std::deque<Event> pending;
@@ -161,20 +165,91 @@ struct rc_session {
         pumpSafely();return static_cast<int>(result);
     }
 };
+struct rc_session {
+    SessionState state;
+    std::unique_ptr<SessionStore> store;
+    rc_session()=default;
+    explicit rc_session(const char* path):store(std::make_unique<SessionStore>(path)) {
+        const auto saved=store->load();
+        auto replay=[](Model& model,const std::vector<Event>& events,const char* local) {
+            for(const auto& e:events) {
+                if(e.request!="request-1") throw std::runtime_error("Unexpected saved request.");
+                const auto result=e.author==local?model.submit(e):model.receive(e);
+                if(result!=Result::Accepted) throw std::runtime_error("Saved event history is invalid.");
+            }
+        };
+        replay(state.requester,saved.publicEvents,"public");
+        replay(state.responder,saved.responderEvents,"command");
+        std::set<std::string> ids;
+        for(const auto& e:saved.pending) {
+            if(e.author!="public" && e.author!="command") throw std::runtime_error("Invalid queued author.");
+            const auto& events=e.author=="public"?state.requester.events():state.responder.events();
+            const auto found=std::find(events.begin(),events.end(),e);
+            if(found==events.end() || !ids.insert(e.id).second) throw std::runtime_error("Invalid saved transfer.");
+        }
+        auto queued=[&saved](const Event& e) {
+            return std::find(saved.pending.begin(),saved.pending.end(),e)!=saved.pending.end();
+        };
+        auto consistent=[&queued](const Model& local,const Model& remote,const char* actor) {
+            for(const auto& e:local.events()) {
+                const auto found=std::find_if(remote.events().begin(),remote.events().end(),[&e](const Event& other){return other.id==e.id;});
+                if(found!=remote.events().end() && *found!=e) throw std::runtime_error("Saved histories disagree.");
+                if(e.author!=actor) {
+                    if(found==remote.events().end()) throw std::runtime_error("Inbound event has no saved origin.");
+                } else if(found==remote.events().end() && !queued(e)) {
+                    throw std::runtime_error("Unreceived event has no saved transfer.");
+                } else if(e.kind!=Kind::Receipt && local.delivery(e.id)==Delivery::Waiting && !queued(e)) {
+                    const auto receipt=remote.receiptFor(e.id,"receipt-"+e.id);
+                    if(!receipt || !queued(*receipt)) throw std::runtime_error("Unconfirmed event has no saved return transfer.");
+                }
+            }
+        };
+        consistent(state.requester,state.responder,"public");
+        consistent(state.responder,state.requester,"command");
+        state.pending=saved.pending;state.connected=saved.connected;
+    }
+    int publish(SessionState&& next) {
+        static_assert(std::is_nothrow_move_assignable_v<SessionState>);
+        try {
+            if(store) store->save({next.requester.events(),next.responder.events(),next.pending,next.connected});
+        } catch(const std::exception& e) {
+            state.error=e.what();return static_cast<int>(Result::StoreFailure);
+        }
+        state=std::move(next);return 0;
+    }
+    int perform(int action,const char* value,const char* reference) {
+        SessionState next=state;
+        const int result=next.perform(action,value,reference);
+        if(result!=0 && result!=1) {state.error=std::move(next.error);return result;}
+        const int saved=publish(std::move(next));return saved==0?result:saved;
+    }
+    int connect(bool connected) {
+        SessionState next=state;next.connected=connected;next.error.clear();next.pumpSafely();
+        return publish(std::move(next));
+    }
+};
 rc_session* rc_create(void) {try{return new rc_session;}catch(...){return nullptr;}}
+rc_session* rc_open(const char* path) {
+    if(!bounded(path,4096) || !*path) return nullptr;
+    try {return new rc_session(path);}catch(...){return nullptr;}
+}
+int rc_reset(rc_session* s) {
+    if(!s) return -1;
+    try {return s->publish(SessionState{});}catch(...){return -1;}
+}
 void rc_destroy(rc_session* s) {delete s;}
 int rc_perform(rc_session* s,int action,const char* value,const char* reference) {
     if(!s)return -1;try{return s->perform(action,value,reference);}catch(...){return -1;}
 }
 int rc_set_connected(rc_session* s,int connected) {
     if(!s || (connected!=0 && connected!=1))return -1;
-    try {s->connected=connected!=0;s->error.clear();s->pumpSafely();return 0;}catch(...){return -1;}
+    try {return s->connect(connected!=0);}catch(...){return -1;}
 }
 char* rc_snapshot(const rc_session* s) {
     if(!s)return nullptr;
     try {
-        std::string json="{\"connected\":"+std::string(boolean(s->connected))+",\"pendingTransfers\":"+std::to_string(s->pending.size())
-            +",\"error\":"+quote(s->error)+",\"publicState\":"+deviceJSON(s->requester,"public")+",\"responderState\":"+deviceJSON(s->responder,"command")+"}";
+        std::string json="{\"persistent\":"+std::string(boolean(s->store!=nullptr))+",\"connected\":"+std::string(boolean(s->state.connected))+",\"pendingTransfers\":"+std::to_string(s->state.pending.size())
+            +",\"error\":"+quote(s->state.error)+",\"publicState\":"+deviceJSON(s->state.requester,"public")+",\"responderState\":"+deviceJSON(s->state.responder,"command")+"}";
         auto* copy=static_cast<char*>(std::malloc(json.size()+1));if(!copy)return nullptr;
         std::memcpy(copy,json.c_str(),json.size()+1);return copy;
     }catch(...){return nullptr;}

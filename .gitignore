@@ -33,3 +33,9 @@ xcuserdata/
 # Swift Package Manager generated state
 .build/
 .swiftpm/
+
+# Generated saved sessions and SQLite journal files
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
