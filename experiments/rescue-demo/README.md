@@ -3,13 +3,13 @@
 A runnable SwiftUI iPhone/iPad app with **public and responder views backed by the C++20 workflow engine**. Two modes are available:
 
 - **Training mode:** one process owns two models and a simulated link, saved together in the original v1 SQLite session.
-- **Local exchange:** each app instance owns one role, one model and a separate v2 SQLite outbox. Real foreground Network-framework sockets carry bounded sample packets; Bonjour lists nearby sample endpoints. Each receiver commits before returning a device receipt.
+- **Secure exchange:** each app instance owns one role, one model and a separate v2 SQLite outbox. Real foreground Network-framework sockets carry signed/encrypted sample packets between checked opposite-role peers; Bonjour discovery names remain untrusted. Each receiver commits before returning a device receipt.
 
-Only preset synthetic requests, locations and responses are exposed. One request per coordinated reset. Both modes preserve histories and pending originals across restart. Role selection is a sample control, not authentication. Local exchange is plain and unauthenticated; physical offline radio behavior is unverified. See the [local exchange walkthrough and evidence](LOCAL_EXCHANGE.md).
+Only preset synthetic requests, locations and responses are exposed. One request per key epoch and coordinated reset/re-pair. Both modes preserve histories and pending originals across restart. Role selection is a sample control; checked public cards establish manual peer trust, not firefighter credentials. Storage remains unencrypted and physical offline radio behavior is unverified. Follow the current [secure exchange walkthrough and evidence](SECURE_EXCHANGE.md); [plain local exchange](LOCAL_EXCHANGE.md) retains the earlier diagnostic baseline.
 
 ## Run in Xcode
 
-Open `iOS/RescueDemo.xcodeproj`, select the `RescueDemo` scheme and an iPhone or iPad simulator, then Run. The local package dependency resolves to `../workflow-model`; no external packages are downloaded. Declared minimum iOS 18; actual UI verification below is on iPhone and iPad simulators running iOS 26.4. Physical installation/signing and older-device compatibility are unverified.
+Open `iOS/RescueDemo.xcodeproj`, select the `RescueDemo` scheme and an iPhone or iPad simulator, then Run. The local package dependency resolves to `../workflow-model`; no external packages are downloaded. Simulator signing is configured for Keychain; do not override CODE_SIGNING_ALLOWED to NO for secure-mode testing. Declared minimum iOS 18; actual UI verification below is on iPhone and iPad simulators running iOS 26.4. Physical installation/signing and older-device compatibility are unverified.
 
 ```sh
 xcodebuild -project experiments/rescue-demo/iOS/RescueDemo.xcodeproj \
@@ -72,4 +72,8 @@ The store uses system SQLite, DELETE rollback journaling, synchronous EXTRA and 
 
 Commands above reproduce the tests; configure a separate CMake directory with `-DCMAKE_BUILD_TYPE=Release` for Release checks. [Storage spec and primary sources](../../docs/superpowers/specs/2026-10-07-durable-demo-session.md) · [Implementation plan](../../docs/superpowers/plans/2026-10-07-durable-demo-session.md).
 
-No physical radio, encrypted exchange, background operation, relay range, device-count throughput or delivery-latency benchmark is established here. Saved simulated receipts are local training-session facts, not physical delivery evidence. This does not close NET-01, SEC-01, ENG-04 or M1. Local exchange now establishes separate endpoint ownership and real socket delivery with sample data. Next: physical measurements when devices are available and security before private data.
+This saved-training checkpoint established no physical radio, encrypted exchange, background operation or relay range. Later secure exchange and plain-loopback measurements are linked separately above. Saved simulated receipts are local training-session facts, not physical delivery evidence. This does not close NET-01, SEC-01, ENG-04 or M1. Local exchange now establishes separate endpoint ownership and real socket delivery with sample data. Next: physical measurements when devices are available and security before private data.
+
+## Secure exchange checkpoint — 2026-10-08
+
+See [secure walkthrough](SECURE_EXCHANGE.md) for current native pairing, encryption, exact checks and limits.62 Swift checks retain the original 33; C++30/Python14 remain green. Use real measured figures only for their stated baseline; secure latency is unmeasured.

@@ -161,6 +161,10 @@
 			<dict>
 				<key>CLANG_CXX_LANGUAGE_STANDARD</key>
 				<string>c++20</string>
+				<key>CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]</key>
+				<string>Simulator.entitlements</string>
+				<key>CODE_SIGN_IDENTITY[sdk=iphonesimulator*]</key>
+				<string>-</string>
 				<key>CODE_SIGN_STYLE</key>
 				<string>Automatic</string>
 				<key>INFOPLIST_FILE</key>
@@ -193,6 +197,10 @@
 			<dict>
 				<key>CLANG_CXX_LANGUAGE_STANDARD</key>
 				<string>c++20</string>
+				<key>CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]</key>
+				<string>Simulator.entitlements</string>
+				<key>CODE_SIGN_IDENTITY[sdk=iphonesimulator*]</key>
+				<string>-</string>
 				<key>CODE_SIGN_STYLE</key>
 				<string>Automatic</string>
 				<key>INFOPLIST_FILE</key>

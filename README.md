@@ -21,10 +21,11 @@ Nearby participating devices can later relay encrypted messages. A responder mus
 
 - [Connection probe](experiments/network-probe/README.md): iPhone test screen and Mac host; synthetic simulator-to-Mac exchange verified.
 - [C++ workflow model](experiments/workflow-model/README.md): separate requester/responder models, complete synthetic SOS/reply/update/handling walkthrough and failure tests.
-- [Native rescue demo](experiments/rescue-demo/README.md): public/responder SwiftUI views with SOS, acknowledgment, replies, location corrections and handling actions. Training mode uses a simulated link; local mode exchanges real packets between independently saved endpoints.
+- [Native rescue demo](experiments/rescue-demo/README.md): public/responder SwiftUI views with SOS, acknowledgment, replies, location corrections and handling actions. Training mode uses a simulated link; Secure exchange sends signed/encrypted packets between independently saved, manually paired endpoints.
 - [Local exchange walkthrough](experiments/rescue-demo/LOCAL_EXCHANGE.md): Bonjour discovery, Mac endpoint CLI, separate-process recovery checks and native simulator evidence. C++ SQLite commits precede device receipts; queued messages survive restart.
 - [Reproducible measurements](experiments/rescue-demo/MEASUREMENTS.md): repeated independent-process exchange, deliberately lost receipts, duplicate checks and inspectable loopback timings.
-- Preset sample data only: local exchange is plain and unauthenticated. Physical radio and endpoint cryptography remain unfinished.
+- [Secure exchange](experiments/rescue-demo/SECURE_EXCHANGE.md): checked pairing cards, CryptoKit HPKE/signatures, Keychain identity recovery and retained C++ durable receipts. Plain diagnostics remain separate.
+- Preset sample data only: message storage remains unencrypted. Physical radio, agency enrollment and independent security audit remain unfinished.
 
 ## Current focus
 
@@ -63,7 +64,7 @@ Later, evaluate indoor floor estimates, urgent-message scheduling, firefighter t
 | [Research and sources](docs/RESEARCH.md) | Primary sources, limitations, and unresolved feasibility questions |
 | [Decision register](docs/DECISIONS.md) | Accepted direction, provisional defaults, and open decisions |
 
-Read the first milestone for the immediate next steps. The PRD and roadmap explain the full scope.
+Read current state for the immediate next task; the first milestone retains the original product gates. The PRD and roadmap explain the full scope.
 
 ## Current assumptions
 

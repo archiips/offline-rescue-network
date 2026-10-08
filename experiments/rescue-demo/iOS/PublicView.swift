@@ -32,7 +32,7 @@ struct PublicView: View {
                     Image(systemName: "antenna.radiowaves.left.and.right").font(.system(size: 44)).foregroundStyle(.orange).accessibilityHidden(true)
                     Text("Ask for help nearby").font(.title2.bold())
                     Text("Explore how a request reaches a responder and receives a human acknowledgment.")
-                    Text(demo.localRole == nil ? "This sample uses a simulated connection. It does not contact emergency services." : "This sample exchanges data with an unverified local peer. It does not contact emergency services.").font(.caption).foregroundStyle(.secondary)
+                    Text(demo.localRole == nil ? "This sample uses a simulated connection. It does not contact emergency services." : (demo.secureMode ? "Pair with a checked sample endpoint to exchange requests. This does not contact emergency services." : "This sample exchanges data with an unverified local peer. It does not contact emergency services.")).font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Sample reported location") { floorPicker; Text("Training Building A") }
                 Section { Button("Review sample SOS") { reviewing = true }.buttonStyle(.borderedProminent).tint(.orange) }

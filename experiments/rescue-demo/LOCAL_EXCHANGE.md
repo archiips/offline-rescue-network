@@ -1,5 +1,7 @@
 # Local rescue exchange — sample data only
 
+> Historical plain diagnostic baseline. Native local mode now uses [Secure exchange](SECURE_EXCHANGE.md); use that walkthrough for pairing and simulator signing. The plain CLI and its measurements remain unchanged.
+
 Each app/CLI instance owns one C++ endpoint and one saved outbox. A public endpoint sends an SOS; a responder endpoint saves it and returns a device receipt. Human acknowledgment and replies are separate responder actions. No cloud service is required for this local socket exchange.
 
 The protocol and SQLite files are plain and unauthenticated. Use only the preset samples. Bonjour names and fixture roles do not verify identity. Physical no-internet/no-common-access-point radio behavior is not established by simulator or loopback results.

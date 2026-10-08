@@ -43,6 +43,7 @@
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_rescue-demo._tcp</string>
+		<string>_rescue-sec._tcp</string>
 	</array>
 </dict>
 </plist>

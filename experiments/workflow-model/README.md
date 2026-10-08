@@ -48,3 +48,7 @@ C++ binary packets validate UTF-8, canonical fixture IDs, lengths and field boun
 
 
 The [repeated measurement harness](../rescue-demo/MEASUREMENTS.md) adds Python stdlib test orchestration around these unchanged C++ endpoints and Swift sockets. It validates raw results and persisted histories under controlled failures; it introduces no new backend or production dependency.
+
+## Secure Apple adapter and independent host
+
+[Secure walkthrough](../rescue-demo/SECURE_EXCHANGE.md) adds CryptoKit HPKE/signatures and Keychain identities around this same C++ endpoint. No external production packages; SwiftPM resolves the Apple system frameworks. `rescue-secure-host` owns one manually pinned role and UUID/epoch SQLite store. The original `rescue-exchange-host` and measured plain protocol remain diagnostics.62 Swift checks now retain the original 33, with real signature/card/epoch/Keychain and socket recovery coverage. Run the same `swift test`; the separate `tests/secure_host_smoke.py --host <absolute secure-host>` verifies real-Keychain two-process replay/lost-receipt recovery and cleans only its test-owned keys. These checks do not close physical/private-data gates.

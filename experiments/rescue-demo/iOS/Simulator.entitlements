@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Simulator-only ad-hoc test identity. Physical builds use Xcode's actual development team. -->
+<plist version="1.0"><dict>
+    <key>application-identifier</key><string>LOCALDEMO.$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>keychain-access-groups</key><array><string>LOCALDEMO.$(PRODUCT_BUNDLE_IDENTIFIER)</string></array>
+</dict></plist>

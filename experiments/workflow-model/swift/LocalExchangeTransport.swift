@@ -15,7 +15,11 @@ public struct ExchangeFrameAccumulator: Sendable {
     private var expected: Int?
     private var complete = false
     private var failed = false
-    public init() {}
+    private let payloadLimit: Int
+    public init(maximumPayload: Int = 4096) {
+        precondition((1...4276).contains(maximumPayload))
+        payloadLimit = maximumPayload
+    }
     public var bufferedCount: Int { buffer.count }
     public var isPartial: Bool { !buffer.isEmpty && !complete && !failed }
 
@@ -35,7 +39,7 @@ public struct ExchangeFrameAccumulator: Sendable {
                 rest = Data(rest.dropFirst(take))
                 guard buffer.count == Self.headerLength else { return nil }
                 let length = buffer.reduce(UInt64(0)) { $0 << 8 | UInt64($1) }
-                guard (1...UInt64(Self.maximumPayload)).contains(length) else { throw ExchangeFrameError.invalidLength(length) }
+                guard (1...UInt64(payloadLimit)).contains(length) else { throw ExchangeFrameError.invalidLength(length) }
                 expected = Self.headerLength + Int(length)
             }
             guard let expected else { return nil }
@@ -50,7 +54,8 @@ public struct ExchangeFrameAccumulator: Sendable {
             throw error
         }
     }
-    public static func frame(_ payload: Data) throws -> Data {
+    public static func frame(_ payload: Data, maximumPayload: Int = 4096) throws -> Data {
+        precondition((1...4276).contains(maximumPayload))
         guard (1...maximumPayload).contains(payload.count) else {
             throw ExchangeFrameError.invalidLength(UInt64(payload.count))
         }
@@ -66,7 +71,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     case network(String)
 }
 
-/// Plain, unauthenticated synthetic local exchange: one request frame and one receipt frame per
+/// Bounded local transport; authentication is supplied by its owner: one request frame and one receipt frame per
 /// TCP connection. Foreground only; the owner calls stop() on background. All state is MainActor.
 @MainActor public final class LocalExchangeTransport: ObservableObject {
     public nonisolated static let serviceType = "_rescue-demo._tcp"
@@ -79,6 +84,8 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     /// Saves an incoming packet and returns its committed receipt. Nil or throwing closes without a response.
     public var onIncoming: ((Data) throws -> Data)?
     private let timeout: Duration
+    private let payloadLimit: Int
+    private let discoveryType: String
     private var generation = UUID()
     private var listener: NWListener?
     private var browser: NWBrowser?
@@ -89,14 +96,18 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         /// Present for outgoing exchanges; resumed exactly once by finish().
         var continuation: CheckedContinuation<Data, any Error>?
         var request: Data?
-        var accumulator = ExchangeFrameAccumulator()
+        var accumulator: ExchangeFrameAccumulator
         var deadline: Task<Void, Never>?
         var ready = false
         var responding = false
     }
     var pendingSessions: Int { sessions.count }
 
-    public init(timeout: Duration = .seconds(8)) { self.timeout = timeout }
+    public init(timeout: Duration = .seconds(8), secure: Bool = false) {
+        self.timeout = timeout
+        payloadLimit = secure ? 4276 : 4096
+        discoveryType = secure ? "_rescue-sec._tcp" : Self.serviceType
+    }
 
     private nonisolated static func parameters() -> NWParameters {
         let parameters = NWParameters.tcp
@@ -136,7 +147,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         }
         let run = generation
         if advertise {
-            listener.service = .init(name: name, type: Self.serviceType)
+            listener.service = .init(name: name, type: discoveryType)
             advertisedName = name
         }
         listener.stateUpdateHandler = { [weak self, weak listener] state in
@@ -163,7 +174,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
                     return
                 }
                 let token = UUID()
-                self.sessions[token] = Session(connection: connection)
+                self.sessions[token] = Session(connection: connection, accumulator: ExchangeFrameAccumulator(maximumPayload: self.payloadLimit))
                 self.begin(token)
             }
         }
@@ -190,7 +201,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     public func exchange(_ packet: Data, to endpoint: NWEndpoint) async throws -> Data {
         guard active else { throw ExchangeTransportError.notActive }
         let frame: Data
-        do { frame = try ExchangeFrameAccumulator.frame(packet) } catch let error as ExchangeFrameError {
+        do { frame = try ExchangeFrameAccumulator.frame(packet, maximumPayload: payloadLimit) } catch let error as ExchangeFrameError {
             throw ExchangeTransportError.frame(error)
         }
         guard sessions.count < Self.maximumSessions else { throw ExchangeTransportError.sessionLimit }
@@ -199,7 +210,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 let connection = NWConnection(to: endpoint, using: Self.parameters())
-                sessions[token] = Session(connection: connection, continuation: continuation, request: frame)
+                sessions[token] = Session(connection: connection, continuation: continuation, request: frame, accumulator: ExchangeFrameAccumulator(maximumPayload: payloadLimit))
                 begin(token)
             }
         } onCancel: {
@@ -208,7 +219,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     }
 
     private func startBrowsing(_ run: UUID) {
-        let browser = NWBrowser(for: .bonjour(type: Self.serviceType, domain: nil), using: Self.parameters())
+        let browser = NWBrowser(for: .bonjour(type: discoveryType, domain: nil), using: Self.parameters())
         browser.stateUpdateHandler = { [weak self] state in
             MainActor.assumeIsolated {
                 guard let self, self.generation == run, self.browser != nil else { return }
@@ -269,7 +280,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     private func receive(_ token: UUID) {
         guard let session = sessions[token] else { return }
         // Read up to the whole bound so extra bytes in the same chunk are rejected, never buffered past it.
-        let capacity = max(1, ExchangeFrameAccumulator.maximumFrame - session.accumulator.bufferedCount)
+        let capacity = max(1, 4 + payloadLimit - session.accumulator.bufferedCount)
         session.connection.receive(minimumIncompleteLength: 1, maximumLength: capacity) { [weak self] data, _, complete, error in
             MainActor.assumeIsolated {
                 guard let self, var current = self.sessions[token], !current.responding else { return }
@@ -291,7 +302,7 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         if session.continuation != nil { finish(token, .success(payload)); return }
         guard let handler = onIncoming else { finish(token, .failure(.noHandler)); return }
         let response: Data
-        do { response = try ExchangeFrameAccumulator.frame(try handler(payload)) } catch {
+        do { response = try ExchangeFrameAccumulator.frame(try handler(payload), maximumPayload: payloadLimit) } catch {
             finish(token, .failure(.rejected)); return
         }
         // The handler may have stopped the transport.

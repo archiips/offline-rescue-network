@@ -15,9 +15,14 @@ private final class CoreHandle {
     private let storageURL: URL?
     private var core: CoreHandle?
     private var endpoint: EndpointController?
+    private var secureEndpoint: SecureEndpointController?
+    private var secureRecordStore: (any SecureRecordStore)?
+    @Published public private(set) var secureMode = false
+    public var secureCard: SecurePairingCard? { secureEndpoint?.card }
+    public var pairedCard: SecurePairingCard? { secureEndpoint?.peerCard }
     private var peer: NWEndpoint?
     private var exchangeGeneration = UUID()
-    public let transport = LocalExchangeTransport()
+    @Published public private(set) var transport = LocalExchangeTransport()
     @Published public private(set) var localRole: EndpointRole?
     @Published public private(set) var exchangeBusy = false
     @Published public private(set) var snapshot: DemoSnapshot?
@@ -29,6 +34,7 @@ private final class CoreHandle {
     public func useLocalRole(_ role: EndpointRole) {
         guard let storageURL else { error = "Local exchange needs a saved sample session."; return }
         stopLocalExchange()
+        secureEndpoint = nil; secureMode = false; transport = LocalExchangeTransport()
         localRole = role
         endpoint = EndpointController(storageURL: storageURL.deletingLastPathComponent().appendingPathComponent("local-\(role.rawValue).sqlite"), role: role)
         endpoint?.onChange = { [weak self] in self?.refreshEndpoint() }
@@ -38,13 +44,38 @@ private final class CoreHandle {
         }
         refreshEndpoint()
     }
+    public func useSecureRole(_ role: EndpointRole, recordStore: (any SecureRecordStore)? = nil) {
+        guard let storageURL else { error = "Secure exchange needs a saved sample session."; return }
+        stopLocalExchange()
+        localRole = role; secureMode = true; secureRecordStore = recordStore; endpoint = nil; secureEndpoint = nil; snapshot = nil
+        transport = LocalExchangeTransport(secure: true)
+        do {
+            let secure = try SecureEndpointController(rootURL: storageURL.deletingLastPathComponent(), role: role, recordStore: recordStore)
+            secureEndpoint = secure; endpoint = secure.endpoint
+            bindSecureEndpoint()
+            refreshEndpoint()
+        } catch { self.error = "Secure session unavailable: \(error)" }
+    }
+    @discardableResult public func pairSecurePeer(_ card: String) -> Bool {
+        guard let secureEndpoint else { error = "Secure session unavailable"; return false }
+        do { try secureEndpoint.pair(card); error = ""; objectWillChange.send(); return true }
+        catch { self.error = "Pairing rejected: \(error)"; return false }
+    }
+    private func bindSecureEndpoint() {
+        endpoint?.onChange = { [weak self] in self?.refreshEndpoint() }
+        transport.onIncoming = { [weak self] packet in
+            guard let self, let secure = self.secureEndpoint, self.secureMode else { throw EndpointError(message: "Secure endpoint stopped") }
+            return try secure.accept(packet)
+        }
+    }
     public func useTraining() {
-        stopLocalExchange(); endpoint = nil; localRole = nil
+        stopLocalExchange(); endpoint = nil; secureEndpoint = nil; secureMode = false; localRole = nil; transport = LocalExchangeTransport()
         retrySavedSession()
     }
     public func startLocalExchange() {
         guard let role = localRole, endpoint?.snapshot != nil else { return }
-        do { try transport.start(name: "RescueSample-\(role == .publicUser ? "Public" : "Responder")-\(UUID().uuidString.prefix(8))") }
+        guard !secureMode || pairedCard != nil else { error = "Pair with the opposite sample endpoint first."; return }
+        do { try transport.start(name: "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")-\(UUID().uuidString.prefix(8))") }
         catch { self.error = "Could not start local exchange: \(error)" }
     }
     public func stopLocalExchange() {
@@ -52,15 +83,18 @@ private final class CoreHandle {
     }
     public func transferQueued(to destination: NWEndpoint) async {
         guard localRole != nil, let endpoint, transport.active, !exchangeBusy else { return }
+        let secure = secureEndpoint
+        guard !secureMode || secure?.peerCard != nil else { error = "Pair before transferring saved messages."; return }
+        let channel = transport
         peer = destination; exchangeBusy = true
         let run = exchangeGeneration
         defer { if run == exchangeGeneration { exchangeBusy = false } }
         do {
             for _ in 0..<64 {
-                guard run == exchangeGeneration, let packet = try endpoint.nextPacket() else { break }
-                let receipt = try await transport.exchange(packet, to: destination)
+                guard run == exchangeGeneration, let packet = try (secure != nil ? secure!.nextPacket() : endpoint.nextPacket()) else { break }
+                let receipt = try await channel.exchange(packet, to: destination)
                 guard run == exchangeGeneration else { return }
-                try endpoint.confirm(receipt)
+                if let secure { try secure.confirm(receipt) } else { try endpoint.confirm(receipt) }
             }
         } catch { if run == exchangeGeneration { peer = nil; self.error = "Transfer stopped; unconfirmed messages stay saved. \(error)" } }
     }
@@ -73,7 +107,15 @@ private final class CoreHandle {
             responderState: localRole == .responder ? state.state : .empty)
     }
     public func retrySavedSession() {
-        if localRole != nil { endpoint?.reopen(); refreshEndpoint(); return }
+        if let role = localRole {
+            if secureMode {
+                if let secureEndpoint {
+                    do { try secureEndpoint.reopen(); endpoint = secureEndpoint.endpoint; bindSecureEndpoint(); refreshEndpoint() }
+                    catch { self.error = "Secure reopen failed: \(error)" }
+                } else { useSecureRole(role, recordStore: secureRecordStore) }
+            } else { endpoint?.reopen(); refreshEndpoint() }
+            return
+        }
         if storageURL == nil, core?.pointer != nil { refresh(); return }
         core = nil
         do {
@@ -89,8 +131,12 @@ private final class CoreHandle {
         }
     }
     public func perform(_ action: DemoAction, value: String = "", reference: String = "") {
-        if let endpoint, localRole != nil {
-            endpoint.perform(action, value: value, reference: reference)
+        if localRole != nil {
+            guard let endpoint else { error = "Local endpoint unavailable; action was not saved."; return }
+            do {
+                if let secureEndpoint { try secureEndpoint.perform(action, value: value, reference: reference) }
+                else { endpoint.perform(action, value: value, reference: reference) }
+            } catch { self.error = "Action was not saved: \(error)"; return }
             if let peer, transport.active {
                 let run = exchangeGeneration
                 Task { guard run == self.exchangeGeneration else { return }; await self.transferQueued(to: peer) }
@@ -108,7 +154,22 @@ private final class CoreHandle {
         if result != 0 && error.isEmpty { error = "Could not save the simulated connection change." }
     }
     public func reset() {
-        if let endpoint, localRole != nil { stopLocalExchange(); endpoint.reset(); return }
+        if localRole != nil {
+            stopLocalExchange()
+            if secureMode {
+                guard let secure = secureEndpoint else {
+                    guard let role = localRole, let storageURL else { return }
+                    do {
+                        let fresh = try SecureEndpointController.newSession(rootURL: storageURL.deletingLastPathComponent(), role: role, recordStore: secureRecordStore)
+                        secureEndpoint = fresh; endpoint = fresh.endpoint; bindSecureEndpoint(); refreshEndpoint()
+                    } catch { self.error = "New secure session failed: \(error)" }
+                    return
+                }
+                do { try secure.resetSession(); endpoint = secure.endpoint; bindSecureEndpoint(); refreshEndpoint() }
+                catch { endpoint = secure.endpoint; bindSecureEndpoint(); refreshEndpoint(); self.error = "New secure session failed: \(error)" }
+            } else { endpoint?.reset() }
+            return
+        }
         let result = rc_reset(core?.pointer)
         refresh()
         if result != 0 && error.isEmpty { error = "Could not reset the sample session. Previous data is retained." }
