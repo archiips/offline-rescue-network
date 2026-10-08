@@ -6,7 +6,7 @@ One offline rescue communication system with a public iPhone interface and a res
 
 ## Current state and source of truth
 
-Documentation only. Start with README.md, docs/PRD.md, docs/DECISIONS.md, and docs/TODO.md. No build/test/lint commands exist; read future project manifests and record actual commands when implementation begins. Do not invent successful checks or operational capabilities.
+Documentation and a linked Figma draft; no product code. Start with README.md, docs/PRD.md, docs/DECISIONS.md, and docs/TODO.md. Figma identifiers and evidence are recorded in docs/design/figma-state.json and docs/DESIGN_REVIEW.md. No build/test/lint commands exist; read future project manifests and record actual commands when implementation begins. Do not invent successful checks or operational capabilities.
 
 ## Design constraints
 

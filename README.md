@@ -2,7 +2,9 @@
 
 **One project. Two interfaces. A person asks for help; a responder receives the request and replies—even when internet service is unavailable, provided a usable local communication path exists.**
 
-Working description, not a selected brand. **Documentation only; no product code exists yet.**
+Working description, not a selected brand. **Documentation and design prototypes; no product code exists yet.**
+
+[Public GitHub repository](https://github.com/archiips/offline-rescue-network) · [Editable Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
 
 ## The product in plain language
 
@@ -30,6 +32,8 @@ Later, evaluate indoor floor estimates, urgent-message scheduling, firefighter t
 | Document | Purpose |
 |---|---|
 | [First milestone](docs/FIRST_MILESTONE.md) | Immediate screen designs, device experiment, and acceptance checks |
+| [Design review](docs/DESIGN_REVIEW.md) | Claude findings, Figma evidence, and prototype limitations |
+| [Device inventory](docs/DEVICE_INVENTORY.md) | Verified development tools and missing physical-test inputs |
 | [Product requirements](docs/PRD.md) | Users, workflows, requirements, and first-release boundaries |
 | [System architecture](docs/ARCHITECTURE.md) | Components, ownership, deployment, and trust boundaries |
 | [System design](docs/SYSTEM_DESIGN.md) | Data contracts, delivery semantics, persistence, and failure handling |

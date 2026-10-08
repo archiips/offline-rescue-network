@@ -63,3 +63,7 @@ Append dated changes with evidence, the superseded decision ID, affected require
 ## 2026-10-07 — first design checkpoint
 
 The user approved proceeding with the first-milestone brief and sharing the five named documents with Claude Code. Its completed read-only review and the primary-agent assessment are recorded in [design review](DESIGN_REVIEW.md). The PRD, system design, privacy model, and validation now clarify return-message receipts, explicit reopening/withdrawal disposition, required transport permission readiness, and optional operator-label attribution. Coordinator setup is provisionally placed within the responder interface, subject to SEC-01; no third app is introduced. These clarify D-05/D-07/D-12 without changing D-01–D-03 or resolving NET-01/SEC-01. Figma team and physical endpoints remain unselected.
+
+## 2026-10-07 — publication and Figma draft
+
+The user selected Archit Jaiswal's team for Figma and explicitly authorized a public GitHub repo plus ongoing commits/pushes at verified checkpoints. Repository: [archiips/offline-rescue-network](https://github.com/archiips/offline-rescue-network); local default branch: main. The [Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333) and its current evidence/limitations are recorded in DESIGN_REVIEW.md. Figma MCP limits stopped further refinement; no engineering-completion or operational-use claim follows. Physical endpoints remain unconfirmed.

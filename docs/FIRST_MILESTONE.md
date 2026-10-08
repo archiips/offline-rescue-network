@@ -1,6 +1,6 @@
 # First milestone: screen design and transport proof
 
-Status: screen brief approved; execution preparation in progress · 2026-10-07
+Status: screen brief approved; first Figma draft created · 2026-10-07
 
 **One product: a person sends an SOS; a firefighter receives it, acknowledges it, and replies. Both interfaces use the same C++ engine.**
 
@@ -18,6 +18,8 @@ Design work can proceed while we gather hardware details. Product scaffolding fo
 ## First Figma package
 
 Working title: **Offline Rescue — Direct SOS**. Use a neutral, readable visual style, large text and controls, text labels for status, and a visible exercise identifier. A location map is not required.
+
+The [editable Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333) is in Archit Jaiswal's team. Start at the overview for the simulated public/responder walkthroughs and state browser. The [review notes](DESIGN_REVIEW.md) distinguish verified structure/rendering from incomplete interactions.
 
 | Screen | Contents and actions |
 |---|---|
@@ -59,4 +61,6 @@ NET-01 remains incomplete until there is recorded physical-device evidence. M1 r
 
 The user approved this direction and sharing the five named project documents with Claude Code on 2026-10-07. The read-only review completed; [review notes](DESIGN_REVIEW.md) record findings and their disposition. The [design execution plan](superpowers/plans/2026-10-07-direct-sos-design.md) covers the Figma checkpoint; the [device inventory](DEVICE_INVENTORY.md) records verified development tools.
 
-Open inputs: physical endpoint device/OS inventory and Figma team selection. These are configuration choices, not requests to reauthorize the project.
+The user selected Archit Jaiswal's team and authorized public publication plus ongoing project commits/pushes. The public repository is [archiips/offline-rescue-network](https://github.com/archiips/offline-rescue-network).
+
+Open input: physical endpoint device/OS inventory. Further Figma refinement is currently limited by the Starter MCP tool-call allowance; the artifact is a draft rather than a completed design-validation checkpoint.

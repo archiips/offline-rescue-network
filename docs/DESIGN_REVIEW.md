@@ -1,6 +1,6 @@
 # Direct SOS design review
 
-Status: documentation review complete; Figma artifact not created · 2026-10-07
+Status: documentation review complete; Figma draft structurally and visually inspected · 2026-10-07
 
 ## Review method and scope
 
@@ -23,7 +23,20 @@ No new transport, cryptographic library, operating-system support, or device com
 - Both public and responder screen families remain in FIRST_MILESTONE.md.
 - The screen execution plan includes normal flows and failure variants.
 - Development tool availability is recorded in DEVICE_INVENTORY.md; physical endpoint inventory remains incomplete.
-- No Figma URL, screen IDs, or screenshots exist yet. Team selection is pending. Rendered inspection and interaction checks remain required before claiming the design artifact complete.
+- Figma draft: [Offline Rescue — Direct SOS](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333), in the user-selected Archit Jaiswal's team. Exact identifiers and read-back evidence are stored in [the state ledger](design/figma-state.json).
 - No engineering task has been marked complete by this review.
 
-When Figma work completes, append the verified file URL, node IDs, rendered checks, interaction results, and unresolved issues here.
+## Figma checkpoint evidence
+
+- Eight screen families are represented by 35 editable screen/state snapshots: public frames 390 × 844, responder frames 1024 × 768. These are design canvases, not compatibility claims.
+- Four prototype starting points exist: overview, public SOS, responder handling, and interrupted updates. Successful writes recorded 65 navigation links plus three back actions. Read-back validated 45 links inside product screen frames; the additional 20 links are in the explicitly separate demo overview/browser.
+- All 35 screen frames are valid top-level destinations. Read-back found no screen-content overflow, no image-filled UI layers, and Inter as the single font family. All UI content is editable text, frames, and local component instances.
+- Rendered inspection covered the public normal-flow composition, public compose and acknowledgment views, responder request detail, and late-update handling. It exposed text/label sizing and container-height defects, which were repaired; post-fix renders showed readable, uncut content in these reviewed views.
+- Explicit links cover public compose/review/save, responder inbox/detail/acknowledge/reply, assignment/resolution, and acknowledged/disconnected correction/follow-up/withdrawal. These are declared-state walkthroughs; native input, persistence, transport, signing, and permission changes are not implemented or tested.
+
+## Remaining limitations
+
+- The Apple iOS/iPadOS library import was denied. This draft uses a small local Inter-based component set, not a verified Apple UI-kit implementation.
+- Public update controls before acknowledgment and native settings/revalidation controls are visual-only. No browser presentation replay or native accessibility/device test was performed; graph validation is not evidence of runtime behavior.
+- A further responder-side received-by-requester example was planned but not created: the Figma Starter MCP tool-call allowance was reached. The requester-facing acknowledgment/reply and responder return-message-waiting examples exist; fully refining the return-receipt view remains design work.
+- Because these limitations remain, the full design acceptance checkpoint is not declared complete. NET-01, SEC-01, and M1 remain incomplete.

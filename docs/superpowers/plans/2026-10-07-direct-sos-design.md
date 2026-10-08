@@ -35,20 +35,20 @@ Figma file: **Offline Rescue — Direct SOS**, in the user-selected team. Screen
 
 **Consumes:** selected Figma team and approved first-milestone brief. **Produces:** file key, page ID, verified font choices, and layout conventions.
 
-- [ ] Resolve the user-selected team using the Figma creation skill; create one Design file.
-- [ ] Inspect its pages and existing contents before writing nodes; retain returned identifiers.
-- [ ] Use public 390 × 844 and responder 1024 × 768 frames as draft design canvases, not supported-device claims. Choose an available readable font, neutral backgrounds, dark text, and one accent; status must include text.
-- [ ] Record all created/mutated IDs and reuse them for later changes.
+- [x] Resolve the user-selected team using the Figma creation skill; create one Design file.
+- [x] Inspect its pages and existing contents before writing nodes; retain returned identifiers.
+- [x] Use public 390 × 844 and responder 1024 × 768 frames as draft design canvases, not supported-device claims. Choose an available readable font, neutral backgrounds, dark text, and one accent; status must include text.
+- [x] Record all created/mutated IDs and reuse them for later changes.
 
 ### Task 2: Create both direct-exchange journeys
 
 **Consumes:** file/page IDs and conventions. **Produces:** eight screen families and linked normal-flow transitions.
 
-- [ ] Build exercise entry, public describe/review/conversation/update screens, and responder inbox/detail/handling screens from the spec's inventory.
-- [ ] Use one synthetic exercise and one consistent request throughout: Training Hall, reported Floor 2, Room 204, two people, no automatic estimate.
+- [x] Build exercise entry, public describe/review/conversation/update screens, and responder inbox/detail/handling screens from the spec's inventory.
+- [x] Use one synthetic exercise and one consistent request throughout: Training Hall, reported Floor 2, Room 204, two people, no automatic estimate.
 - [ ] Link send to waiting; demonstrate verified device receipt as a separate state; link explicit responder acknowledgment and reply to the corresponding public views.
-- [ ] Include correction, withdrawal, assignment, resolution, and explicit reopen actions. Mark the prototype's transitions as simulated in its overview.
-- [ ] Inspect a rendered composition of the public and responder flows; fix clipped text, crowding, or ambiguous hierarchy with targeted changes.
+- [x] Include correction, withdrawal, assignment, resolution, and explicit reopen actions. Mark the prototype's transitions as simulated in its overview.
+- [x] Inspect a rendered composition of the public and responder flows; fix clipped text, crowding, or ambiguous hierarchy with targeted changes.
 
 ### Task 3: Create failure variants and review
 
@@ -58,7 +58,9 @@ Figma file: **Offline Rescue — Direct SOS**, in the user-selected team. Screen
 - [ ] Replay the public send/correct/withdraw and responder acknowledge/reply/assign/resolve flows. Check that the original acknowledgment never labels a new message as acknowledged.
 - [ ] Verify unknown floor remains allowed, receive time does not replace observation time, and public users cannot create verified responder authority.
 - [ ] Inspect the rendered failure variants and confirm statuses remain understandable without color. Native large-text and VoiceOver checks belong to M1.
-- [ ] Record the file URL, screen IDs, interactions checked, rendered inspection, remaining issues, and simulated-network limitation in `docs/DESIGN_REVIEW.md`.
+- [x] Record the file URL, screen IDs, interactions checked, rendered inspection, remaining issues, and simulated-network limitation in `docs/DESIGN_REVIEW.md`.
+
+Checkpoint evidence (2026-10-07): see [design review](../../DESIGN_REVIEW.md) and [state ledger](../../design/figma-state.json). Unchecked steps remain incomplete: the draft has separate declared-state examples and valid links, but not a replayed complete cross-device workflow or complete return-receipt variants. The Starter MCP tool-call limit stopped further refinement. No engineering task was completed.
 
 ## Self-review and next gate
 

@@ -1,0 +1,845 @@
+{
+  "fileKey": "KfslxdEf2XarwLbSEDzbJS",
+  "fileUrl": "https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS",
+  "team": "Archit Jaiswal's team",
+  "pageId": "0:1",
+  "overviewId": "4:333",
+  "roots": {
+    "P0": "4:5",
+    "P1": "4:19",
+    "P2": "4:41",
+    "P3": "4:56",
+    "P4": "4:73",
+    "R0": "4:90",
+    "R1": "4:104",
+    "R2": "4:112",
+    "R3": "4:141",
+    "P5": "4:160",
+    "P6": "4:180",
+    "P7": "4:200",
+    "P8": "4:218",
+    "P9": "4:230",
+    "P10": "4:242",
+    "P11": "4:251",
+    "P12": "4:262",
+    "P13": "4:273",
+    "R4": "4:283",
+    "R5": "4:298",
+    "R6": "4:307",
+    "R7": "4:316",
+    "P14": "4:325",
+    "R8": "6:68",
+    "R9": "6:97",
+    "R10": "6:116",
+    "R11": "6:135",
+    "R12": "6:144",
+    "R13": "6:158",
+    "R14": "6:167",
+    "P15": "6:176",
+    "P16": "6:191",
+    "P17": "6:203",
+    "P18": "6:223",
+    "P19": "6:243"
+  },
+  "kit": {
+    "pageId": "0:1",
+    "createdNodeIds": [
+      "3:29",
+      "3:30",
+      "3:31",
+      "3:32",
+      "3:33",
+      "3:34",
+      "3:35",
+      "3:36",
+      "3:37"
+    ],
+    "mutatedNodeIds": [
+      "0:1"
+    ],
+    "collectionIds": [
+      "VariableCollectionId:3:2",
+      "VariableCollectionId:3:3"
+    ],
+    "variableIds": [
+      "VariableID:3:4",
+      "VariableID:3:5",
+      "VariableID:3:6",
+      "VariableID:3:7",
+      "VariableID:3:8",
+      "VariableID:3:9",
+      "VariableID:3:10",
+      "VariableID:3:11",
+      "VariableID:3:12",
+      "VariableID:3:13",
+      "VariableID:3:14",
+      "VariableID:3:15",
+      "VariableID:3:16",
+      "VariableID:3:17",
+      "VariableID:3:18",
+      "VariableID:3:19",
+      "VariableID:3:20",
+      "VariableID:3:21",
+      "VariableID:3:22",
+      "VariableID:3:23",
+      "VariableID:3:24",
+      "VariableID:3:25"
+    ],
+    "styleIds": [
+      "S:6cffb3d5069a467ec3b120cc62024f180803f49b,",
+      "S:ee8e519c12352ab72100a1b319f22b7b14687454,",
+      "S:20531b754be823975067d1fb9fea641f410d1ffc,"
+    ],
+    "tokenIds": {
+      "color/ink": "VariableID:3:5",
+      "color/muted": "VariableID:3:7",
+      "color/surface": "VariableID:3:9",
+      "color/paper": "VariableID:3:11",
+      "color/accent": "VariableID:3:13",
+      "color/danger": "VariableID:3:15",
+      "color/tint": "VariableID:3:17",
+      "space/sm": "VariableID:3:19",
+      "space/md": "VariableID:3:21",
+      "space/lg": "VariableID:3:23",
+      "radius/card": "VariableID:3:25"
+    },
+    "styles": {
+      "Title": "S:6cffb3d5069a467ec3b120cc62024f180803f49b,",
+      "Body": "S:ee8e519c12352ab72100a1b319f22b7b14687454,",
+      "Caption": "S:20531b754be823975067d1fb9fea641f410d1ffc,"
+    },
+    "buttons": {
+      "Primary": {
+        "id": "3:29",
+        "labelKey": "Label#3:0"
+      },
+      "Secondary": {
+        "id": "3:31",
+        "labelKey": "Label#3:1"
+      },
+      "Danger": {
+        "id": "3:33",
+        "labelKey": "Label#3:2"
+      }
+    },
+    "field": {
+      "id": "3:35",
+      "labelKey": "Label#3:3",
+      "valueKey": "Value#3:4"
+    },
+    "gapAnalysis": "Apple library import denied; local prototype kit used. Not an Apple UI kit or production client."
+  },
+  "coreLinks": [
+    {
+      "source": "4:17",
+      "target": "4:19",
+      "key": "start"
+    },
+    {
+      "source": "4:39",
+      "target": "4:41",
+      "key": "review"
+    },
+    {
+      "source": "4:52",
+      "target": "4:56",
+      "key": "send"
+    },
+    {
+      "source": "4:54",
+      "target": "4:19",
+      "key": "edit"
+    },
+    {
+      "source": "4:100",
+      "target": "4:104",
+      "key": "inbox"
+    },
+    {
+      "source": "4:108",
+      "target": "4:112",
+      "key": "request"
+    },
+    {
+      "source": "4:132",
+      "target": "4:298",
+      "key": "ack"
+    },
+    {
+      "source": "4:137",
+      "target": "6:158",
+      "key": "reply"
+    },
+    {
+      "source": "4:139",
+      "target": "4:141",
+      "key": "handling"
+    },
+    {
+      "source": "4:151",
+      "target": "6:97",
+      "key": "assign"
+    },
+    {
+      "source": "4:156",
+      "target": "6:116",
+      "key": "resolve"
+    },
+    {
+      "source": "4:158",
+      "target": "4:112",
+      "key": "backDetail"
+    },
+    {
+      "source": "6:90",
+      "target": "6:158",
+      "key": "R8_reply"
+    },
+    {
+      "source": "6:91",
+      "target": "4:141",
+      "key": "R8_handling"
+    },
+    {
+      "source": "4:305",
+      "target": "6:68",
+      "key": "returnPendingBack"
+    },
+    {
+      "source": "6:165",
+      "target": "6:68",
+      "key": "replyBack"
+    },
+    {
+      "source": "4:214",
+      "target": "4:230",
+      "key": "correctSend"
+    },
+    {
+      "source": "4:226",
+      "target": "4:242",
+      "key": "withdrawSend"
+    },
+    {
+      "source": "4:240",
+      "target": "4:180",
+      "key": "pendingBack"
+    },
+    {
+      "source": "4:249",
+      "target": "4:180",
+      "key": "withdrawBack"
+    },
+    {
+      "source": "4:258",
+      "target": "4:56",
+      "key": "retrySave"
+    },
+    {
+      "source": "4:260",
+      "target": "4:19",
+      "key": "storageEdit"
+    },
+    {
+      "source": "4:271",
+      "target": "4:19",
+      "key": "blockedDraft"
+    },
+    {
+      "source": "4:281",
+      "target": "4:56",
+      "key": "unknownSend"
+    },
+    {
+      "source": "4:294",
+      "target": "6:167",
+      "key": "reopen"
+    },
+    {
+      "source": "4:296",
+      "target": "6:135",
+      "key": "disposition"
+    },
+    {
+      "source": "6:142",
+      "target": "6:68",
+      "key": "dispositionBack"
+    },
+    {
+      "source": "6:174",
+      "target": "6:68",
+      "key": "reopenedBack"
+    },
+    {
+      "source": "4:102",
+      "target": "6:144",
+      "key": "setup"
+    },
+    {
+      "source": "6:154",
+      "target": "4:90",
+      "key": "setupBack"
+    },
+    {
+      "source": "6:155",
+      "target": "4:90",
+      "key": "enrollmentStatus"
+    },
+    {
+      "source": "6:184",
+      "target": "6:191",
+      "key": "followSend"
+    },
+    {
+      "source": "6:201",
+      "target": "4:180",
+      "key": "followPendingBack"
+    },
+    {
+      "source": "4:337",
+      "target": "4:5",
+      "key": "demoPublic"
+    },
+    {
+      "source": "4:339",
+      "target": "4:90",
+      "key": "demoResponder"
+    },
+    {
+      "source": "4:174",
+      "target": "6:176",
+      "key": "P5:Send follow-up"
+    },
+    {
+      "source": "4:176",
+      "target": "4:200",
+      "key": "P5:Correct location"
+    },
+    {
+      "source": "4:178",
+      "target": "4:218",
+      "key": "P5:Request withdrawal"
+    },
+    {
+      "source": "4:194",
+      "target": "6:176",
+      "key": "P6:Send follow-up"
+    },
+    {
+      "source": "4:196",
+      "target": "4:200",
+      "key": "P6:Correct location"
+    },
+    {
+      "source": "4:198",
+      "target": "4:218",
+      "key": "P6:Request withdrawal"
+    },
+    {
+      "source": "6:217",
+      "target": "6:176",
+      "key": "P17:Send follow-up"
+    },
+    {
+      "source": "6:218",
+      "target": "4:200",
+      "key": "P17:Correct location"
+    },
+    {
+      "source": "6:219",
+      "target": "4:218",
+      "key": "P17:Request withdrawal"
+    },
+    {
+      "source": "6:237",
+      "target": "6:176",
+      "key": "P18:Send follow-up"
+    },
+    {
+      "source": "6:238",
+      "target": "4:200",
+      "key": "P18:Correct location"
+    },
+    {
+      "source": "6:239",
+      "target": "4:218",
+      "key": "P18:Request withdrawal"
+    }
+  ],
+  "menuLinks": [
+    {
+      "source": "8:186",
+      "target": "4:73",
+      "key": "catalog:P4"
+    },
+    {
+      "source": "8:189",
+      "target": "4:160",
+      "key": "catalog:P5"
+    },
+    {
+      "source": "8:192",
+      "target": "4:180",
+      "key": "catalog:P6"
+    },
+    {
+      "source": "8:195",
+      "target": "4:200",
+      "key": "catalog:P7"
+    },
+    {
+      "source": "8:198",
+      "target": "4:218",
+      "key": "catalog:P8"
+    },
+    {
+      "source": "8:201",
+      "target": "4:230",
+      "key": "catalog:P9"
+    },
+    {
+      "source": "8:204",
+      "target": "4:242",
+      "key": "catalog:P10"
+    },
+    {
+      "source": "8:207",
+      "target": "4:251",
+      "key": "catalog:P11"
+    },
+    {
+      "source": "8:210",
+      "target": "4:262",
+      "key": "catalog:P12"
+    },
+    {
+      "source": "8:213",
+      "target": "4:273",
+      "key": "catalog:P13"
+    },
+    {
+      "source": "8:216",
+      "target": "4:283",
+      "key": "catalog:R4"
+    },
+    {
+      "source": "8:219",
+      "target": "4:298",
+      "key": "catalog:R5"
+    },
+    {
+      "source": "8:222",
+      "target": "4:307",
+      "key": "catalog:R6"
+    },
+    {
+      "source": "8:225",
+      "target": "4:316",
+      "key": "catalog:R7"
+    },
+    {
+      "source": "8:228",
+      "target": "4:325",
+      "key": "catalog:P14"
+    },
+    {
+      "source": "8:231",
+      "target": "6:203",
+      "key": "catalog:P17"
+    },
+    {
+      "source": "8:234",
+      "target": "6:223",
+      "key": "catalog:P18"
+    },
+    {
+      "source": "8:237",
+      "target": "6:243",
+      "key": "catalog:P19"
+    }
+  ],
+  "audit": {
+    "screens": [
+      {
+        "key": "P0",
+        "id": "4:5",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 525,
+        "editableNodes": 14,
+        "topLevel": true
+      },
+      {
+        "key": "P1",
+        "id": "4:19",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 635,
+        "editableNodes": 22,
+        "topLevel": true
+      },
+      {
+        "key": "P2",
+        "id": "4:41",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 520,
+        "editableNodes": 15,
+        "topLevel": true
+      },
+      {
+        "key": "P3",
+        "id": "4:56",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 538,
+        "editableNodes": 17,
+        "topLevel": true
+      },
+      {
+        "key": "P4",
+        "id": "4:73",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 557,
+        "editableNodes": 17,
+        "topLevel": true
+      },
+      {
+        "key": "R0",
+        "id": "4:90",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 461,
+        "editableNodes": 14,
+        "topLevel": true
+      },
+      {
+        "key": "R1",
+        "id": "4:104",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 280,
+        "editableNodes": 8,
+        "topLevel": true
+      },
+      {
+        "key": "R2",
+        "id": "4:112",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 604,
+        "editableNodes": 29,
+        "topLevel": true
+      },
+      {
+        "key": "R3",
+        "id": "4:141",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 574,
+        "editableNodes": 19,
+        "topLevel": true
+      },
+      {
+        "key": "P5",
+        "id": "4:160",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 663,
+        "editableNodes": 20,
+        "topLevel": true
+      },
+      {
+        "key": "P6",
+        "id": "4:180",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 682,
+        "editableNodes": 20,
+        "topLevel": true
+      },
+      {
+        "key": "P7",
+        "id": "4:200",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 555,
+        "editableNodes": 18,
+        "topLevel": true
+      },
+      {
+        "key": "P8",
+        "id": "4:218",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 414,
+        "editableNodes": 12,
+        "topLevel": true
+      },
+      {
+        "key": "P9",
+        "id": "4:230",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 416,
+        "editableNodes": 12,
+        "topLevel": true
+      },
+      {
+        "key": "P10",
+        "id": "4:242",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 291,
+        "editableNodes": 9,
+        "topLevel": true
+      },
+      {
+        "key": "P11",
+        "id": "4:251",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 390,
+        "editableNodes": 11,
+        "topLevel": true
+      },
+      {
+        "key": "P12",
+        "id": "4:262",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 374,
+        "editableNodes": 11,
+        "topLevel": true
+      },
+      {
+        "key": "P13",
+        "id": "4:273",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 388,
+        "editableNodes": 10,
+        "topLevel": true
+      },
+      {
+        "key": "R4",
+        "id": "4:283",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 487,
+        "editableNodes": 15,
+        "topLevel": true
+      },
+      {
+        "key": "R5",
+        "id": "4:298",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 272,
+        "editableNodes": 9,
+        "topLevel": true
+      },
+      {
+        "key": "R6",
+        "id": "4:307",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 272,
+        "editableNodes": 9,
+        "topLevel": true
+      },
+      {
+        "key": "R7",
+        "id": "4:316",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 272,
+        "editableNodes": 9,
+        "topLevel": true
+      },
+      {
+        "key": "P14",
+        "id": "4:325",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 305,
+        "editableNodes": 8,
+        "topLevel": true
+      },
+      {
+        "key": "R8",
+        "id": "6:68",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 604,
+        "editableNodes": 29,
+        "topLevel": true
+      },
+      {
+        "key": "R9",
+        "id": "6:97",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 227,
+        "editableNodes": 7,
+        "topLevel": true
+      },
+      {
+        "key": "R10",
+        "id": "6:116",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 227,
+        "editableNodes": 7,
+        "topLevel": true
+      },
+      {
+        "key": "R11",
+        "id": "6:135",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 291,
+        "editableNodes": 9,
+        "topLevel": true
+      },
+      {
+        "key": "R12",
+        "id": "6:144",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 461,
+        "editableNodes": 14,
+        "topLevel": true
+      },
+      {
+        "key": "R13",
+        "id": "6:158",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 291,
+        "editableNodes": 9,
+        "topLevel": true
+      },
+      {
+        "key": "R14",
+        "id": "6:167",
+        "type": "FRAME",
+        "width": 1024,
+        "height": 768,
+        "bottom": 291,
+        "editableNodes": 9,
+        "topLevel": true
+      },
+      {
+        "key": "P15",
+        "id": "6:176",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 490,
+        "editableNodes": 15,
+        "topLevel": true
+      },
+      {
+        "key": "P16",
+        "id": "6:191",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 416,
+        "editableNodes": 12,
+        "topLevel": true
+      },
+      {
+        "key": "P17",
+        "id": "6:203",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 701,
+        "editableNodes": 20,
+        "topLevel": true
+      },
+      {
+        "key": "P18",
+        "id": "6:223",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 682,
+        "editableNodes": 20,
+        "topLevel": true
+      },
+      {
+        "key": "P19",
+        "id": "6:243",
+        "type": "FRAME",
+        "width": 390,
+        "height": 844,
+        "bottom": 310,
+        "editableNodes": 9,
+        "topLevel": true
+      }
+    ],
+    "screenCount": 35,
+    "overflows": [],
+    "fonts": [
+      "Inter"
+    ],
+    "imageFilledNodes": [],
+    "prototypeLinksFromScreens": 45,
+    "flowStartingPoints": [
+      {
+        "nodeId": "4:333",
+        "name": "Start here · simulated walkthrough"
+      },
+      {
+        "nodeId": "4:5",
+        "name": "Public · SOS"
+      },
+      {
+        "nodeId": "4:90",
+        "name": "Responder · handling"
+      },
+      {
+        "nodeId": "4:180",
+        "name": "Interrupted updates"
+      }
+    ]
+  },
+  "limitations": [
+    "Static first-draft prototype; no radio, credential, or dynamic text-entry implementation.",
+    "Public update controls before acknowledgment and native settings/revalidation are visual only.",
+    "Additional responder-side receipt presentation refinement was not created: Starter MCP tool-call limit reached."
+  ]
+}
