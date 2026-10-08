@@ -23,6 +23,7 @@ Nearby participating devices can later relay encrypted messages. A responder mus
 - [C++ workflow model](experiments/workflow-model/README.md): separate requester/responder models, complete synthetic SOS/reply/update/handling walkthrough and failure tests.
 - [Native rescue demo](experiments/rescue-demo/README.md): public/responder SwiftUI views with SOS, acknowledgment, replies, location corrections and handling actions. Training mode uses a simulated link; local mode exchanges real packets between independently saved endpoints.
 - [Local exchange walkthrough](experiments/rescue-demo/LOCAL_EXCHANGE.md): Bonjour discovery, Mac endpoint CLI, separate-process recovery checks and native simulator evidence. C++ SQLite commits precede device receipts; queued messages survive restart.
+- [Reproducible measurements](experiments/rescue-demo/MEASUREMENTS.md): repeated independent-process exchange, deliberately lost receipts, duplicate checks and inspectable loopback timings.
 - Preset sample data only: local exchange is plain and unauthenticated. Physical radio and endpoint cryptography remain unfinished.
 
 ## Current focus

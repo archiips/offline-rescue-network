@@ -10,7 +10,7 @@ The user cannot physically test now and authorized continued local development. 
 
 ## Last completed code milestone
 
-Published code checkpoint: `60cbf99a124dc92d9d9628f30039083750a46061` — independently saved local rescue endpoints and native exchange. Main was clean and remote matched after publication; check again on resume rather than assuming it remains unchanged. The task-created feature worktree/branch was removed after merge and push.
+Native exchange code checkpoint: `60cbf99a124dc92d9d9628f30039083750a46061` — independently saved local rescue endpoints and native exchange. The subsequent measurement harness/evidence lives in the current repository; use recent Git history for its publication commit. Main was clean and remote matched after publication; check again on resume rather than assuming it remains unchanged. The local-exchange task-created worktree/branch was removed after merge and push. Measurement publication/cleanup is reported by its Git history/task handoff; check current worktrees on resume.
 
 - Training mode: original two independent C++ models, simulated link, v1 SQLite saved session.
 - Local exchange: one selected role/model and v2 SQLite outbox per app/CLI instance; real foreground sockets and Bonjour discovery.
@@ -37,15 +37,19 @@ xcodebuild -project experiments/rescue-demo/iOS/RescueDemo.xcodeproj \
   -derivedDataPath /private/tmp/rescue-resume-derived CODE_SIGNING_ALLOWED=NO build
 ```
 
-The separate-process harness and host commands are in the walkthrough. Read actual manifests before changing commands. Temporary databases/logs/screenshots are not required to resume; fixtures/tests reproduce the evidence. No benchmark numbers have been established.
+The separate-process harness and host commands are in the walkthrough. Read actual manifests before changing commands. Temporary databases/logs/screenshots are not required to resume; fixtures/tests reproduce the evidence. Measured Mac loopback command-to-confirmation values are now recorded in [measurements](../experiments/rescue-demo/MEASUREMENTS.md); no physical benchmark is established.
+
+## Last completed measurement checkpoint
+
+The stdlib Python harness runs existing Swift/C++ hosts with real loopback sockets and fresh SQLite endpoints. 20/20 trials passed with 80 unique original-message exchanges. Every trial validated explicit acknowledgment/reply, refused connection, killed-process restart, duplicated correction/lost receipt and exact retry recovery. 14/14 harness tests pass; original 30 CTest/33 Swift checks are retained. [Report and raw evidence](../experiments/rescue-demo/MEASUREMENTS.md) define the timing populations, limits and independently verified hashes. Python is test orchestration, not a new backend. No product/UI/protocol behavior changed.
+
+Claude Code preference: if used, explicitly request `--model claude-opus-5-5 --effort medium`, no fallback. The review's model metadata confirmed Opus 5.5; follow-up found no blockers. This preference is also in AGENTS.md.
 
 ## Exact next action
 
-Continue the **device-independent measurement/recovery harness** entry at the top of [TODO](TODO.md). Inspect existing `tests/process_exchange.py`, endpoint tests, Swift transport tests and current docs first. Define a short plan and acceptance checks before implementation: repeated isolated sample trials, real local sockets, monotonic timing boundaries, controlled interruption/retry, duplicate checks and an export containing environment/trial counts/failures. Retain the current protocol/UI unless evidence requires a scoped fix. Synthetic results must identify their environment and cannot establish physical performance.
+Continue the **identity/encryption design and bounded encrypted local sample exchange** portfolio task in [TODO](TODO.md). Start with PROTOCOL_SECURITY_DRAFT.md, SECURITY_PRIVACY.md, the current ORX1 endpoint codec and Swift transport. Resolve material uncertainty using current primary sources, compare reviewed libraries/provisioning approaches and write/critique a concrete plan before changing code. Prove identity binding, wrong-role/forged/replayed input rejection, key lifetime/restart and unchanged receipt semantics with synthetic enrolled endpoints. Preserve the public/responder workflows, C++ state ownership and training mode; do not invent cryptography or treat fixture names as authenticated identities. Physical transport testing can still wait.
 
-This is the next task, not an approved new architecture or completed harness. Decide details through the repository's Discover → Research → Plan → critique process. Use local code first, current official sources for material API/security uncertainty and the smallest coherent checkpoint. Physical testing need not block this work.
-
-After that, plan security and relay/urgent scheduling as separate checkpoints. Do not jump to sales, AI, localization or broad infrastructure. NET-01, SEC-01, ENG-04 and M1 remain open because their full physical/private-product criteria exceed this demo. Keep original backlog criteria intact.
+This is the next planning/build checkpoint, not a frozen security design or completed encryption feature. The full NET-01/SEC-01/ENG-05 physical/product gates remain open. After secure direct sample exchange, plan bounded relay and urgent-message scheduling separately. Avoid sales, AI, localization and unrelated infrastructure as immediate prerequisites for the résumé deliverable.
 
 ## Resume checklist
 

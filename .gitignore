@@ -39,3 +39,7 @@ xcuserdata/
 *.sqlite-*
 *.sqlite3
 *.sqlite3-*
+
+# Python test orchestration bytecode
+__pycache__/
+*.pyc

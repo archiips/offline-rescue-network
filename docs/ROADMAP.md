@@ -24,7 +24,7 @@ The user prioritized working software and demonstrable résumé evidence on 2026
 1. Runnable native simulator workflow — [synthetic demo](../experiments/rescue-demo/README.md) now available, with two independent C++ models and a simulated link.
 2. Durable training-session recovery — now available in the [native demo](../experiments/rescue-demo/README.md), including interrupted writes and pending return receipts. Local exchange now has separate per-endpoint ownership.
 3. Real local exchange — [independent endpoints, native simulator-to-Mac messaging and process recovery](../experiments/rescue-demo/LOCAL_EXCHANGE.md) now verified locally. Physical no-internet/no-common-access-point checks remain pending until devices are available.
-4. Controlled relay/disruption demonstration and urgent-message scheduling with measured correctness, latency, throughput and resource use.
+4. Reproducible local measurements — [20 actual-loopback recovery trials and raw timings](../experiments/rescue-demo/MEASUREMENTS.md) now available. Next review/implement identity and encrypted sample exchange, then plan a controlled relay/disruption demonstration and urgent-message scheduling with measured correctness and resource use.
 5. Optional on-device language assistance only after message fidelity and measured local inference are established.
 
 Use measured results on the résumé. Device-count and latency goals remain targets until tested. This sequence prepares M1/M2; it does not relax their evidence gates.

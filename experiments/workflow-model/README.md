@@ -45,3 +45,6 @@ The native-demo checkpoint added one C++ bridge test and 5 Swift integration tes
 The wrapper adds role-tagged v2 endpoint storage alongside unchanged v1 training sessions. Each endpoint owns only its local model; incoming events and deterministic receipts commit together. Confirmation commits a returned receipt and removes its corresponding pending original together. Retry regenerates the same saved receipt without duplicating the message. Recovery validates role, history, outbox order and reserved receipt capacity.
 
 C++ binary packets validate UTF-8, canonical fixture IDs, lengths and field bounds; Swift adds bounded TCP framing. This is an experimental plain protocol with fixed exercise/request IDs, not authenticated private messaging. Reset must be coordinated on both endpoints. [Commands, current checks and evidence](../rescue-demo/LOCAL_EXCHANGE.md) cover the endpoint scenarios, real socket tests, separate processes and native simulator exchange. The original domain and training tests are retained.
+
+
+The [repeated measurement harness](../rescue-demo/MEASUREMENTS.md) adds Python stdlib test orchestration around these unchanged C++ endpoints and Swift sockets. It validates raw results and persisted histories under controlled failures; it introduces no new backend or production dependency.

@@ -30,3 +30,8 @@ No application scaffolding, dependencies, Git initialization, commits, publishin
 ## Repository publication authorization
 
 The user authorized a public GitHub repository and ongoing commits/pushes at coherent, verified checkpoints on 2026-10-07. Target: `archiips/offline-rescue-network`. This later authorization supersedes the initial documentation-only restriction on Git setup and publication. Keep commits scoped to this project, inspect staged changes and secret exposure before each push, and preserve unrelated work. Do not treat repository publication as authorization for live deployment or external outreach.
+
+
+## Claude Code preference
+
+When using the authorized Claude Code CLI, the user requested Opus 5.5 with medium reasoning on 2026-10-08. Use `--model claude-opus-5-5 --effort medium` explicitly and do not configure a fallback model. Verify supported settings/model identity; if unavailable, continue locally and report the limitation rather than silently substituting.

@@ -73,3 +73,8 @@ python3 experiments/workflow-model/tests/process_exchange.py \
 These are local development results, not physical radio, privacy-prompt, background delivery, range, power-loss, older-device, throughput or latency benchmarks. `includePeerToPeer` requests available peer-to-peer technologies; it does not establish a route or universal compatibility. Apple's local-network privacy simulator limitation makes physical permission tests necessary. NET-01, SEC-01, ENG-04 and M1 remain open.
 
 [Design and primary sources](../../docs/superpowers/specs/2026-10-08-local-exchange.md) · [Plan and execution ledger](../../docs/superpowers/plans/2026-10-08-local-exchange.md).
+
+
+## Repeated measurement and recovery evidence
+
+The [measurement harness](MEASUREMENTS.md) repeats the actual independent-process loopback workflow with controlled refused connections, killed-process restart and a dropped receipt after duplicate delivery. It checks saved databases and exports all trial outcomes and clearly defined timings. The original smoke walkthrough and native interfaces are retained.
