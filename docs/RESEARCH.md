@@ -1,5 +1,7 @@
 # Research and source register
 
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
 Status: initial evidence baseline, v0.1 · 2026-10-07
 
 The register separates sourced capabilities from design proposals and commercial hypotheses. Sources were consulted during this conversation, with selected platform and validation sources revisited on 2026-10-07. A source's publication date is not its access date. A vendor claim is not an independent performance result.

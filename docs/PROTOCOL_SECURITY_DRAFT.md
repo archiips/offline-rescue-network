@@ -1,5 +1,7 @@
 # Product message contract and security proposal
 
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
 Status: candidate for SEC-01/ENG-02 review, not a frozen protocol · 2026-10-07
 
 The rescue product still has public and responder interfaces backed by C++. This document prepares implementation after transport evidence and security review. It is **not** the diagnostic probe's wire format.

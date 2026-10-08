@@ -39,6 +39,10 @@ Later, evaluate indoor floor estimates, urgent-message scheduling, firefighter t
 
 **Preferred stack:** Swift/SwiftUI interfaces and native Apple adapters, a shared C++ engine, and an optional C++ relay service on a laptop. The essential local exchange must not require a cloud server.
 
+## Resume work
+
+[Current state and exact next task](docs/CURRENT_STATE.md) is the entry point for “continue from where we left off.” The [task backlog](docs/TODO.md) separates verified portfolio checkpoints from remaining physical/security/product work.
+
 ## Read the docs
 
 | Document | Purpose |

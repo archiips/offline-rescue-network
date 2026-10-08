@@ -1,6 +1,10 @@
 # Business and adoption
 
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
 Status: customer-discovery hypotheses, v0.1 · 2026-10-07
+
+**Deferred work:** these business hypotheses support the longer-term vision. The current goal is a working résumé project and demonstrable engineering evidence. Do not start sales, interviews, outreach, pricing or partner pilots merely because they appear here. Resume from [current portfolio tasks](TODO.md#current-portfolio-tasks).
 
 ## 1. Proposed offering
 

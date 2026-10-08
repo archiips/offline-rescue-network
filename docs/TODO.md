@@ -1,10 +1,25 @@
 # Detailed task backlog
 
-Status: initial backlog, v0.1 · 2026-10-07
+Status: product backlog with portfolio execution status · updated 2026-10-08
 
-This backlog is requested project documentation, not evidence that software exists. Owner labels are roles, not assigned people. P0 is required for the next coherent milestone; P1 follows a dependency; P2 is an optional expansion. Dependencies refer to task IDs. Do not mark research/build/pilot tasks complete because their plans were written.
+Start with [current state and resume instructions](CURRENT_STATE.md). The sections below retain the full product/pilot requirements; their unchecked boxes do not mean the bounded demo has no implementation. Owner labels are roles, not assigned people. Do not close a production task from synthetic or simulator evidence alone.
 
-Read [PRD](PRD.md), [decisions](DECISIONS.md), and [validation](VALIDATION.md) before execution. Choose implementation file paths and exact test commands when ENG-01 establishes the actual build system; this initial backlog deliberately contains no code or invented test results.
+## Current portfolio tasks
+
+The user prioritized a working résumé project and deferred commercialization and physical testing. One project retains public and responder interfaces, a C++ engine and Swift native adapters. These checkpoints are separate from the broader gated tasks below.
+
+- [x] Shared C++ workflow with independent public/responder state, delivery versus human acknowledgment, location correction and handling actions. Evidence: [workflow model](../experiments/workflow-model/README.md).
+- [x] Runnable native public/responder training UI. Evidence: [native demo](../experiments/rescue-demo/README.md), inspected phone/tablet simulator layouts.
+- [x] Durable training session and queued-transfer recovery. Evidence: [saved-session checkpoint](../experiments/rescue-demo/README.md#saved-session-checkpoint--2026-10-07).
+- [x] Independently saved local endpoints, bounded packet codec, Bonjour/socket adapter, native local mode and Mac host. Evidence: [local exchange](../experiments/rescue-demo/LOCAL_EXCHANGE.md), 30 CTest / 33 Swift checks, separate processes and simulator-to-Mac exchange; code checkpoint `60cbf99` published.
+- [ ] **Next device-independent task:** build a reproducible synthetic measurement/recovery harness around existing independent endpoints. First inspect current tests and write/review the small implementation plan. Capture actual round-trip timings, queue recovery and duplicate-free delivery under controlled connection failures; report trial counts, environment and failures. Keep C++ state ownership and both journeys. Do not invent results or count simulation timing as physical radio performance.
+- [ ] Physical direct-exchange matrix when the user can test: signing/install, Local Network permission allow/deny, exact OS/device versions, no-internet and no-common-access-point variants, disconnect/reconnect and lifecycle limits. Depends on physical availability; NET-01 remains open.
+- [ ] Reviewed identity/encryption and protected storage before private data. SEC-01 and ENG-05 remain open; revisit current official sources before choosing libraries/protocol.
+- [ ] Bounded relay/disruption demonstration and urgent-message scheduling. Requires a separate design/acceptance plan; measure a genuinely isolated relay path before claiming multi-hop.
+- [ ] Optional on-device translation/summarization after message fidelity and measured local inference; localization remains optional research.
+- [ ] Commercial/partner discovery, sales, public distribution and operational use are deferred. Outreach needs explicit authorization.
+
+Read [PRD](PRD.md), [decisions](DECISIONS.md) and [validation](VALIDATION.md) for the longer-term requirements. Experimental build commands are established in the linked experiment READMEs; production packaging/lint and physical/private-data gates are not complete. Preserve the original task definitions and dependencies below.
 
 ## M0 — documentation and discovery
 

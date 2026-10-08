@@ -1,12 +1,14 @@
 # Product requirements
 
-Status: initial product specification, v0.1 · 2026-10-07
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
+Status: portfolio-first scope with retained long-term product requirements · updated 2026-10-08
 
 ## 1. Outcome
 
 Enable a person to submit a location-bearing assistance request and exchange replies with an enrolled responder over an available local device network when internet or cellular service is unreliable. Show the true delivery state and the limitations of location information.
 
-This is one product with public and responder interfaces. The first milestone is a supervised building drill, not a general public emergency deployment. See [decisions](DECISIONS.md) for assumptions and [research](RESEARCH.md) for supporting evidence.
+This is one project with public and responder interfaces. **The current deliverable is a working, demonstrable résumé project**, not an organizational pilot or sale. Prioritize reliable local messaging, durable recovery, understandable native UI and reproducible measured evidence. A controlled physical demonstration follows when devices are available. Commercial discovery and partner deployment are deferred. See [current state](CURRENT_STATE.md) for implemented capabilities and the next task, [decisions](DECISIONS.md) for the scope change and [research](RESEARCH.md) for supporting evidence.
 
 ## 2. Problem and audience
 
@@ -22,7 +24,11 @@ Two problems intersect: communication may fail, and indoor location may be ambig
 
 The eventual public user must not need a fire-department employee account. Open public onboarding is a later design question; controlled enrollment in the prototype does not establish a scalable public deployment.
 
-## 3. Product stages
+## 3. Current delivery scope and longer-term stages
+
+For the portfolio version, success means both interfaces run, independent endpoints exchange SOS/acknowledgment/replies, interrupted delivery recovers without fabricated statuses, and documented tests/demos support every résumé claim. Those local capabilities are implemented in the sample app; physical offline verification remains pending. Next establish reproducible measurements, then evaluate bounded relay and urgent-message scheduling. Encryption/identity review precedes any private data. On-device language assistance is optional later work. Selling to organizations, discovery interviews and pilot operations are not prerequisites for this deliverable.
+
+The following table preserves the larger product roadmap; it is not the current execution order.
 
 | Stage | Included | Excluded from this stage |
 |---|---|---|
@@ -32,7 +38,7 @@ The eventual public user must not need a fire-department employee account. Open 
 | M4: supervised organizational pilot | Workflow review, exercises, deployment support, replay | Automatic dispatch or replacement of existing emergency procedures |
 | Later capabilities | Firefighter tracking, multi-command coordination, AI, partner integrations | Require their own design and evidence before inclusion |
 
-The MVP is M1 plus M2. M3 is a separate research milestone within the same project.
+The original product MVP is M1 plus M2. The active portfolio scope above is a smaller evidence-backed deliverable; M3 remains optional research within the same project.
 
 ## 4. Primary workflows
 

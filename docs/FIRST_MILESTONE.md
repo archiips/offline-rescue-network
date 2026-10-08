@@ -1,12 +1,14 @@
 # First milestone: screen design and transport proof
 
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
 Status: screen brief approved; first Figma draft created · 2026-10-07
 
 **One product: a person sends an SOS; a firefighter receives it, acknowledges it, and replies. Both interfaces use the same C++ engine.**
 
-This brief translates the [PRD](PRD.md) into the first design work. It does not replace the [task backlog](TODO.md), choose a radio API, or claim that an app exists.
+This brief preserves the original screen/drill requirements. A native sample app and real local exchange now exist. The active priority is the working résumé project in [current state](CURRENT_STATE.md), with commercial/partner work deferred. Follow [current portfolio tasks](TODO.md#current-portfolio-tasks), not the historical sequence below, to continue.
 
-## What we do next
+## Original product sequence — superseded as the immediate work order
 
 1. Review this screen brief and turn it into editable Figma designs for the public iPhone and responder iPad flows.
 2. Record available physical devices and development/provisioning access (DISC-02).

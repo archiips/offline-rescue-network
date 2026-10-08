@@ -1,8 +1,10 @@
 # Roadmap
 
-Status: evidence-gated roadmap, v0.1 · 2026-10-07
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
 
-**One project: public SOS + responder interface + shared C++ engine.** Development stages reduce implementation risk without removing either audience. Calendar commitments follow device availability, team capacity, and feasibility evidence; none are invented here.
+Status: portfolio-first execution, retained evidence-gated product roadmap · updated 2026-10-08
+
+**One project: public SOS + responder interface + shared C++ engine.** Development stages reduce implementation risk without removing either audience. The active work order is the portfolio sequence below: working software and measured résumé evidence first; sales and organizational pilots are deferred. The M0–M4 table preserves the longer-term product requirements, not a requirement to complete commercial discovery before continuing the sample app. Calendar commitments follow device availability and feasibility evidence.
 
 | Milestone | Deliverable | Unlocking evidence | Main tasks |
 |---|---|---|---|

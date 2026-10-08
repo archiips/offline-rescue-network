@@ -1,5 +1,7 @@
 # Security and privacy
 
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
 Status: initial threat model and requirements, v0.1 · 2026-10-07
 
 The first deployment is a prepared exercise with synthetic requests. This boundary enables testing; it is not the eventual public onboarding design. See [system design](SYSTEM_DESIGN.md) for records and [tasks](TODO.md) for the security gates.

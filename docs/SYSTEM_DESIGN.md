@@ -1,5 +1,7 @@
 # System design
 
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
 Status: logical prototype design, v0.1 · 2026-10-07
 
 This specifies state, data ownership, and failure behavior. Names are proposed contracts, not implemented APIs. Exact serialization and reviewed security encoding must be frozen in ENG-02 and SEC-01 before code; do not invent a wire protocol during unrelated implementation tasks.

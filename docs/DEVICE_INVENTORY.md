@@ -1,5 +1,7 @@
 # Device and development inventory
 
+> Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
+
 Status: partial inventory · 2026-10-07 · DISC-02 remains incomplete
 
 | Item | Observed value | Evidence / limitation |
