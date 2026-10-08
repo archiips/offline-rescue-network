@@ -38,5 +38,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Exchange preset synthetic rescue-training messages with another local test endpoint.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_rescue-demo._tcp</string>
+	</array>
 </dict>
 </plist>

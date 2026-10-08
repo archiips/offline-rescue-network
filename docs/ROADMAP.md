@@ -20,8 +20,8 @@ M3 data collection may run alongside M2 after consent and capture design are rea
 The user prioritized working software and demonstrable résumé evidence on 2026-10-07. Commercial discovery and deployment work are deferred. Preserve both interfaces throughout:
 
 1. Runnable native simulator workflow — [synthetic demo](../experiments/rescue-demo/README.md) now available, with two independent C++ models and a simulated link.
-2. Durable training-session recovery — now available in the [native demo](../experiments/rescue-demo/README.md), including interrupted writes and pending return receipts. Per-network-endpoint ownership remains required for radio integration.
-3. Real local exchange between app instances behind the same engine boundary; physical no-internet/no-common-access-point checks when devices are available.
+2. Durable training-session recovery — now available in the [native demo](../experiments/rescue-demo/README.md), including interrupted writes and pending return receipts. Local exchange now has separate per-endpoint ownership.
+3. Real local exchange — [independent endpoints, native simulator-to-Mac messaging and process recovery](../experiments/rescue-demo/LOCAL_EXCHANGE.md) now verified locally. Physical no-internet/no-common-access-point checks remain pending until devices are available.
 4. Controlled relay/disruption demonstration and urgent-message scheduling with measured correctness, latency, throughput and resource use.
 5. Optional on-device language assistance only after message fidelity and measured local inference are established.
 

@@ -8,6 +8,7 @@
 
 namespace {
 constexpr const char* sessionSchema="CREATE TABLE session (id INTEGER PRIMARY KEY CHECK(id=1), generation INTEGER NOT NULL, connected INTEGER NOT NULL)";
+constexpr const char* endpointSchema="CREATE TABLE session (id INTEGER PRIMARY KEY CHECK(id=1), generation INTEGER NOT NULL, connected INTEGER NOT NULL, actor TEXT NOT NULL)";
 constexpr const char* eventsSchema="CREATE TABLE events (area INTEGER NOT NULL, position INTEGER NOT NULL, id TEXT NOT NULL, exercise TEXT NOT NULL, request_id TEXT NOT NULL,author TEXT NOT NULL, destination TEXT NOT NULL, kind INTEGER NOT NULL, seq INTEGER NOT NULL, revision INTEGER NOT NULL, seen INTEGER NOT NULL,ref TEXT NOT NULL, text TEXT NOT NULL, location TEXT NOT NULL, PRIMARY KEY(area,position))";
 void require(bool ok, const char* reason) { if (!ok) throw std::runtime_error(reason); }
 void sql(sqlite3* db, const char* query) {
@@ -67,10 +68,10 @@ sqlite3_int64 scalar(sqlite3* db,const char* query) {
     const auto n=integer(s.value,0,std::numeric_limits<sqlite3_int64>::max());
     require(!s.row(),"Unexpected session metadata rows.");return n;
 }
-void validateSchema(sqlite3* db) {
+void validateSchema(sqlite3* db,const std::string& actor) {
     Statement rows(db,"SELECT name,type,sql FROM sqlite_schema WHERE name NOT GLOB 'sqlite_*' ORDER BY name");
     require(rows.row() && text(rows.value,0,64)=="events" && text(rows.value,1,16)=="table" && text(rows.value,2,2048)==eventsSchema,"Unexpected saved event schema.");
-    require(rows.row() && text(rows.value,0,64)=="session" && text(rows.value,1,16)=="table" && text(rows.value,2,2048)==sessionSchema && !rows.row(),"Unexpected saved session schema.");
+    require(rows.row() && text(rows.value,0,64)=="session" && text(rows.value,1,16)=="table" && text(rows.value,2,2048)==(actor.empty()?sessionSchema:endpointSchema) && !rows.row(),"Unexpected saved session schema.");
 }
 rescue::Event event(sqlite3_stmt* row) {
     rescue::Event e;
@@ -94,10 +95,13 @@ void insert(Statement& s,int area,std::size_t position,const rescue::Event& e) {
 struct SessionStore::Impl {
     sqlite3* db=nullptr;
     sqlite3_int64 generation=0;
+    std::string actor;
     ~Impl() {sqlite3_close(db);}
 };
 SessionStore::~SessionStore()=default;
-SessionStore::SessionStore(const std::string& path):impl_(std::make_unique<Impl>()) {
+SessionStore::SessionStore(const std::string& path,std::string actor):impl_(std::make_unique<Impl>()) {
+    require(actor.empty() || actor=="public" || actor=="command","Invalid endpoint actor.");
+    impl_->actor=std::move(actor);
     require(std::filesystem::path(path).is_absolute(),"Saved session path must be absolute.");
     const bool exists=std::filesystem::exists(path);
     if(exists) require(std::filesystem::is_regular_file(path) && std::filesystem::file_size(path)<=4*1024*1024,"Saved session file exceeds demo bounds.");
@@ -124,7 +128,7 @@ SessionStore::SessionStore(const std::string& path):impl_(std::make_unique<Impl>
     require(sqlite3_busy_timeout(db,250)==SQLITE_OK,"Could not configure session lock timeout.");
     const auto version=scalar(db,"PRAGMA user_version");
     const bool initialize=version==0 && scalar(db,"PRAGMA page_count")==0;
-    require(initialize || version==1,"Unsupported saved session version; file preserved.");
+    require(initialize || version==(impl_->actor.empty()?1:2),"Unsupported saved session version; file preserved.");
     Statement journal(db,"PRAGMA journal_mode");
     require(journal.row() && text(journal.value,0,16)=="delete" && !journal.row(),"Unsupported saved journal mode; file preserved.");
     sql(db,"PRAGMA journal_mode=DELETE; PRAGMA synchronous=EXTRA; PRAGMA fullfsync=ON; PRAGMA trusted_schema=OFF; PRAGMA max_page_count=1024;");
@@ -132,14 +136,17 @@ SessionStore::SessionStore(const std::string& path):impl_(std::make_unique<Impl>
     require(scalar(db,"PRAGMA synchronous")==3,"Session durability mode unavailable.");
     if(initialize) {
         Transaction transaction(db,"BEGIN IMMEDIATE");
-        sql(db,sessionSchema);sql(db,"INSERT INTO session VALUES(1,0,1)");
-        sql(db,eventsSchema);sql(db,"PRAGMA user_version=1");
+        sql(db,impl_->actor.empty()?sessionSchema:endpointSchema);
+        if(impl_->actor.empty()) {sql(db,"INSERT INTO session VALUES(1,0,1)");sql(db,"PRAGMA user_version=1");}
+        else {Statement meta(db,"INSERT INTO session VALUES(1,0,1,?)");meta.text(1,impl_->actor);meta.insert();sql(db,"PRAGMA user_version=2");}
+        sql(db,eventsSchema);
         transaction.commit();
     }
 }
 SavedSession SessionStore::load() {
     auto* db=impl_->db;Transaction transaction(db,"BEGIN");
-    validateSchema(db);
+    validateSchema(db,impl_->actor);
+    if(!impl_->actor.empty()) {Statement actor(db,"SELECT actor FROM session WHERE id=1");require(actor.row() && text(actor.value,0,64)==impl_->actor && !actor.row(),"Saved endpoint role mismatch.");}
     Statement integrity(db,"PRAGMA quick_check(1)");
     require(integrity.row() && text(integrity.value,0,256)=="ok" && !integrity.row(),"Saved session integrity check failed.");
     Statement meta(db,"SELECT id,generation,connected FROM session");
@@ -163,7 +170,8 @@ void SessionStore::save(const SavedSession& state) {
     require(state.publicEvents.size()<=128 && state.responderEvents.size()<=128 && state.pending.size()<=64,"Session exceeds demo bounds.");
     require(impl_->generation<std::numeric_limits<sqlite3_int64>::max()-1,"Saved session generation limit reached.");
     auto* db=impl_->db;Transaction transaction(db,"BEGIN IMMEDIATE");
-    validateSchema(db);
+    validateSchema(db,impl_->actor);
+    if(!impl_->actor.empty()) {Statement actor(db,"SELECT actor FROM session WHERE id=1");require(actor.row() && text(actor.value,0,64)==impl_->actor && !actor.row(),"Saved endpoint role mismatch.");}
     require(scalar(db,"SELECT generation FROM session WHERE id=1")==impl_->generation,"Saved session changed in another instance. Reopen it before retrying.");
     sql(db,"DELETE FROM events");
     Statement rows(db,"INSERT INTO events VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");

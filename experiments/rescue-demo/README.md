@@ -1,8 +1,11 @@
 # Native rescue workflow demo
 
-A runnable SwiftUI iPhone/iPad training app with **both public and responder views backed by the C++20 workflow engine**. One process owns two independent model instances; a bounded simulated link transfers events and receipts between them. No cloud or network connection is used by this app. This demonstrates real app behavior, **not physical offline networking**.
+A runnable SwiftUI iPhone/iPad app with **public and responder views backed by the C++20 workflow engine**. Two modes are available:
 
-Only preset synthetic requests, locations and responses are exposed. One request per reset. The C++ SQLite wrapper saves both histories, outstanding transfers and connection state in the app’s Application Support directory; closing and reopening preserves them. Role switching is a training control, not responder authentication. The separate [network probe](../network-probe/README.md) remains the transport experiment.
+- **Training mode:** one process owns two models and a simulated link, saved together in the original v1 SQLite session.
+- **Local exchange:** each app instance owns one role, one model and a separate v2 SQLite outbox. Real foreground Network-framework sockets carry bounded sample packets; Bonjour lists nearby sample endpoints. Each receiver commits before returning a device receipt.
+
+Only preset synthetic requests, locations and responses are exposed. One request per coordinated reset. Both modes preserve histories and pending originals across restart. Role selection is a sample control, not authentication. Local exchange is plain and unauthenticated; physical offline radio behavior is unverified. See the [local exchange walkthrough and evidence](LOCAL_EXCHANGE.md).
 
 ## Run in Xcode
 
@@ -21,7 +24,7 @@ cmake --build /private/tmp/rescue-native-cmake
 ctest --test-dir /private/tmp/rescue-native-cmake --output-on-failure
 ```
 
-## Walkthrough
+## Training walkthrough
 
 1. In Public view, select a sample floor, review and send the sample SOS. The first status is device receipt, not human acknowledgment.
 2. Switch to Responder view. Acknowledge the SOS and send a sample reply. Return to Public to see acknowledgment and the conversation.
@@ -46,7 +49,7 @@ flowchart LR
 
 The bridge compiles the existing `workflow.cpp` through SwiftPM, also tested by CMake. JSON is an internal display snapshot, not the future network wire format. Swift owns and frees bridge snapshots and handles. Named Swift enums and C++ compile-time assertions pin the internal numeric schema. Each accepted action queues a transfer; the copied session is committed to SQLite before its actions or simulated receipts become visible; acknowledgments remain explicit human actions. Stable receipt IDs avoid retry loops. Transfers survive a failed pump and remain unconfirmed until their return receipt arrives.
 
-Limits: 128 events per model, 64 outstanding transfers, 256 pump steps per invocation, 64-byte references and model IDs, 2 KiB combined event text/location. Destination exhaustion preserves pending transfers and reports an error; reconnect cannot create storage space, so this sample requires reset. A receiver can have a message while its sender still awaits the receipt. That difference is expected asynchronous knowledge, not proof of lost data. Radio integration needs separate per-endpoint inbox/outbox transactions. Production still requires retention/reserved capacity and security.
+Limits: 128 events per model, 64 outstanding transfers, 256 pump steps per invocation, 64-byte references and model IDs, 2 KiB combined event text/location. Destination exhaustion preserves pending transfers and reports an error; reconnect cannot create storage space, so this sample requires reset. A receiver can have a message while its sender still awaits the receipt. That difference is expected asynchronous knowledge, not proof of lost data. Local exchange uses separate endpoint transactions and reserved receipt capacity as documented in its walkthrough. Production still requires retention and security.
 
 ## Native baseline evidence — 2026-10-07
 
@@ -69,4 +72,4 @@ The store uses system SQLite, DELETE rollback journaling, synchronous EXTRA and 
 
 Commands above reproduce the tests; configure a separate CMake directory with `-DCMAKE_BUILD_TYPE=Release` for Release checks. [Storage spec and primary sources](../../docs/superpowers/specs/2026-10-07-durable-demo-session.md) · [Implementation plan](../../docs/superpowers/plans/2026-10-07-durable-demo-session.md).
 
-No physical radio, encrypted exchange, background operation, relay range, device-count throughput or delivery-latency benchmark is established here. Saved simulated receipts are local training-session facts, not physical delivery evidence. This does not close NET-01, SEC-01, ENG-04 or M1. Next: separate endpoint storage ownership and integrate local transport behind a tested adapter, then physical measurements when devices are available.
+No physical radio, encrypted exchange, background operation, relay range, device-count throughput or delivery-latency benchmark is established here. Saved simulated receipts are local training-session facts, not physical delivery evidence. This does not close NET-01, SEC-01, ENG-04 or M1. Local exchange now establishes separate endpoint ownership and real socket delivery with sample data. Next: physical measurements when devices are available and security before private data.

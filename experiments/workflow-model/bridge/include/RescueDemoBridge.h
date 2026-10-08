@@ -1,3 +1,4 @@
+#include <stddef.h>
 #ifndef RESCUE_DEMO_BRIDGE_H
 #define RESCUE_DEMO_BRIDGE_H
 #ifdef __cplusplus
@@ -7,6 +8,18 @@ extern "C" {
 typedef struct rc_session rc_session;
 enum rc_action { RC_SOS, RC_FOLLOWUP, RC_CORRECTION, RC_WITHDRAWAL, RC_ACKNOWLEDGE,
                  RC_REPLY, RC_ASSIGN, RC_RESOLVE, RC_REOPEN, RC_DISPOSITION };
+typedef struct rc_endpoint rc_endpoint;
+rc_endpoint* rc_endpoint_open(const char* path, int role);
+void rc_endpoint_destroy(rc_endpoint*);
+int rc_endpoint_perform(rc_endpoint*, int action, const char* value, const char* reference);
+unsigned char* rc_endpoint_next(const rc_endpoint*, size_t* length);
+int rc_endpoint_accept(rc_endpoint*, const unsigned char* packet, size_t length, unsigned char** receipt, size_t* receipt_length);
+int rc_endpoint_confirm(rc_endpoint*, const unsigned char* receipt, size_t length);
+char* rc_endpoint_snapshot(const rc_endpoint*);
+int rc_endpoint_reset(rc_endpoint*);
+/* Packet outputs are owned allocations freed by rc_free. Null next + length 0 means empty.
+   accept publishes only after event and return receipt commit; confirm commits outbox removal.
+   Result codes match rc_perform. These fixture roles/packets are not authenticated. */
 rc_session* rc_create(void);
 /* Absolute local path <=4096 bytes; opens validated saved sample state, or creates it.
    Existing corrupt/unsupported data is not replaced. Null on failure; no silent fallback. */
@@ -23,7 +36,7 @@ int rc_perform(rc_session*, int action, const char* value, const char* reference
 int rc_set_connected(rc_session*, int connected);
 /* New malloc-owned UTF-8 JSON snapshot. Never a transport message. Free with rc_free. */
 char* rc_snapshot(const rc_session*);
-void rc_free(char*);
+void rc_free(void*);
 #ifdef __cplusplus
 }
 #endif

@@ -1,6 +1,7 @@
 #include "RescueDemoBridge.h"
 #include "workflow.hpp"
 #include "session_store.hpp"
+#include "demo_support.hpp"
 #include <memory>
 #include <set>
 #include <stdexcept>
@@ -12,6 +13,7 @@
 #include <sstream>
 #include <type_traits>
 using namespace rescue;
+using namespace rescue_demo;
 namespace {
 // Pin the public C result contract and internal Swift snapshot schema.
 static_assert(static_cast<int>(Result::Accepted)==0 && static_cast<int>(Result::Duplicate)==1 &&
@@ -28,52 +30,7 @@ static_assert(static_cast<int>(Delivery::Waiting)==0 && static_cast<int>(Deliver
  static_cast<int>(Delivery::HumanAcknowledged)==2);
 static_assert(static_cast<int>(Handling::Open)==0 && static_cast<int>(Handling::Assigned)==1 &&
  static_cast<int>(Handling::Resolved)==2);
-const std::map<std::string,Role> members{{"public",Role::Public},{"command",Role::Command}};
-bool bounded(const char* p, std::size_t max) {
-    if (!p) return false;
-    for (std::size_t n=0;n<=max;++n) if (p[n]=='\0') return true;
-    return false;
-}
-std::string quote(const std::string& input) {
-    std::string out="\"";constexpr char hex[]="0123456789abcdef";
-    for (unsigned char c:input) {
-        if (c=='"' || c=='\\') {out+='\\';out+=static_cast<char>(c);}
-        else if(c<32) {out+="\\u00";out+=hex[c>>4];out+=hex[c&15];}
-        else out+=static_cast<char>(c);
-    }
-    return out+'"';
-}
-const char* boolean(bool b) {return b?"true":"false";}
-std::string errorFor(Result r) {
-    switch(r) {
-    case Result::Accepted:case Result::Duplicate:return "";
-    case Result::Full:return "Demo memory is full. Reset the exercise to continue.";
-    case Result::MissingDependency:return "The referenced request or update has not arrived yet.";
-    case Result::Conflict:return "This action conflicts with an existing event or handling revision.";
-    case Result::Unauthorized:return "This demo role cannot perform that action.";
-    case Result::StoreFailure:return "Could not save the action in demo memory.";
-    case Result::Invalid:return "That action is not valid for the current request state.";
-    }
-    return "Unknown demo error.";
-}
-std::string deviceJSON(const Model& model,const char* local) {
-    const auto optional=model.snapshot("request-1");const Snapshot s=optional.value_or(Snapshot{});
-    std::ostringstream out;out.imbue(std::locale::classic());
-    out<<"{\"hasRequest\":"<<boolean(optional.has_value())<<",\"reportedLocation\":"<<quote(s.reportedLocation)
-       <<",\"originalDelivery\":"<<static_cast<int>(s.originalDelivery)<<",\"handling\":"<<static_cast<int>(s.handling)
-       <<",\"assignedTo\":"<<quote(s.assignedTo)<<",\"reason\":"<<quote(s.reason)
-       <<",\"withdrawalPending\":"<<boolean(s.withdrawalPending)<<",\"withdrawalDisposition\":"<<quote(s.withdrawalDisposition)
-       <<",\"lateUpdate\":"<<boolean(s.lateUpdate)<<",\"pendingPublicMessages\":"<<s.pendingPublicMessages<<",\"messages\":[";
-    bool first=true;
-    for (const auto& e:model.events()) {
-        if(e.kind==Kind::Receipt) continue;
-        if(!first) out<<',';first=false;
-        out<<"{\"id\":"<<quote(e.id)<<",\"kind\":"<<static_cast<int>(e.kind)<<",\"text\":"<<quote(e.text)
-           <<",\"location\":"<<quote(e.reportedLocation)<<",\"reference\":"<<quote(e.reference)
-           <<",\"outgoing\":"<<boolean(e.author==local)<<",\"delivery\":"<<static_cast<int>(model.delivery(e.id))<<'}';
-    }
-    return out.str()+"]}";
-}
+
 }
 struct SessionState {
     Model requester{"public","training-demo",members};
@@ -254,4 +211,4 @@ char* rc_snapshot(const rc_session* s) {
         std::memcpy(copy,json.c_str(),json.size()+1);return copy;
     }catch(...){return nullptr;}
 }
-void rc_free(char* p) {std::free(p);}
+void rc_free(void* p) {std::free(p);}

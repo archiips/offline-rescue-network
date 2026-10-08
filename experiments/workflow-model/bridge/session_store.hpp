@@ -13,7 +13,7 @@ struct SavedSession {
 // A bounded synthetic-session store, not a production per-device inbox/outbox.
 class SessionStore {
 public:
-    explicit SessionStore(const std::string& absolutePath);
+    explicit SessionStore(const std::string& absolutePath, std::string localActor = "");
     ~SessionStore();
     SessionStore(const SessionStore&) = delete;
     SessionStore& operator=(const SessionStore&) = delete;

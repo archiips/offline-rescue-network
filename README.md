@@ -2,7 +2,7 @@
 
 **One project. Two interfaces. A person asks for help; a responder receives the request and replies—even when internet service is unavailable, provided a usable local communication path exists.**
 
-Working description, not a selected brand. **A runnable native SwiftUI training demo, shared C++ workflow engine, synthetic networking probe, docs and a Figma draft. Saved-session restart recovery is implemented; physical offline exchange and private-message security remain unfinished.**
+Working description, not a selected brand. **A runnable SwiftUI rescue demo with local messaging between independently saved C++ endpoints, plus training mode, docs and a Figma draft. Simulator-to-Mac rescue exchange and restart recovery are verified; physical offline exchange and private-message security remain unfinished.**
 
 [Public GitHub repository](https://github.com/archiips/offline-rescue-network) · [Editable Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
 
@@ -21,12 +21,13 @@ Nearby participating devices can later relay encrypted messages. A responder mus
 
 - [Connection probe](experiments/network-probe/README.md): iPhone test screen and Mac host; synthetic simulator-to-Mac exchange verified.
 - [C++ workflow model](experiments/workflow-model/README.md): separate requester/responder models, complete synthetic SOS/reply/update/handling walkthrough and failure tests.
-- [Native workflow demo](experiments/rescue-demo/README.md): public/responder SwiftUI views connected to independent C++ models, with SOS, acknowledgments, replies, queued updates and handling actions. Its C++ SQLite store preserves both histories and pending transfers across restarts.
-- These remain experiments: the native demo uses a simulated link; physical networking and endpoint cryptography remain unfinished.
+- [Native rescue demo](experiments/rescue-demo/README.md): public/responder SwiftUI views with SOS, acknowledgment, replies, location corrections and handling actions. Training mode uses a simulated link; local mode exchanges real packets between independently saved endpoints.
+- [Local exchange walkthrough](experiments/rescue-demo/LOCAL_EXCHANGE.md): Bonjour discovery, Mac endpoint CLI, separate-process recovery checks and native simulator evidence. C++ SQLite commits precede device receipts; queued messages survive restart.
+- Preset sample data only: local exchange is plain and unauthenticated. Physical radio and endpoint cryptography remain unfinished.
 
 ## Current focus
 
-Build an impressive, measurable portfolio project first. The immediate sequence is native workflow and durable recovery (available) → real local exchange → relay demonstration and measured results. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
+Build an impressive, measurable portfolio project first. The immediate sequence is native workflow, durable recovery and real local exchange (available locally) → physical transport checks → relay demonstration and measured results. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
 
 ## First milestone
 
