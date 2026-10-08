@@ -44,7 +44,7 @@ Environment/provenance includes UTC capture date, macOS version, architecture, P
 
 ## Verified capture — 2026-10-08
 
-[Raw 20-trial evidence](evidence/2026-10-08-loopback-20-trials.json) records **20/20 passed**, zero failures and80 unique original-message exchanges across20 fresh sample sessions. Every trial verified refused-connection retention, killed-process outbox recovery, duplicate receipt equality, an unconfirmed sender after lost response and duplicate-free direct retry. Each trial's final histories and checks remain inspectable.
+[Raw 20-trial evidence](evidence/2026-10-08-loopback-20-trials.json) records **20/20 passed**, zero failures and80 confirmed original-message transfers across20 fresh sample sessions. Every trial verified refused-connection retention, killed-process outbox recovery, duplicate receipt equality, an unconfirmed sender after lost response and duplicate-free direct retry. Each trial's final histories and checks remain inspectable.
 
 | Command-to-confirmation metric | Trials | Median (ms) | Nearest-rank p95 (ms) | Maximum (ms) |
 |---|---:|---:|---:|---:|
