@@ -1,6 +1,6 @@
 # Current state and resume instructions
 
-Updated 2026-10-08. This is the entry point for **“continue tasks from where we left off.”** Read it with repository-root AGENTS.md and the current Git state before choosing work. Durable repo files are authoritative; temporary tool sessions and chat memory are not required.
+Updated 2026-10-09. This is the entry point for **“continue tasks from where we left off.”** Read it with repository-root AGENTS.md and the current Git state before choosing work. Durable repo files are authoritative; temporary tool sessions and chat memory are not required.
 
 ## Goal and constraints
 
@@ -77,11 +77,19 @@ Both audiences now have a Direct/Via relay selector and shared manual host/port,
 
 Fresh verification:96/96 Swift tests,43/43 fatal-UBSan CTest,13/13 relay Python checks with11 actual-process facts,14/14 measurement-harness checks and signed simulator app build. Tests use real C++ stores/crypto/sockets with test record stores. Read-only Claude review ran on verified claude-opus-5-5 with explicit medium effort. Its mixed-route delayed-receipt finding was reproduced, then fixed: an exact already-committed receipt can resolve its original through a read-only C++ lookup, still requiring the signed cached relay event and correct correlation. No wire/store format change or trust bypass.
 
-Updated signed app installed on iPhone17 Pro and iPad Pro11 M5 simulators (iOS26.4). Route/connection controls and unpaired restrictions inspected. Both fresh synthetic endpoint identities remain unpaired. The full native relay/Keychain round trip is unverified: automatic approval review rejected confirming trust without fresh action-time consent. An explicit question to approve pairing these two simulators is pending. Generic “continue” does not override this boundary. Previous epoch files remain; no physical testing is required now.
+At publication of8c41c82 the native trust exercise was pending. The user subsequently gave explicit approval; the attended native relay checkpoint below supersedes that blocker.
+
+## Attended native relay checkpoint — 2026-10-08/09
+
+On source8c41c82, compared full public fingerprints and paired the synthetic iPhone17 Pro public and iPad Pro11 M5 responder (iOS26.4) through normal UI. Four events (SOS, human acknowledgment, reply and Floor4 correction) and their four signed reverse receipts crossed the Mac relay in eight successful flushes. Observed public waiting after custody/forwarding, device-received only after reverse receipt, separate human acknowledgment and preserved conversations/location provenance. [Walkthrough](../experiments/rescue-demo/NATIVE_RELAY.md) and [structured manual evidence](../experiments/rescue-demo/native-relay-evidence.json).
+
+Responder Home/return stopped listening and preserved history/trust. Public process restart with pending correction retained pairing/route/host/port/location/pending1 and stopped networking. An upload with relay absent failed without removing the original. Reopening the same Mac relay database with current endpoint ports allowed delivery/receipt recovery. Responder process restart retained the complete conversation and corrected location, networking stopped. Both app queues and relay custody ended zero. No code changes were needed. Existing automated/build counts above belong to the Oct8 code checkpoint, not a new benchmark.
+
+Final local state: both project simulators remain open, paired, in Via relay, with synthetic history retained and networking stopped. The task's Mac relay was quit normally. Historical sample files were retained. No active task worktree or relay process is needed to resume; read Git rather than assuming a temporary binary/log still exists. Physical radio, OS isolation, background delivery and private-data gates remain unverified.
 
 ## Exact next action
 
-Finish the attended native relay exercise, without rebuilding the completed controller/UI milestone. Obtain explicit approval to compare fingerprints and pair the fresh synthetic iPhone17 Pro public and iPad Pro responder endpoints on both sides. Then use normal Pair endpoints UI, configure the existing Mac relay with their public cards and listener ports, manually upload/flush the preset SOS, delayed device receipt, human acknowledgment and reply. Inspect both rendered histories and native restart/background stop behavior. Record actual native evidence separately from controller tests. Do not create trust via CLI/Keychain or delegate a workaround. If approval remains pending, continue only independent read-only/documentation work.
+The user requested stopping this window after saving the checkpoint. In a new window, start with this file, portfolio TODO and Git. Do not rebuild the completed native relay feature or repeat pairing approval for these already-authorized peers. Next bounded portfolio work: package a short reproducible recruiter-facing demo using the verified walkthrough, then design a measured signed-relay evaluation if useful. Existing plain-loopback timings must not be relabeled as secure/native benchmarks; define the population and failure conditions before measuring. Physical testing can wait. No AI, sensors, agency sales or new transport scope is implied.
 
 Physical tests can still wait. Full NET-03/ENG-07/SEC-01, encrypted storage, enrollment, independent audit, background behavior, device compatibility and private-data gates remain open. AI, sensors and selling to agencies are deferred.
 

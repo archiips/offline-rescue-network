@@ -1,6 +1,6 @@
 # Native relay controls
 
-Checkpoint2026-10-08. Both public iPhone and responder iPad interfaces expose the signed relay adapter from [the separate-process checkpoint](RELAY_NETWORK.md). Native signed UI plus shared-controller real-socket tests are verified. The full simulator-to-Mac relay exercise is still pending attended pairing approval; do not infer that evidence from a build or the controller tests.
+Controls checkpoint2026-10-08; attended native verification2026-10-08/09. Both public iPhone and responder iPad interfaces expose the signed relay adapter from [the separate-process checkpoint](RELAY_NETWORK.md). Native signed UI plus shared-controller real-socket tests are verified. The attended simulator-to-Mac relay exercise now passes with native Keychain pairing on both simulators. This evidence is separate from controller tests and does not establish physical offline radio behavior.
 
 ## Use the controls
 
@@ -14,11 +14,19 @@ Checkpoint2026-10-08. Both public iPhone and responder iPad interfaces expose th
 
 Invalid host/port is rejected before upload. Socket errors, wrong-ID custody and lost responses retain the outbox. Expired/full/lost retry cache requires explicit Reset/new secure sample session and re-pairing both endpoints/relay. This rotates keys and does not migrate pending messages; prior epoch files remain on disk. Reset asks for confirmation in the app. No plaintext fallback.
 
-## Fresh evidence and limits
+## Code checkpoint evidence — 2026-10-08
 
-- 96/96 Swift tests: seven new native-controller checks cover route/history/identity preservation, reset/reopen and unpaired start, input rejection, wrong custody, exact retry/no automatic or direct send, route switch while awaiting custody, delayed SOS/receipt/ack/reply over actual loopback sockets custody arriving after a signed receipt and delayed relay receipts after Direct confirmation/reopen without blocking acknowledgment. The mixed-route test retains a newer pending message while accepting the old receipt. C++ checks also reject changed/generated receipts and malformed/null lookup input without mutation. These use real C++ stores/Apple crypto with test record stores, not the iOS Keychain.
+- 96/96 Swift tests: seven new native-controller checks cover route/history/identity preservation, reset/reopen and unpaired start, input rejection, wrong custody, exact retry/no automatic or direct send, route switch while awaiting custody, delayed SOS/receipt/ack/reply over actual loopback sockets, custody arriving after a signed receipt and delayed relay receipts after Direct confirmation/reopen without blocking acknowledgment. The mixed-route test retains a newer pending message while accepting the old receipt. C++ checks also reject changed/generated receipts and malformed/null lookup input without mutation. These use real C++ stores/Apple crypto with test record stores, not the iOS Keychain.
 - 43/43 fatal-UBSan CTest;13/13 actual relay-process Python checks (11 named facts);14/14 existing measurement-harness tests; signed native simulator build.
-- iPhone17 Pro/iPad Pro11 M5, iOS26.4: rendered route controls and scrollable connection/recovery sheets inspected on both devices; unpaired Start/Upload restrictions observed. Fresh synthetic identities were created through normal confirmed Reset, retaining historical files. The trust toggle remains off. Both endpoint UI/controller code is shared.
-- Native end-to-end pairing/relay delivery remains unverified for this checkpoint because automatic approval review requires explicit action-time permission to establish paired trust. No trust was installed through a workaround. Physical radio, lock/background operation, older versions, independent audit, encrypted local storage and agency enrollment remain open.
+
+## Attended native evidence — 2026-10-08/09
+
+After explicit user approval, compared complete fingerprints and paired the public iPhone17 Pro and responder iPad Pro11 M5 simulators (iOS26.4) through the normal UI. No trust workaround or endpoint private keys supplied to the relay. [Structured observation record](native-relay-evidence.json) contains source/binary hashes, public fingerprints, relay event/receipt IDs and observed checks. This is one attended walkthrough, not an automated benchmark.
+
+Four preset events crossed the Mac relay: SOS, explicit human acknowledgment, reply and reported-location correction. Eight successful flushes delivered the four events and their four reverse receipts. After SOS upload and forward delivery, the public UI stayed Waiting for delivery with one queued original; only the later signed receipt changed it to Received by responder device. Human acknowledgment advanced the separate status to Acknowledged by responder. Both rendered conversations retained the original Floor1 SOS, acknowledgment, reply and Floor4 correction as distinct entries.
+
+Responder Home/return stopped its listener and preserved pairing/history. Public process restart with an unsent correction retained pairing, Via relay, host/port, Floor4 and pending1 with networking stopped. Upload while the Mac relay was absent failed with Connection refused and retained pending1. Reopening the same relay database with the endpoints' new listener ports allowed retry/delivery/receipt recovery. Responder process restart retained pairing, all conversation entries and corrected Floor4 with networking stopped. Both native queues and relay custody ended at zero. The Mac relay exited normally; both apps remain open with networking stopped and synthetic history retained.
+
+Physical radio/range, no-common-access-point behavior, OS/network isolation, background delivery, lock-state behavior, older devices, agency enrollment, encrypted local storage and independent audit remain unverified. Exact-byte retry is established by the earlier controller/process checks, not independently measured by this native walkthrough. No latency or reliability statistic is inferred from these eight flushes.
 
 The default native build command is in README.md and the full commands/review history are in [the plan](../../docs/superpowers/plans/2026-10-08-native-relay.md). Keep simulator evidence separate from the older direct native exchange walkthrough and from plain-loopback timing measurements. No new latency or radio-range claim.

@@ -1,6 +1,6 @@
 # Roadmap
 
-> Signed relay checkpoint (2026-10-08): [separate-process evidence](../experiments/rescue-demo/RELAY_NETWORK.md) verifies signed bounded routing, durable exact retries and delayed reverse receipts over sequential Mac loopback contacts. [Native relay controls](../experiments/rescue-demo/NATIVE_RELAY.md) are implemented with controller/socket tests and a signed app build; attended native relay pairing/round trip, physical/OS isolation and full-product gates remain open.
+> Signed relay checkpoint (2026-10-08): [separate-process evidence](../experiments/rescue-demo/RELAY_NETWORK.md) verifies signed bounded routing, durable exact retries and delayed reverse receipts over sequential Mac loopback contacts. [Native relay controls](../experiments/rescue-demo/NATIVE_RELAY.md) are verified with controller/socket tests, a signed app build and an approved attended native simulator relay/restart walkthrough (2026-10-08/09). Physical/OS isolation and full-product gates remain open.
 
 > Bounded portfolio checkpoint (2026-10-08): [secure exchange evidence](../experiments/rescue-demo/SECURE_EXCHANGE.md) now establishes manually paired signed/encrypted Apple endpoints with C++ durable state. Full-product enrollment, private storage and physical gates remain open; CryptoKit is an Apple adapter, not portable C++ cryptography.
 

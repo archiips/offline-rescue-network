@@ -15,7 +15,7 @@ Working description, not a selected brand. **A runnable SwiftUI rescue demo with
 | Share available phone location information | See uncertainty and the age of each observation |
 | See whether a responder received the request | Acknowledge, reply, and update handling status |
 
-The Mac demonstration relays encrypted messages between participating endpoints. [Native relay controls](experiments/rescue-demo/NATIVE_RELAY.md) are implemented; their full native relay exercise awaits attended pairing approval. A responder must become reachable. The app shows when a request is still waiting; a relay receipt does not mean help is dispatched.
+The Mac demonstration relays encrypted messages between participating endpoints. [Native relay controls](experiments/rescue-demo/NATIVE_RELAY.md) are verified in an attended iPhone/iPad simulator-to-Mac relay journey with SOS, acknowledgment, reply and restart recovery. A responder must become reachable. The app shows when a request is still waiting; a relay receipt does not mean help is dispatched.
 
 ## What works today
 
@@ -32,7 +32,7 @@ The Mac demonstration relays encrypted messages between participating endpoints.
 
 ## Current focus
 
-Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Both audiences have manual native relay controls. Next: the attended native relay round trip; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
+Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Both audiences have manual native relay controls. The attended native relay round trip and restart recovery are verified. Next: package the portfolio walkthrough and choose measured secure-relay evaluation; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
 
 ## First milestone
 

@@ -1,6 +1,6 @@
 # Detailed task backlog
 
-Status: product backlog with portfolio execution status · updated 2026-10-08
+Status: product backlog with portfolio execution status · updated 2026-10-09
 
 Start with [current state and resume instructions](CURRENT_STATE.md). The sections below retain the full product/pilot requirements; their unchecked boxes do not mean the bounded demo has no implementation. Owner labels are roles, not assigned people. Do not close a production task from synthetic or simulator evidence alone.
 
@@ -18,7 +18,7 @@ The user prioritized a working résumé project and deferred commercialization a
 - [x] Durable opaque relay custody foundation, priority/FIFO scheduling and encrypted process-local delayed-contact scenario. Evidence: [relay walkthrough](../experiments/rescue-demo/RELAY_QUEUE.md), 41 sanitizer CTest / 67 Swift / 14 Python checks, 10 encrypted CLI facts and signed native build. Trusted local metadata only; no relay listener or native relay controls.
 - [x] Signed separate-Mac-process relay exchange with exact encrypted retries, durable mapping-bound cache and delayed reverse receipts. Evidence: [relay network](../experiments/rescue-demo/RELAY_NETWORK.md),43 sanitizer CTest /89 Swift /13 relay Python checks,11 actual-process facts,14 retained measurement-harness checks and signed native build. Sequential loopback contacts only; physical/OS isolation and full NET-03/ENG-07 remain open.
 - [x] Explicit native relay controls for both audiences: manual route/address/listen/upload, truthful custody/device/human states, saved-session recovery and stale-result fencing. Evidence: [native relay](../experiments/rescue-demo/NATIVE_RELAY.md),96 Swift /43 fatal-UBSan CTest /13 relay Python /14 measurement checks and signed native build. Phone/tablet controls inspected; controller tests use test record stores, not iOS Keychain.
-- [ ] **Next device-independent task:** attended native iPhone/iPad-to-Mac relay SOS/device receipt/human acknowledgment/reply, native restart/background checks and final rendered workflow inspection. Fresh simulator trust requires explicit user approval; do not bypass the rejected pairing action. Follow [resume instructions](CURRENT_STATE.md#exact-next-action).
+- [x] Attended native iPhone/iPad-to-Mac relay SOS/device receipt/human acknowledgment/reply/correction, native restart/background-stop checks and rendered conversation inspection. Explicit user approval received; normal UI pairing completed on both sides. Four events/eight successful forwards, refused-upload retention, queued correction recovery and drained queues observed. Evidence: [native walkthrough](../experiments/rescue-demo/NATIVE_RELAY.md) and [manual observation record](../experiments/rescue-demo/native-relay-evidence.json). Simulator loopback only; physical/product gates stay open. Follow [resume instructions](CURRENT_STATE.md#exact-next-action) for the next bounded portfolio checkpoint.
 - [ ] Optional on-device translation/summarization after message fidelity and measured local inference; localization remains optional research.
 - [ ] Commercial/partner discovery, sales, public distribution and operational use are deferred. Outreach needs explicit authorization.
 

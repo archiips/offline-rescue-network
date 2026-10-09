@@ -1,0 +1,124 @@
+{
+  "verification_kind": "Attended manual native UI exercise with real Mac relay sockets; observed via simulator accessibility/screenshots and relay stdout, not an automated benchmark",
+  "observed_pacific_dates": [
+    "2026-10-08",
+    "2026-10-09"
+  ],
+  "source_commit": "8c41c825b2e2f38b74bb620790da6f9898e3f80f",
+  "approval": "Explicit user approval to pair the two synthetic simulators received before confirming trust on both devices",
+  "devices": [
+    {
+      "role": "public",
+      "simulator": "iPhone 17 Pro",
+      "os": "iOS 26.4",
+      "fingerprint": "cda73223 79c97004 900a0f25 154e5fcd 353d17be 653a37ab 2eb09575 1a245639",
+      "initial_port": 55346,
+      "recovery_port": 55602
+    },
+    {
+      "role": "responder",
+      "simulator": "iPad Pro 11-inch (M5)",
+      "os": "iOS 26.4",
+      "fingerprint": "2e9297a8 4c6e0332 b41067a2 70670dda 69ef4cbf 02dca5f5 3325ae60 c12fbb5e",
+      "initial_port": 55278,
+      "recovery_port": 55541
+    }
+  ],
+  "relay": {
+    "host": "127.0.0.1",
+    "port": 55400,
+    "sha256": "1efa57cd70340d5fed5ec240682dc0c40fa491f354e49c20c5fd6c20aa48fca2",
+    "configuration": "Only public cards and endpoint ports; no endpoint private keys supplied"
+  },
+  "signed_app_launcher_sha256": "3cd7481b982743936fa24cc837905ef447476c21539e92f8478b23cd5462cda0",
+  "checks": [
+    {
+      "name": "attended-opposite-role-pairing",
+      "observed": "Full fingerprints compared directly across the two UI sheets; both show Paired sample peer"
+    },
+    {
+      "name": "custody-is-not-delivery",
+      "observed": "SOS upload accepted; public remains Waiting for delivery with 1 queued original"
+    },
+    {
+      "name": "delayed-device-receipt",
+      "observed": "First flush delivered SOS and retained reverse receipt at relay count1; public still waiting. Second flush returned receipt; public Received by responder device, pending0"
+    },
+    {
+      "name": "explicit-human-acknowledgment",
+      "observed": "Responder Acknowledge SOS queued1; manual upload plus two flushes delivered acknowledgment and receipt; public Acknowledged by responder, responder pending0"
+    },
+    {
+      "name": "reply-received",
+      "observed": "Preset reply manually uploaded/flushed with reverse receipt; public history contains SYNTHETIC: your request is being reviewed; responder labels reply Received by public device"
+    },
+    {
+      "name": "background-stops-listener",
+      "observed": "Responder Home then return preserves history/pairing and shows Stopped; no background exchange; explicit Start needed"
+    },
+    {
+      "name": "pending-correction-survives-restart",
+      "observed": "Public selected Floor4 and queued correction; process terminate/launch retained pairing, Via relay, location Floor4 and pending1 with listener Stopped; persisted host127.0.0.1 port55400"
+    },
+    {
+      "name": "refused-upload-retains-original",
+      "observed": "Upload while relay stopped reports Connection refused and pending remains1"
+    },
+    {
+      "name": "recovery-after-relay-restart",
+      "observed": "Same relay database reopened with updated endpoint ports; manual retry and two flushes delivered correction and returned receipt; public pending0"
+    },
+    {
+      "name": "history-and-location-provenance",
+      "observed": "Original SOS Floor1, acknowledgment, reply and correction Floor4 remain distinct conversation entries; responder reported location becomes Floor4"
+    },
+    {
+      "name": "responder-process-restart",
+      "observed": "Responder terminate/launch retains pairing, Via relay, SOS/ack/reply/correction and Floor4; networking Stopped, pending0"
+    },
+    {
+      "name": "final-queues-drained-and-network-stopped",
+      "observed": "Both native endpoints show pending0; relay reports count0 before normal quit; public explicitly stopped, responder restarted stopped"
+    }
+  ],
+  "forwarded_events": [
+    {
+      "kind": "sos",
+      "event_id": "dd787a991b274bfdbc4fac7da81dea99e311bac5384e9f5865f30c72ac998ea6",
+      "receipt_id": "ea9bc345d7916e77eac9dde35c4e8d7fc7af3ead372219f7edcca6aaf5bec9d5",
+      "bytes": 503
+    },
+    {
+      "kind": "acknowledgment",
+      "event_id": "460ed25e18395e2f2f078d711da5adfd276e1e8fdb980582bc742629df8ce6e4",
+      "receipt_id": "ef465be5397518d8711a52def12de423e8a066acb0e692bb6ab1df20af34461a",
+      "bytes": 503
+    },
+    {
+      "kind": "reply",
+      "event_id": "75a0943ce13b09ac74c778182f4176db3cd75a30468dcbe41ddbfbfc7cf92267",
+      "receipt_id": "54f8cc9cc86ade4c18ed4202bc9aba85956b6bbe1c784382a84fa2acd343c15f",
+      "bytes": 487
+    },
+    {
+      "kind": "correction",
+      "event_id": "e145e81ad37ea9502e18c5cdc0b2adb5a5184fa58ea2dd9242abb7498e07a9a1",
+      "receipt_id": "c91c873d66b4af0a96ad7a90860ffec0099f4c791bda476b9fc08eee49821e52",
+      "bytes": 513
+    }
+  ],
+  "forwarding_observation": "Eight successful flushes: four events and four reverse receipts, each reported attempts1. One separate refused native upload observed while relay absent. No rate/latency/reliability inference from this single walkthrough.",
+  "not_established": [
+    "physical radio or range",
+    "no-access-point behavior",
+    "OS/network isolation",
+    "background delivery",
+    "lock-state behavior",
+    "older-device compatibility",
+    "agency enrollment",
+    "encrypted local storage",
+    "independent security audit",
+    "native exact-byte retry measurement"
+  ],
+  "signed_app_debug_library_sha256": "eea1887f0d1633a87aa73ef90c0dcec6f01d450dd55fef544c4c1870dfe6cab1"
+}
