@@ -140,6 +140,33 @@ class ReportTests(unittest.TestCase):
             self.assertEqual(report['counts'], {'attempted': 1, 'passed': 0, 'failed': 1, 'planned': 3, 'not_run': 2})
             self.assertTrue(report['trials'][0]['interrupted'])
 
+    def test_cli_host_disappears_after_trial_still_publishes_invalid_capture(self):
+        with tempfile.TemporaryDirectory() as folder:
+            binary = Path(folder) / 'host'
+            binary.write_text('synthetic executable')
+            binary.chmod(0o755)
+            output = Path(folder) / 'result.json'
+            argv = ['measure_relay.py', '--host', str(binary), '--configuration', 'debug', '--trials', '1', '--output', str(output)]
+            def remove_host(*args):
+                binary.unlink()
+                return dict(number=1, passed=True, interrupted=False, cleanup_failed=False, facts=[], commands=[], confirmations=[], elapsed_ns=100)
+            with patch.object(measure, 'environment', return_value={'host_sha256': 'before'}), patch.object(measure, 'run_trial', side_effect=remove_host), patch('sys.argv', argv):
+                self.assertEqual(measure.main(), 1)
+            self.assertFalse(json.loads(output.read_text())['capture_valid'])
+
+    def test_cli_interrupt_between_trials_still_publishes_report(self):
+        with tempfile.TemporaryDirectory() as folder:
+            binary = Path(folder) / 'host'
+            binary.write_text('synthetic executable')
+            binary.chmod(0o755)
+            output = Path(folder) / 'result.json'
+            argv = ['measure_relay.py', '--host', str(binary), '--configuration', 'debug', '--trials', '3', '--output', str(output)]
+            with patch.object(measure, 'environment', return_value={}), patch.object(measure, 'run_trial', side_effect=KeyboardInterrupt()), patch('sys.argv', argv):
+                self.assertEqual(measure.main(), 1)
+            report = json.loads(output.read_text())
+            self.assertTrue(report['interrupted'])
+            self.assertEqual(report['counts']['not_run'], 3)
+
     def test_failed_trial_metric_coverage_is_visible(self):
         trials = [dict(number=1, passed=True, commands=[dict(metric='upload_custody', elapsed_ns=10)], confirmations=[], elapsed_ns=100),
                   dict(number=2, passed=False, commands=[dict(metric='upload_custody', elapsed_ns=999), dict(metric='command_error', action='flush', elapsed_ns=1000)], confirmations=[], elapsed_ns=2000)]

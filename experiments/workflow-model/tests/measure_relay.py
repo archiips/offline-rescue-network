@@ -188,6 +188,7 @@ def build_report(trials, metadata, planned=None):
     if planned is not None:
         counts.update(planned=planned, not_run=planned-len(trials))
     return dict(schema='signed-relay-evaluation-v1', environment=metadata, capture_valid=capture_valid,
+                interrupted=metadata.get('interrupted_between_trials', False) or any(t.get('interrupted', False) for t in trials),
                 counts=counts,
                 metric_coverage=coverage, incomplete_commands_by_action=incomplete,
                 percentile='nearest rank: ceil(0.95*n), one-based',
@@ -232,13 +233,19 @@ def main():
         parser.error('Output must be a new file in an existing directory')
     metadata = environment(args.host, args.configuration)
     trials = []
-    for number in range(1, args.trials+1):
-        trial = run_trial(args.host, number)
-        trials.append(trial)
-        print(f"Trial {number}/{args.trials}: {'PASS' if trial['passed'] else 'FAIL'}; facts={len(trial['facts'])}", flush=True)
-        if trial['interrupted'] or trial['cleanup_failed']:
-            break
-    metadata['host_sha256_after'] = hashlib.sha256(args.host.read_bytes()).hexdigest()
+    try:
+        for number in range(1, args.trials+1):
+            trial = run_trial(args.host, number)
+            trials.append(trial)
+            print(f"Trial {number}/{args.trials}: {'PASS' if trial['passed'] else 'FAIL'}; facts={len(trial['facts'])}", flush=True)
+            if trial['interrupted'] or trial['cleanup_failed']:
+                break
+    except KeyboardInterrupt:
+        metadata['interrupted_between_trials'] = True
+    try:
+        metadata['host_sha256_after'] = hashlib.sha256(args.host.read_bytes()).hexdigest()
+    except OSError:
+        metadata['host_sha256_after'] = None
     metadata['load_average_after'] = os.getloadavg()
     report = build_report(trials, metadata, planned=args.trials)
     try:
@@ -248,7 +255,7 @@ def main():
     print(json.dumps(report['counts']))
     for metric, values in report['passed_trial_metrics'].items():
         print(metric, json.dumps(values))
-    return int(report['counts']['failed'] != 0 or report['counts']['not_run'] != 0 or not report['capture_valid'])
+    return int(report['counts']['failed'] != 0 or report['counts']['not_run'] != 0 or not report['capture_valid'] or report['interrupted'])
 
 
 if __name__ == '__main__':
