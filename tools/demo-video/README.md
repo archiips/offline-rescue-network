@@ -26,3 +26,12 @@ ffmpeg -v error -ss 16 -t 16 -i docs/media/rescue-story.mp4 \
   -filter_complex "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" \
   -loop 0 -y docs/media/workflow-preview.gif
 ```
+
+
+## Live native revision (in progress)
+
+The user rejected the illustrated film as the desired demo medium. The next cut must show actual native interaction footage. `src/live.tsx` is a provisional dark-console framing composition, separate from the historical illustrated film. Its camera timing must be retuned against observed actions in the real take, not treated as evidence of events.
+
+Record a continuous fresh **training** workflow in a separate simulator: review/send while simulated link is off → show queued/waiting → turn link on → show device receipt → acknowledge in responder → send reply → show public result. On wide iPad, both native audiences can remain visible. Preserve existing secure paired samples. Record at least 40 seconds, trim operator dead time without reversing causal order, retain readable state holds, and put the reviewed actual recording at `public/live-take.mp4`. Label training throughout; this is not a secure radio benchmark.
+
+`npm run render:live` refuses to render without a real input video. Once recording works, retune camera beats, inspect every meaningful state and mid-transition, then decode the complete export. No replacement demo is claimed until that happens. Computer-use connection startup currently blocks interaction capture; simulator CLI build/capture of static screens is still available.

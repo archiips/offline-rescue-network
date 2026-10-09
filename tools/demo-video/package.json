@@ -1,1 +1,22 @@
-{"name":"rescue-demo-video","version":"1.0.0","private":true,"scripts":{"studio":"remotion studio src/index.tsx","render":"remotion render src/index.tsx RescueStory ../../docs/media/rescue-story.mp4 --concurrency=2 --crf=22","poster":"remotion still src/index.tsx RescueStory ../../docs/media/demo-poster.png --frame=105","typecheck":"tsc --noEmit"},"dependencies":{"@remotion/cli":"4.0.534","remotion":"4.0.534","react":"19.0.0","react-dom":"19.0.0"},"devDependencies":{"typescript":"5.8.3","@types/react":"19.0.12"}}
+{
+  "name": "rescue-demo-video",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.tsx",
+    "render": "remotion render src/index.tsx RescueStory ../../docs/media/rescue-story.mp4 --concurrency=2 --crf=22",
+    "poster": "remotion still src/index.tsx RescueStory ../../docs/media/demo-poster.png --frame=105",
+    "typecheck": "tsc --noEmit",
+    "render:live": "python3 check-live-input.py && remotion render src/live-index.tsx LiveTake ../../docs/media/rescue-live.mp4 --concurrency=2 --crf=20"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.534",
+    "remotion": "4.0.534",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "typescript": "5.8.3",
+    "@types/react": "19.0.12"
+  }
+}
