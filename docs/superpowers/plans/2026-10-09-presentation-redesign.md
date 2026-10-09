@@ -25,7 +25,7 @@
 ## Checkpoints / acceptance
 
 - [x] Record active request, design, alternatives and recovery instructions before implementation.
-- [ ] Claude Opus 5.5 medium: native UI changes only; all existing actions retained; no model/crypto/store mutations.
+- [x] Claude Opus 5.5 medium: native UI changes only; all existing actions retained; no model/crypto/store mutations.
 - [ ] Signed native build and controller suite; inspect installed iPhone/iPad UI, empty and saved states as feasible without implicit reset.
 - [ ] Reproducible motion source and exported narrated/captioned explanatory video; multiple distinct animated scenes, readable type, correct status semantics.
 - [ ] README hero, preview, screenshots, setup and scope; local links/media checked.
@@ -34,3 +34,11 @@
 ## Resume immediately if usage ends
 
 Read this file and docs/CURRENT_STATE.md, then git status/log. Parent owns video source, media, README and docs; Claude owns ONLY the three existing iOS Swift view files (plus project-file registration only if necessary). Claude prompt and result are in ignored local-artifacts/presentation-redesign; inspect modelUsage and job log before rerunning. Do not discard partial UI edits or rebuild completed networking. Persist verified source checkpoints before extended rendering. Original clip 901e423 was rejected for not explaining anything; do not present it as the new deliverable.
+
+## Execution checkpoint
+
+- Claude implementation returned with actual modelUsage `claude-opus-5-5`, requested medium effort, no fallback; only the three view files changed. Signed build and 96 controller checks reported passed.
+- Parent independently reran signed build and 96 Swift tests successfully (logs `/private/tmp/rescue-redesign-parent-{build,tests}.log`). Actual existing paired phone/tablet installed and inspected, history/queues/trust retained and networking stopped. Setup → pairing → back → Done exercised without changing trust.
+- Independent read-only Claude review confirmed all workflow actions and lifecycle fences; found ambiguous shortened human-action wording and a new size-class-triggered draft reset. Parent corrected wording to Human / Acknowledged with constrained value scaling, and lifted draft/review bindings to DemoShell. Final rebuild/captures pending after these corrections.
+- Remotion 4.0.534 source compiles, first full 64-second narrated render succeeded; final render in progress. Typeface Manrope is bundled with OFL. Eight scenes have illustrative/evidence labels. README rewritten, awaiting final capture/link/media verification.
+- Task observer #10 records the rejected static clip's missing story. No live skill changes implied.
