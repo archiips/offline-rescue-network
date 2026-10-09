@@ -211,8 +211,10 @@ rc_relay* rc_relay_open(const char* path){
 }
 void rc_relay_destroy(rc_relay* relay){delete relay;}
 
-rc_relay_result rc_relay_enqueue(rc_relay* relay,const char* id,const char* flow,int urgency,int64_t expiry,
-                                 int hops,const unsigned char* payload,size_t length,int64_t now){
+namespace {
+// Shared admission; only the queue prunes. The cache keeps expired rows so an ID can never be renewed.
+rc_relay_result admit(rc_relay* relay,const char* id,const char* flow,int urgency,int64_t expiry,
+                      int hops,const unsigned char* payload,size_t length,int64_t now,bool pruneExpired){
     if(!relay)return RC_RELAY_NULL_HANDLE;
     if(!hex64(id) || !hex64(flow) || (urgency!=0 && urgency!=1) || expiry<=0 || expiry<=now || hops<1 || hops>maxHops
        || !payload || length<minPayload || length>maxPayload)return RC_RELAY_INVALID;
@@ -220,7 +222,7 @@ rc_relay_result rc_relay_enqueue(rc_relay* relay,const char* id,const char* flow
     try{incoming.id=id;incoming.flow=flow;incoming.urgency=urgency;incoming.expiry=expiry;incoming.hops=hops;
         incoming.payload.assign(payload,payload+length);}catch(...){return RC_RELAY_STORAGE;}
     return relay->write([&](State& state){
-        auto* db=relay->db.handle;prune(db,state,now);
+        auto* db=relay->db.handle;if(pruneExpired)prune(db,state,now);
         std::size_t bytes=0;
         for(const auto& row:state.rows){
             if(row.id==incoming.id){
@@ -237,6 +239,31 @@ rc_relay_result rc_relay_enqueue(rc_relay* relay,const char* id,const char* flow
         Statement meta(db,"UPDATE relay_meta SET admissions=? WHERE id=1");meta.integer(1,state.admissions+1);meta.change(db);
         return RC_RELAY_OK;
     });
+}
+}
+
+rc_relay_result rc_relay_enqueue(rc_relay* relay,const char* id,const char* flow,int urgency,int64_t expiry,
+                                 int hops,const unsigned char* payload,size_t length,int64_t now){
+    return admit(relay,id,flow,urgency,expiry,hops,payload,length,now,true);
+}
+
+rc_relay_result rc_relay_cache_admit(rc_relay* relay,const char* id,const char* flow,int urgency,int64_t expiry,
+                                     int hops,const unsigned char* payload,size_t length,int64_t now){
+    return admit(relay,id,flow,urgency,expiry,hops,payload,length,now,false);
+}
+
+rc_relay_result rc_relay_lookup(rc_relay* relay,const char* id,rc_relay_item** item){
+    if(item)*item=nullptr;
+    if(!relay)return RC_RELAY_NULL_HANDLE;
+    if(!item || !hex64(id))return RC_RELAY_INVALID;
+    try{
+        Transaction t(relay->db.handle,"BEGIN");const auto state=load(relay->db.handle);t.commit();
+        for(const auto& row:state.rows){
+            if(row.id!=id)continue;
+            *item=copy(row).release();return RC_RELAY_OK;
+        }
+        return RC_RELAY_EMPTY;
+    }catch(...){return RC_RELAY_STORAGE;}
 }
 
 rc_relay_result rc_relay_select(rc_relay* relay,int64_t now,rc_relay_item** item){

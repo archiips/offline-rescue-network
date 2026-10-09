@@ -222,6 +222,62 @@ int main(int argc,char** argv){
         for(int i=0;i<10;++i){auto again=open(path);check(count(again.get())==1,"reopen");}
         check(descriptors()==before,"successful handles close descriptors");
         relay=open(path);
+    }else if(scenario=="lookup"){
+        auto find=[&](rc_relay* handle,const std::string& id,int expected){
+            rc_relay_item* raw=reinterpret_cast<rc_relay_item*>(1);check(rc_relay_lookup(handle,id.c_str(),&raw)==expected,"lookup result");
+            Item item(raw,rc_relay_item_free);check(expected==RC_RELAY_OK?item!=nullptr:item==nullptr,"lookup output only on success");return item;
+        };
+        const auto large=payload(4276,5);
+        check(enqueue(r,1,10,1,large,0,later,2)==0 && enqueue(r,2,20,1,sealed)==0 && enqueue(r,3,30,1,sealed)==0
+              && enqueue(r,4,40,1,sealed)==0 && enqueue(r,5,50,0,sealed)==0 && enqueue(r,6,60,0,sealed,0,100)==0,"lookup fixtures");
+        relay.reset();relay=open(path);r=relay.get();
+        {auto hit=find(r,hex(1),RC_RELAY_OK);check(is(hit,1) && std::string(hit->flow)==hex(10) && hit->urgency==1 && hit->expiry==later
+              && hit->remaining_hops==1 && hit->attempts==0 && Bytes(hit->payload,hit->payload+hit->length)==large,"reopened exact read-only copy");}
+        for(int i=0;i<5;++i)find(r,hex(1),RC_RELAY_OK);
+        {auto first=select(r);check(is(first,1) && first->attempts==1,"lookups consumed no attempts");}
+        check(find(r,hex(1),RC_RELAY_OK)->attempts==1,"lookup reports stored attempts");
+        check(rc_relay_remove(r,hex(1).c_str())==0 && is(select(r),2) && rc_relay_remove(r,hex(2).c_str())==0,"two urgent turns");
+        for(int i=0;i<4;++i)find(r,hex(3),RC_RELAY_OK);
+        check(is(select(r),3) && rc_relay_remove(r,hex(3).c_str())==0,"third urgent turn");
+        check(is(select(r),5),"lookup did not reset urgent fairness");
+        {auto expired=find(r,hex(6),RC_RELAY_OK);check(expired->expiry==100,"expired rows visible to lookup");}
+        check(count(r)==3,"lookup never prunes");
+        find(r,hex(99),RC_RELAY_EMPTY);
+        for(const auto& bad:{std::string(63,'0')+"A",std::string(63,'0'),hex(1)+"0"})find(r,bad,RC_RELAY_INVALID);
+        check(rc_relay_lookup(r,nullptr,nullptr)==RC_RELAY_INVALID && rc_relay_lookup(r,hex(4).c_str(),nullptr)==RC_RELAY_INVALID,"null output");
+        rc_relay_item* none=reinterpret_cast<rc_relay_item*>(1);check(rc_relay_lookup(nullptr,hex(4).c_str(),&none)==RC_RELAY_NULL_HANDLE && none==nullptr,"null handle clears output");
+        none=reinterpret_cast<rc_relay_item*>(1);check(rc_relay_lookup(r,nullptr,&none)==RC_RELAY_INVALID && none==nullptr,"null id clears output");
+        {Hold lock(path,"BEGIN EXCLUSIVE");find(r,hex(4),RC_RELAY_STORAGE);}
+        sql(path,"UPDATE relay_items SET attempts='1' WHERE admitted=4;");find(r,hex(4),RC_RELAY_STORAGE);find(r,hex(5),RC_RELAY_STORAGE);
+        sql(path,"UPDATE relay_items SET attempts=0 WHERE admitted=4;");find(r,hex(4),RC_RELAY_OK);
+        Item kept(nullptr,rc_relay_item_free);
+        const auto before=descriptors();
+        for(int i=0;i<10;++i){auto again=open(path);kept=find(again.get(),hex(4),RC_RELAY_OK);}
+        check(descriptors()==before && is(kept,4) && Bytes(kept->payload,kept->payload+kept->length)==sealed,"copy outlives handle; descriptors closed");
+    }else if(scenario=="cache"){
+        auto admit=[&](rc_relay* handle,unsigned id,const Bytes& bytes,int64_t now,int64_t expiry,int urgency=0){
+            return rc_relay_cache_admit(handle,hex(id).c_str(),hex(id+100).c_str(),urgency,expiry,2,bytes.data(),bytes.size(),now);
+        };
+        check(admit(r,1,sealed,0,100)==RC_RELAY_OK && admit(r,1,sealed,50,100)==RC_RELAY_DUPLICATE,"admit then identical duplicate");
+        check(admit(r,1,payload(181,2),50,100)==RC_RELAY_CONFLICT && admit(r,1,sealed,50,101)==RC_RELAY_CONFLICT && admit(r,1,sealed,50,100,1)==RC_RELAY_CONFLICT,"changed cached fields conflict");
+        relay.reset();relay=open(path);r=relay.get();
+        check(admit(r,2,sealed,200,300)==RC_RELAY_OK && count(r)==2,"expired row retained by cache admission");
+        check(admit(r,1,payload(181,3),200,300)==RC_RELAY_CONFLICT,"expired cached ID cannot be renewed or resealed");
+        check(admit(r,1,sealed,200,100)==RC_RELAY_INVALID,"expired admission rejected");
+        rc_relay_item* raw=nullptr;check(rc_relay_lookup(r,hex(1).c_str(),&raw)==RC_RELAY_OK,"expired mapping readable");
+        Item old(raw,rc_relay_item_free);check(old->expiry==100 && Bytes(old->payload,old->payload+old->length)==sealed && old->attempts==0,"original mapping preserved");
+        for(unsigned i=3;i<=64;++i)check(admit(r,i,payload(4276,static_cast<unsigned char>(i)),200,i<20?250:later)==RC_RELAY_OK,"fill cache");
+        check(admit(r,65,sealed,900,later)==RC_RELAY_CAPACITY && count(r)==64,"full cache never evicts expired rows");
+        check(admit(r,64,payload(4276,64),900,later)==RC_RELAY_DUPLICATE,"duplicate at capacity");
+        check(rc_relay_cache_admit(r,"x",hex(1).c_str(),0,later,2,sealed.data(),sealed.size(),0)==RC_RELAY_INVALID
+              && rc_relay_cache_admit(r,hex(70).c_str(),hex(1).c_str(),2,later,2,sealed.data(),sealed.size(),0)==RC_RELAY_INVALID
+              && rc_relay_cache_admit(r,hex(70).c_str(),hex(1).c_str(),0,later,3,sealed.data(),sealed.size(),0)==RC_RELAY_INVALID
+              && rc_relay_cache_admit(r,hex(70).c_str(),hex(1).c_str(),0,later,2,sealed.data(),180,0)==RC_RELAY_INVALID
+              && rc_relay_cache_admit(r,hex(70).c_str(),hex(1).c_str(),0,later,2,nullptr,181,0)==RC_RELAY_INVALID
+              && rc_relay_cache_admit(nullptr,hex(70).c_str(),hex(1).c_str(),0,later,2,sealed.data(),sealed.size(),0)==RC_RELAY_NULL_HANDLE,"cache admission bounds");
+        relay.reset();relay=open(path);r=relay.get();check(count(r)==64,"cache persists");
+        {Hold lock(path,"BEGIN IMMEDIATE");check(admit(r,64,payload(4276,64),900,later)==RC_RELAY_STORAGE,"locked cache admission");}
+        check(enqueue(r,66,66,0,sealed,900)==RC_RELAY_OK && count(r)==46,"generic enqueue still prunes; cache must never call it");
     }else check(false,"unknown scenario");
     relay.reset();std::filesystem::remove_all(dir);
 }

@@ -52,10 +52,35 @@ public struct RelayError: Error, Equatable, Sendable, CustomStringConvertible {
 
     public func enqueue(id: String, flow: String, priority: RelayPriority, expiry: Int64, hops: Int,
                         payload: Data, now: Int64) throws -> RelayAdmission {
+        try admit(rc_relay_enqueue, id: id, flow: flow, priority: priority, expiry: expiry, hops: hops, payload: payload, now: now)
+    }
+
+    /// Append-only cache admission: never prunes, so an expired ID conflicts rather than being renewed.
+    /// Pair only with `lookup(id:)`; `select` and `enqueue` prune expired rows.
+    public func cacheAdmit(id: String, flow: String, priority: RelayPriority, expiry: Int64, hops: Int,
+                           payload: Data, now: Int64) throws -> RelayAdmission {
+        try admit(rc_relay_cache_admit, id: id, flow: flow, priority: priority, expiry: expiry, hops: hops, payload: payload, now: now)
+    }
+
+    /// Next eligible item, or nil when none is eligible. Attempts are committed before this returns.
+    public func select(now: Int64) throws -> RelayItem? {
+        try item { rc_relay_select(handle, now, &$0) }
+    }
+
+    /// Exact stored copy (attempts as stored, expired or not), or nil when absent. Mutates nothing.
+    public func lookup(id: String) throws -> RelayItem? {
+        guard !id.contains("\0") else { throw Self.error(RC_RELAY_INVALID) }
+        return try item { rc_relay_lookup(handle, id, &$0) }
+    }
+
+    private typealias Admission = (OpaquePointer?, UnsafePointer<CChar>?, UnsafePointer<CChar>?, Int32, Int64, Int32,
+                                   UnsafePointer<UInt8>?, Int, Int64) -> rc_relay_result
+    private func admit(_ operation: Admission, id: String, flow: String, priority: RelayPriority, expiry: Int64, hops: Int,
+                       payload: Data, now: Int64) throws -> RelayAdmission {
         guard !id.contains("\0"), !flow.contains("\0"), let hops = Int32(exactly: hops) else { throw Self.error(RC_RELAY_INVALID) }
         let result = payload.withUnsafeBytes { raw in
-            rc_relay_enqueue(handle, id, flow, priority.rawValue, expiry, hops,
-                             raw.bindMemory(to: UInt8.self).baseAddress, raw.count, now)
+            operation(handle, id, flow, priority.rawValue, expiry, hops,
+                      raw.bindMemory(to: UInt8.self).baseAddress, raw.count, now)
         }
         switch result {
         case RC_RELAY_OK: return .admitted
@@ -64,10 +89,9 @@ public struct RelayError: Error, Equatable, Sendable, CustomStringConvertible {
         }
     }
 
-    /// Next eligible item, or nil when none is eligible. Attempts are committed before this returns.
-    public func select(now: Int64) throws -> RelayItem? {
+    private func item(_ operation: (inout UnsafeMutablePointer<rc_relay_item>?) -> rc_relay_result) throws -> RelayItem? {
         var raw: UnsafeMutablePointer<rc_relay_item>?
-        let result = rc_relay_select(handle, now, &raw)
+        let result = operation(&raw)
         defer { rc_relay_item_free(raw) }
         if result == RC_RELAY_EMPTY { return nil }
         guard result == RC_RELAY_OK else { throw Self.error(result) }

@@ -44,6 +44,16 @@ rc_relay_result rc_relay_enqueue(rc_relay*, const char* id, const char* flow, in
    unless 3 urgent selections occurred in a row and an ordinary head is eligible. Attempts and fairness
    commit before *item is set; on any failure *item is null. */
 rc_relay_result rc_relay_select(rc_relay*, int64_t now, rc_relay_item** item);
+/* Append-only cache admission: the same arguments, duplicate/conflict checks and 64-item/byte bounds as
+   enqueue, but expired rows are never pruned or replaced. An expired ID therefore conflicts instead of
+   being renewed, and expired rows keep occupying capacity. Use only with rc_relay_lookup on a cache file;
+   never select or enqueue on it, since both prune. */
+rc_relay_result rc_relay_cache_admit(rc_relay*, const char* id, const char* flow, int urgency, int64_t expiry,
+                                     int hops, const unsigned char* payload, size_t length, int64_t now);
+/* Read-only exact copy of the item with this ID, expired or not, after strict store validation. Changes no
+   attempts, fairness or rows. attempts is the stored count; remaining_hops is derived as for select.
+   *item is cleared first and set only on success; absent ID returns RC_RELAY_EMPTY. */
+rc_relay_result rc_relay_lookup(rc_relay*, const char* id, rc_relay_item** item);
 /* Deletes custody. The caller must already have validated the destination's receipt, or be an
    administrator; the queue verifies no proof. */
 rc_relay_result rc_relay_remove(rc_relay*, const char* id);

@@ -25,3 +25,10 @@ Preflight/self-critique: existing APIs identified; new thin C++ read/cache polic
 
 ## Execution ledger
 Design/research/plan/critique completed before implementation. Baseline b1dd8bc, main clean, persistent ignored `.worktrees/relay-network` created.
+
+### Task 1 — read-only lookup and append-only cache admission (2026-10-08)
+- Baseline in worktree: sanitizer CTest 41/41; Swift build OK.
+- RED: added relay_tests `lookup`/`cache` scenarios + CMake registration; build failed on undeclared `rc_relay_lookup`/`rc_relay_cache_admit`. Swift RED: `RelayQueue` had no `cacheAdmit`.
+- GREEN: `rc_relay_lookup` (read transaction, full strict load, exact copy, stored attempts, expired rows visible, output cleared first; absent 8/invalid 2/storage 7/null -1) and `rc_relay_cache_admit` (shared admission path with `enqueue`, pruning disabled: expired IDs conflict instead of renewing, expired rows hold capacity, no eviction). Swift `lookup(id:)`/`cacheAdmit(...)` share the existing item/admission conversion.
+- Checks: `UBSAN_OPTIONS=halt_on_error=1 ctest` 43/43 (sanitizers); `swift test` 68/68.
+- Design note: lookup reports `remaining_hops` derived exactly as select does (stored − 1) to keep one struct meaning; cache callers ignore it.

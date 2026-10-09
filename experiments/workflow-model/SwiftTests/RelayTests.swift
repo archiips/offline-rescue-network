@@ -65,6 +65,28 @@ private func opaque(_ count: Int = 181, seed: UInt8 = 1) -> Data { Data((0..<cou
     #expect(try Data(contentsOf: endpointURL) == before)
 }
 
+@MainActor @Test func relayLookupIsReadOnlyAndCacheAdmissionNeverPrunes() throws {
+    let root = relayRoot()
+    defer { try? FileManager.default.removeItem(at: root) }
+    let bytes = opaque(4276, seed: 3)
+    var cache: RelayQueue? = try queue(root)
+    #expect(try cache!.cacheAdmit(id: hexID(1), flow: hexID(2), priority: .urgent, expiry: 100, hops: 2, payload: bytes, now: 0) == .admitted)
+    #expect(try cache!.cacheAdmit(id: hexID(1), flow: hexID(2), priority: .urgent, expiry: 100, hops: 2, payload: bytes, now: 1) == .duplicate)
+    cache = nil
+    let reopened = try queue(root)
+    let hit = try #require(try reopened.lookup(id: hexID(1)))
+    #expect(hit == RelayItem(id: hexID(1), flow: hexID(2), priority: .urgent, expiry: 100, remainingHops: 1, attempts: 0, payload: bytes))
+    #expect(try reopened.lookup(id: hexID(9)) == nil)
+    #expect(throws: RelayError.self) { try reopened.lookup(id: "ABC") }
+    #expect(throws: RelayError.self) { try reopened.lookup(id: hexID(1) + "\0") }
+    // Past expiry the mapping stays; renewal conflicts instead of pruning and resealing.
+    #expect(try reopened.cacheAdmit(id: hexID(3), flow: hexID(4), priority: .ordinary, expiry: 300, hops: 2, payload: opaque(), now: 200) == .admitted)
+    #expect(throws: RelayError(code: .conflict, message: "Rejected: a different item already uses this relay ID")) {
+        try reopened.cacheAdmit(id: hexID(1), flow: hexID(2), priority: .urgent, expiry: 300, hops: 2, payload: bytes, now: 200)
+    }
+    #expect(try reopened.count() == 2 && reopened.lookup(id: hexID(1))?.expiry == 100)
+}
+
 @MainActor private struct SealedPair {
     let root = relayRoot()
     let publicIdentity = SecureIdentity(role: .publicUser)
