@@ -20,11 +20,11 @@ Correctness: timestamps must include only one command; source confirmation must 
 
 ## Checkpoints and acceptance
 
-- [ ] Baseline: all 13 smoke tests with real host; record sandbox-only failures separately.
-- [ ] Test first: deterministic classification/confirmation/partial failure/statistics tests must fail before implementation. Add factory seam and timing runner; all harness tests pass.
-- [ ] Verify: 20 actual signed-relay scenarios, raw JSON and recomputed summaries/hashes; retain failure denominators. Existing 13 relay and 14 measurement checks pass with hosts. Swift checks remain unchanged and should be run against the built package.
-- [ ] Independent review: Claude Opus 5.5, explicit medium, verify returned model metadata and no fallback. Reproduce/fix material findings before capture/publication.
-- [ ] Report: exact populations, command-to-observed-state boundaries, failure/retry counts, host/source fingerprints and no physical/native latency inference. Update README/current state/TODO/decisions; inspect diff and secrets/ignores, commit and push authorized checkpoint.
+- [x] Baseline: all 13 smoke tests with real host; record sandbox-only failures separately.
+- [x] Test first: deterministic classification/confirmation/partial failure/statistics tests must fail before implementation. Add factory seam and timing runner; all harness tests pass.
+- [x] Verify: 20 actual signed-relay scenarios, raw JSON and recomputed summaries/hashes; retain failure denominators. Existing 13 relay and 14 measurement checks pass with hosts. Swift checks remain unchanged and should be run against the built package.
+- [x] Independent review: Claude Opus 5.5, explicit medium, verify returned model metadata and no fallback. Reproduce/fix material findings before capture/publication.
+- [x] Report: exact populations, command-to-observed-state boundaries, failure/retry counts, host/source fingerprints and no physical/native latency inference. Update README/current state/TODO/decisions; inspect diff and secrets/ignores before authorized checkpoint publication.
 
 ## Execution ledger
 
@@ -44,3 +44,8 @@ Implementation review: actual Claude Opus 5.5/medium found no Critical issues an
 
 
 Targeted follow-up review: verified actual claude-opus-5-5/medium; no remaining Critical/Important findings or new regressions. Minor limits recorded: cleanup role-digit extraction is advisory; interrupted cleanup may remain unknown; abrupt interruption during result/report serialization is not a crash-safe journal; hash validity does not attest build provenance. The binary-change regression metadata now isolates that cause. Final capture will use the freshly built unchanged Swift/C++ Debug host and clean committed Python source. No unrelated production changes or new safety guarantees.
+
+
+Final capture: clean source 5152edb,20/20 trials, all 11 facts and 3 ID-correlated confirmations per trial, no cleanup or interrupted/not-run trials. Raw evidence `experiments/rescue-demo/evidence/2026-10-09-signed-relay-20-trials.json`; report `experiments/rescue-demo/RELAY_MEASUREMENTS.md`. Independent audit re-derived all summaries and 60 confirmation intervals, checked 940 command / 600 lifecycle records and matched 30 before/after source hashes. 47 Python checks (20 new+13 relay+14 plain),96 Swift and43 fatal-UBSan CTest pass. One earlier instrumented preflight is separate, not a removed measured trial. Raw Python macOS-version field is empty; immediately subsequent `sw_vers` returned 26.2 and the report states both. No new native build/UI check was necessary because product code is unchanged.
+
+Documentation verification: nine changed/new documents,110 local links/anchors pass; raw JSON hash matches capture; no cards, keys, fingerprints, location strings or absolute scratch/user paths in published records. Final source unchanged after capture. Scoped publication uses the standing authorization; confirm actual publication from Git history and remote state.

@@ -69,7 +69,7 @@ C++ owns durable bounded custody, append-only endpoint cache and workflow state.
 
 Fresh verification:43/43 sanitizer CTest with fatal UBSan,89/89 Swift tests,13/13 relay Python checks including actual hosts/11 facts and14/14 existing measurement-harness checks. Signed native simulator build passed. Updated iPad responder app retains its saved Secure exchange history with networking stopped. Native relay controls are not implemented yet; direct Secure exchange and Training remain available.
 
-Claude Code used verified Opus5.5 with explicit medium effort, implemented the core and fixed parent-reproduced integrity failures, then reached its session quota. The parent completed host/harness and hardening locally; independent read-only review found no remaining Critical/Important/Minor findings after fixes. No fallback model was configured. The committed spec and execution ledger retain the design and verification history; inspect Git before resuming.
+Claude Code used verified Opus 5.5 with explicit medium effort, implemented the core and fixed parent-reproduced integrity failures, then reached its session quota. The parent completed host/harness and hardening locally; independent read-only review found no remaining Critical/Important/Minor findings after fixes. No fallback model was configured. The committed spec and execution ledger retain the design and verification history; inspect Git before resuming.
 
 ## Native relay controls checkpoint — 2026-10-08
 
@@ -91,9 +91,15 @@ Final local state: both project simulators remain open, paired, in Via relay, wi
 
 [Three-minute recruiter demo](PORTFOLIO_DEMO.md) packages the verified native workflow with signed-build/relay setup, a timed speaking script, optional refused-upload recovery, evidence links and scoped résumé wording. README links it directly. This is documentation derived from the existing evidence; no new native exercise or timing run is claimed.
 
+## Signed-relay evaluation checkpoint — 2026-10-09
+
+[Measured signed-relay evaluation](../experiments/rescue-demo/RELAY_MEASUREMENTS.md) and [raw evidence](../experiments/rescue-demo/evidence/2026-10-09-signed-relay-20-trials.json) record 20/20 complete actual-loopback scenarios,60 confirmed original SOS/ack/reply events and all 11 recovery facts in every trial. No failed/interrupted/not-run trials or cleanup failures. First versus duplicate custody and first versus repeated delivery are separate timing populations. SOS fault-recovery cycle median 353.823 ms includes deliberate failures, process restarts and scripted contact gaps; it is not radio/native latency or comparable to the plain direct baseline.
+
+Python orchestration adds a child-factory seam to the existing smoke scenario; no Swift/C++/UI/protocol change. Fresh checks: 47/47 Python (no skips: 20 new + 13 relay + 14 plain), 96/96 Swift, 43/43 fatal-UBSan CTest. A separate independent audit reconstructed all summaries and 60 event/receipt-correlated intervals and matched 30 source hashes. Captured from clean source 5152edb; host/source hashes before/after match. Actual Claude Opus 5.5 with explicit medium effort reviewed design/code/fixes; follow-up found no remaining Critical/Important findings. Residual capture/cleanup/provenance limitations are in the report/ledger. Simulator GUI was absent during capture; no native rerun was needed or claimed.
+
 ## Exact next action
 
-Next bounded portfolio work: design a measured signed-relay evaluation, then implement and run its harness at a separate verified checkpoint. Define command-to-custody, forward delivery and reverse-receipt timing populations separately; preserve deliberate contact delays and failures rather than pooling them into a misleading latency figure. Existing plain direct timings are not secure-relay measurements. Physical testing still waits for device availability. Do not rebuild completed native controls or repeat pairing approval for the already-authorized peers.
+Next optional bounded portfolio work: capture a short native demo recording from [the script](PORTFOLIO_DEMO.md), retaining both public and responder views and truthful custody/device/human states. Reopen the existing project simulators if needed; current user authorization permits this and Claude Opus 5.5/medium delegation. Inspect actual simulator state rather than assuming prior pairing/history remains. Do not repeat pairing approval for already-authorized peers or reset their history implicitly. A fresh exercise needs explicit app reset/re-pairing; an existing-history narration is also available. Do not rebuild completed relay controls or rerun the measurement checkpoint as missing work. Physical tests still wait for device availability.
 
 Full physical, encrypted-storage, enrollment, independent-audit, device-compatibility and private-data gates remain open. AI, sensors and selling to agencies are deferred.
 

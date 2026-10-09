@@ -138,3 +138,10 @@ A reproduced review finding showed a delayed relay receipt blocking replies afte
 ## Native relay evidence boundary — 2026-10-09
 
 Explicit pairing approval resolved the earlier action-time trust block. The attended native iPhone/iPad→Mac relay exercise now verifies SOS, separate device receipt/human acknowledgment, reply, correction, refused-upload retention, native background-stop and process restart recovery. Four events and four reverse receipts crossed eight successful flushes in one simulator walkthrough. This advances native integration evidence only: it does not establish physical radio, network isolation or a latency/reliability population. No code or protocol change was needed. [Observation record](../experiments/rescue-demo/native-relay-evidence.json).
+
+
+## Signed-relay measurement populations — 2026-10-09
+
+Reuse the verified three-process smoke scenario through a Python child-factory seam; leave the C++ engine, Swift adapters and both native interfaces unchanged. Reject duplicated scenario logic and production timestamp changes for this bounded evaluation. Use command-to-validated-STATE timing, event/receipt-ID-correlated source confirmation probes and separate initial/duplicate custody, initial/replay delivery, reverse receipts and injected failure populations. SOS fault recovery contains deliberate failures and restarts and cannot be compared to clean ack/reply cycles or earlier plain direct timings as a speed result.
+
+[Report/raw evidence](../experiments/rescue-demo/RELAY_MEASUREMENTS.md): 20/20 actual-loopback trials, 60 original confirmations, all 11 recovery facts per trial and zero cleanup failures; 47 Python / 96 Swift / 43 fatal-UBSan CTest checks. Clean captured source and matching before/after source/binary hashes improve inspectability without attesting build provenance or a full toolchain. No physical, native-latency, background or operational reliability claim follows. Next optional portfolio asset is a native recording; product/privacy gates stay open.

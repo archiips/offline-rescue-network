@@ -28,6 +28,8 @@ The Mac demonstration relays encrypted messages between participating endpoints.
 - [Relay queue foundation](experiments/rescue-demo/RELAY_QUEUE.md): durable C++ ciphertext custody, FIFO-safe urgent scheduling and a reproducible encrypted delayed-contact scenario. Historical process-local evidence; see the separate-process checkpoint below.
 - Preset sample data only: message storage remains unencrypted. Physical radio, agency enrollment and independent security audit remain unfinished.
 
+- [Signed-relay evaluation](experiments/rescue-demo/RELAY_MEASUREMENTS.md): 20/20 signed recovery trials and 60 confirmed SOS/acknowledgment/reply events, with separate custody, replay, receipt and scripted recovery timings. One-Mac loopback only.
+
 - [Signed relay network](experiments/rescue-demo/RELAY_NETWORK.md): separate Mac processes, nonoverlapping contacts, restart/lost-response recovery and delayed encrypted receipts; 11 reproducible facts.
 
 ## Show the project
@@ -36,7 +38,7 @@ The Mac demonstration relays encrypted messages between participating endpoints.
 
 ## Current focus
 
-Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Both audiences have manual native relay controls. The attended native relay round trip and restart recovery are verified. The portfolio walkthrough is packaged. Next: design a measured signed-relay evaluation; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
+Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Both audiences have manual native relay controls. The attended native relay round trip and restart recovery are verified. The portfolio walkthrough is packaged. Signed-relay recovery is now measured in 20 reproducible loopback trials. Next: prepare a short native demo recording; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
 
 ## First milestone
 

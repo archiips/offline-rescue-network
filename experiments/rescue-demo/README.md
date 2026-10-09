@@ -7,6 +7,8 @@ A runnable SwiftUI iPhone/iPad app with **public and responder views backed by t
 
 Only preset synthetic requests, locations and responses are exposed. One request per key epoch and coordinated reset/re-pair. Both modes preserve histories and pending originals across restart. Role selection is a sample control; checked public cards establish manual peer trust, not firefighter credentials. Storage remains unencrypted and physical offline radio behavior is unverified. Secure exchange now offers Direct and Via relay routes. [Native relay controls](NATIVE_RELAY.md) document manual upload/listening and the verification boundary. Follow the [secure exchange walkthrough and evidence](SECURE_EXCHANGE.md) for direct exchange; [plain local exchange](LOCAL_EXCHANGE.md) retains the earlier diagnostic baseline.
 
+[Signed-relay measurements](RELAY_MEASUREMENTS.md) record 20/20 separate-process recovery scenarios and 60 original confirmations, distinct from native UI evidence and plain direct timings.
+
 ## Run in Xcode
 
 Open `iOS/RescueDemo.xcodeproj`, select the `RescueDemo` scheme and an iPhone or iPad simulator, then Run. The local package dependency resolves to `../workflow-model`; no external packages are downloaded. Simulator signing is configured for Keychain; do not override CODE_SIGNING_ALLOWED to NO for secure-mode testing. Declared minimum iOS 18; actual UI verification below is on iPhone and iPad simulators running iOS 26.4. Physical installation/signing and older-device compatibility are unverified.

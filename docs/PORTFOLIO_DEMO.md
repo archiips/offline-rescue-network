@@ -62,13 +62,18 @@ The harness creates fresh synthetic endpoints and test-owned login-Keychain iden
 | Native encrypted relay SOS, acknowledgment, reply and correction | [Native walkthrough](../experiments/rescue-demo/NATIVE_RELAY.md), [structured record](../experiments/rescue-demo/native-relay-evidence.json) | One attended simulator exercise: four events and four reverse receipts, eight successful flushes |
 | Durable encrypted retries across interrupted contacts | [Separate-process relay checks](../experiments/rescue-demo/RELAY_NETWORK.md) | Sequential loopback contacts on one Mac; no physical or firewall isolation claim |
 | Repeatable direct-exchange measurement | [Measurement report and raw evidence](../experiments/rescue-demo/MEASUREMENTS.md) | 20/20 trials, 80 confirmed original transfers; earlier plain direct baseline, not signed-relay performance |
+| Repeatable signed-relay recovery evaluation | [Signed-relay report/raw evidence](../experiments/rescue-demo/RELAY_MEASUREMENTS.md) | 20/20 loopback scenarios, 60 original confirmations; fault-recovery cycles and command timings, not native/radio latency |
 | Automated native-control regression coverage | [Code checkpoint evidence](../experiments/rescue-demo/NATIVE_RELAY.md#code-checkpoint-evidence--2026-10-08) | Recorded checkpoint: 96 Swift, 43 sanitizer CTest, 13 relay Python and 14 measurement-harness checks; not a fresh run by this document |
 
 Suggested résumé wording:
 
 > Built a C++20/SQLite rescue-messaging engine with native SwiftUI public/responder interfaces, CryptoKit signed/encrypted envelopes and durable relay custody; demonstrated SOS, device receipts, human acknowledgment and restart recovery through an iPhone/iPad simulator-to-Mac relay.
 
-Optional separate measurement bullet:
+Optional signed-relay measurement bullet:
+
+> Built a reproducible signed-relay evaluation harness; completed 20/20 Mac loopback recovery scenarios with 60 confirmed SOS/acknowledgment/reply events, exact retry checks and delayed reverse receipts.
+
+Optional separate plain-direct measurement bullet:
 
 > Created a reproducible Mac loopback failure/recovery harness; completed 20/20 plain direct-exchange trials with 80 confirmed original-message transfers and duplicate/lost-receipt checks.
 
