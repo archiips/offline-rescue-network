@@ -121,7 +121,7 @@ class ReportTests(unittest.TestCase):
         self.assertTrue(trial['cleanup_failed'])
 
     def test_capture_invalidated_by_binary_change(self):
-        metadata = {'host_sha256': 'before', 'host_sha256_after': 'after'}
+        metadata = {'host_sha256': 'before', 'host_sha256_after': 'after', 'dirty_worktree': False, 'source_sha256': {}, 'source_sha256_after': {}}
         report = measure.build_report([], metadata, planned=20)
         self.assertFalse(report['capture_valid'])
         self.assertEqual(report['counts']['not_run'], 20)
