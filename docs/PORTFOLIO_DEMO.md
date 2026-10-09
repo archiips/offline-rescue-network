@@ -4,7 +4,9 @@ One public iPhone interface sends a synthetic SOS; a responder iPad interface re
 
 This is a presentation script for the [verified native walkthrough](../experiments/rescue-demo/NATIVE_RELAY.md), not a new recording or measurement. Allow setup time before the three-minute presentation. Use preset synthetic data only.
 
-[Watch the 30-second saved-session review](../experiments/rescue-demo/evidence/2026-10-09-native-history-review.mp4). Captured on 2026-10-09 from the existing paired iPhone/iPad simulator session, it shows both audiences, the public acknowledgment summary, responder acknowledgment/reply receipts and original versus corrected reported floor. Networking remains stopped. This silent, labeled history review does not show new custody/delivery transitions; the live three-minute sequence below remains a separate presentation option.
+[Watch the 64-second narrated explanatory demo](media/rescue-story.mp4). Eight animated scenes explain the workflow, recovery and measured scope, followed by actual redesigned native captures. Workflow illustrations are labeled and are not recordings of live transfers. [Editable source and reproduction](../tools/demo-video/README.md).
+
+The earlier [30-second saved-history cut](../experiments/rescue-demo/evidence/2026-10-09-native-history-review.mp4) is historical evidence only; it was rejected as an explanatory demo. The live sequence below remains a separate presentation option.
 
 ## Prepare before presenting
 
@@ -20,9 +22,9 @@ Use one Mac with Xcode and two iOS simulators. The recorded exercise used iPhone
    ```
 
    Use `rescue-relay-host` inside the printed directory; do not assume an architecture-specific path.
-2. Choose Secure exchange, Public on the phone and Responder on the tablet, then Via relay. Existing paired peers need no new trust approval. For fresh peers, exchange public cards through Pair endpoints and compare complete fingerprints before trusting the opposite role. Never give the relay private keys.
+2. Open **Setup** on each app. Choose Secure exchange, Public on the phone and Responder on the tablet, then Via relay. Existing paired peers need no new trust approval. For fresh peers, exchange public cards through Pair endpoints and compare complete fingerprints before trusting the opposite role. Never give the relay private keys.
 3. Use an empty coordinated exercise for a fresh SOS. The sample supports one request per key epoch. Existing completed history is suitable for a narrated review. Starting a new exercise requires the app's explicit reset confirmation on both sides, new pairing and updated relay cards; reset retains old files and does not migrate pending messages.
-4. Start relay exchange on both foreground apps. Record their current listener ports. Set relay host `127.0.0.1` and an available relay port, for example `55400`, in each Relay connection sheet. This host applies to simulators on this Mac only.
+4. In **Setup**, start relay exchange on both foreground apps. Record their current listener ports. Set relay host `127.0.0.1` and an available relay port, for example `55400`, in each app’s relay connection controls in Setup. This host applies to simulators on this Mac only.
 5. In a Mac terminal, run the following form, replacing every uppercase placeholder with the current value. Use a fresh absolute SQLite path for a fresh exercise, in an existing writable directory. Quote each complete public card as one argument:
 
    ```text

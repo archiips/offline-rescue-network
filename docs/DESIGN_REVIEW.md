@@ -42,3 +42,10 @@ No new transport, cryptographic library, operating-system support, or device com
 - Public update controls before acknowledgment and native settings/revalidation controls are visual-only. No browser presentation replay or native accessibility/device test was performed; graph validation is not evidence of runtime behavior.
 - A further responder-side received-by-requester example was planned but not created: the Figma Starter MCP tool-call allowance was reached. The requester-facing acknowledgment/reply and responder return-message-waiting examples exist; fully refining the return-receipt view remains design work.
 - Because these limitations remain, the full design acceptance checkpoint is not declared complete. NET-01, SEC-01, and M1 remain incomplete.
+
+
+## Native presentation checkpoint — 2026-10-09
+
+Implemented directly in SwiftUI; the earlier Figma draft is unchanged. Public request and responder workspace now use consistent navy/teal cards, semantic native type, clear action/history hierarchy and separate device/human/handling facts. Technical setup is in a sheet; connection/queue/save/error state stays on the primary surface. All prior workflow actions and manual transport controls remain available. No engine/security/store behavior changed.
+
+Signed simulator build and 96 Swift checks pass. Existing paired iPhone 17 Pro and iPad Pro 11 M5 synthetic histories were inspected, networking stopped, with Setup/pairing/back/Done exercised without trust changes. Independent Claude Opus 5.5/medium review prompted clearer human acknowledgment wording and shell-owned public draft bindings across size-class changes. Final phone type fits without truncation. Dark mode, large accessibility sizes, empty state and runtime Split View remain unchecked; these are not claimed as verified. [Current captures](../README.md#two-interfaces-one-workflow), [plan and verification](superpowers/plans/2026-10-09-presentation-redesign.md).

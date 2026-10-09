@@ -181,3 +181,15 @@ Design inference: sign routing/priority/expiry around the existing encrypted env
 ## Signed-relay measurement methods — checked 2026-10-09
 
 [Python performance counter](https://docs.python.org/3/library/time.html#time.perf_counter_ns) documents integer high-resolution duration differences and inclusion of sleep. [Statistics quantiles](https://docs.python.org/3/library/statistics.html#statistics.quantiles) documents that quantile methods have different conventions. Project default: explicitly report nearest-rank p95 at ceil(0.95*n), with n/min/median/max, rather than imply a stable tail bound from 20 scenarios. Existing CLI source establishes outcome-before-STATE ordering; the [signed-relay evaluation](../experiments/rescue-demo/RELAY_MEASUREMENTS.md) validates the observed scenario timings and failure populations. Design inference: single-controller timing avoids cross-device-clock subtraction, but includes orchestration/probe delay and is not radio or exact commit latency.
+
+
+## Motion and demo authoring — 2026-10-09
+
+Official sources consulted on 2026-10-09:
+
+- [Remotion API](https://www.remotion.dev/docs/api), [spring](https://www.remotion.dev/docs/spring), [font loading](https://www.remotion.dev/docs/fonts-api/) and [CLI rendering](https://www.remotion.dev/docs/cli/render): React/frame-based authoring supports reproducible motion, local typography and exports.
+- [Motion Canvas documentation](https://motioncanvas.io/docs/) and [rendering](https://motion-canvas.io/docs/rendering/): programmable scenes and a preview/editor/export workflow provide a diagram-oriented alternative.
+- [Screen Studio export guide](https://screen.studio/guide/exporting-the-video): supports exporting polished recordings; it does not determine the explanatory narrative.
+- [Apple button guidance](https://developer.apple.com/design/human-interface-guidelines/buttons): informs clear action hierarchy in the native redesign.
+
+Design judgment, not comparative benchmark: Remotion best fits this source-controlled eight-scene explanatory film; Screen Studio can complement it for future live interactions. Bundle Manrope with its OFL and use local Apple narration. Keep authoring dependencies isolated, label illustrations, and visually inspect the exported scenes. Actual signed-build/controller tests establish implementation checks; the animation establishes no new transport evidence.

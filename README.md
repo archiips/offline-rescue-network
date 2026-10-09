@@ -1,88 +1,75 @@
-# Offline Rescue Communication
+# Offline rescue network
 
-**One project. Two interfaces. A person asks for help; a responder receives the request and replies—even when internet service is unavailable, provided a usable local communication path exists.**
+A person asks for help. A responder receives, acknowledges and replies. One C++ engine powers both native Apple interfaces, with durable messages and explicit delivery states.
 
-Working description, not a selected brand. **A runnable SwiftUI rescue demo with local messaging between independently saved C++ endpoints, plus training mode, docs and a Figma draft. Simulator-to-Mac rescue exchange and restart recovery are verified; physical offline exchange and private-message security remain unfinished.**
+[![Watch the explanatory demo](docs/media/demo-poster.png)](docs/media/rescue-story.mp4)
 
-[Public GitHub repository](https://github.com/archiips/offline-rescue-network) · [Editable Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
+**[Watch the narrated demo →](docs/media/rescue-story.mp4)** · [Run the native app](experiments/rescue-demo/README.md#run-in-xcode) · [Inspect the evidence](experiments/rescue-demo/RELAY_MEASUREMENTS.md) · [Current state](docs/CURRENT_STATE.md)
 
-## The product in plain language
+A portfolio prototype using preset synthetic data. Simulator/Mac local exchange is demonstrated; physical offline-radio behavior and operational readiness are unverified. A usable local communication path is required. The app does not contact emergency services.
 
-| Public iPhone app | Responder iPad app |
+## Two interfaces, one workflow
+
+| Public · iPhone | Responder · iPad |
 |---|---|
-| Send an SOS and describe the situation | Receive and manage assistance requests |
-| Enter building, floor, room, or landmark | See reported locations and available estimates |
-| Share available phone location information | See uncertainty and the age of each observation |
-| See whether a responder received the request | Acknowledge, reply, and update handling status |
+| ![Public native request interface](docs/media/iphone.png) | ![Responder native workspace](docs/media/ipad.png) |
+| Review an SOS, report a floor and track the reply. | Review reported location, acknowledge and manage the request. |
 
-The Mac demonstration relays encrypted messages between participating endpoints. [Native relay controls](experiments/rescue-demo/NATIVE_RELAY.md) are verified in an attended iPhone/iPad simulator-to-Mac relay journey with SOS, acknowledgment, reply and restart recovery. A responder must become reachable. The app shows when a request is still waiting; a relay receipt does not mean help is dispatched.
+The primary screens focus on the request and conversation. Setup contains training controls, endpoint role, manual pairing, connection route and relay configuration. Connection and queue state remain visible. Existing histories and identities survive the presentation redesign.
 
-## What works today
+## What each status means
 
-- [Connection probe](experiments/network-probe/README.md): iPhone test screen and Mac host; synthetic simulator-to-Mac exchange verified.
-- [C++ workflow model](experiments/workflow-model/README.md): separate requester/responder models, complete synthetic SOS/reply/update/handling walkthrough and failure tests.
-- [Native rescue demo](experiments/rescue-demo/README.md): public/responder SwiftUI views with SOS, acknowledgment, replies, location corrections and handling actions. Training mode uses a simulated link; Secure exchange sends signed/encrypted packets between independently saved, manually paired endpoints.
-- [Local exchange walkthrough](experiments/rescue-demo/LOCAL_EXCHANGE.md): Bonjour discovery, Mac endpoint CLI, separate-process recovery checks and native simulator evidence. C++ SQLite commits precede device receipts; queued messages survive restart.
-- [Reproducible measurements](experiments/rescue-demo/MEASUREMENTS.md): repeated independent-process exchange, deliberately lost receipts, duplicate checks and inspectable loopback timings.
-- [Secure exchange](experiments/rescue-demo/SECURE_EXCHANGE.md): checked pairing cards, CryptoKit HPKE/signatures, Keychain identity recovery and retained C++ durable receipts. Plain diagnostics remain separate.
-- [Relay queue foundation](experiments/rescue-demo/RELAY_QUEUE.md): durable C++ ciphertext custody, FIFO-safe urgent scheduling and a reproducible encrypted delayed-contact scenario. Historical process-local evidence; see the separate-process checkpoint below.
-- Preset sample data only: message storage remains unencrypted. Physical radio, agency enrollment and independent security audit remain unfinished.
+1. **Saved locally:** the original is committed to the endpoint outbox.
+2. **Relay custody:** an intermediate holds encrypted bytes. The public endpoint still waits.
+3. **Device received:** the intended endpoint saves the message and returns a signed receipt.
+4. **Human acknowledged:** a responder explicitly acknowledges the request. This is a separate event.
 
-- [Signed-relay evaluation](experiments/rescue-demo/RELAY_MEASUREMENTS.md): 20/20 signed recovery trials and 60 confirmed SOS/acknowledgment/reply events, with separate custody, replay, receipt and scripted recovery timings. One-Mac loopback only.
+Handling stays separate: open, assigned or resolved. An acknowledgment does not imply dispatch. An original Floor 1 report remains in history when the person later reports Floor 4.
 
-- [Signed relay network](experiments/rescue-demo/RELAY_NETWORK.md): separate Mac processes, nonoverlapping contacts, restart/lost-response recovery and delayed encrypted receipts; 11 reproducible facts.
+The demo uses animated workflow illustrations to explain these facts, followed by actual native app captures. Editorial timing is not measured transfer latency.
 
-## Show the project
+![Animated illustration of relay custody and a delayed device receipt](docs/media/workflow-preview.gif)
 
-[Three-minute portfolio demo](docs/PORTFOLIO_DEMO.md): setup, presentation script, recovery extension and evidence-backed résumé wording.
+## How it works
 
-## Current focus
+```mermaid
+flowchart LR
+    P[Public iPhone] -->|signed encrypted envelope| R[Mac relay]
+    R -->|opaque stored message| I[Responder iPad]
+    I -->|signed device receipt| R
+    R -->|delayed reverse receipt| P
+```
 
-Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Both audiences have manual native relay controls. The attended native relay round trip and restart recovery are verified. The portfolio walkthrough is packaged. Signed-relay recovery is now measured in 20 reproducible loopback trials. Next: prepare a short native demo recording; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
+**C++20** owns workflow rules, deduplication, SQLite outboxes and opaque relay custody. **Swift** supplies SwiftUI, Network-framework sockets/Bonjour, CryptoKit envelopes and Keychain-held keys. The relay cannot read private request bodies. Receivers commit before issuing device receipts; retry preserves the original encrypted identity.
 
-## First milestone
+Training mode runs two models over a simulated link. Secure exchange gives each endpoint an independent model/store and manually pinned opposite-role identity. Direct and Via relay are explicit foreground routes; listening and uploading remain manual. Backgrounding or restart stops networking while retaining saved state.
 
-A controlled building drill: a person sends an SOS with a confirmed floor; a responder receives it on an iPad without internet; an acknowledgment comes back. Start with direct exchange, then test a relay and interruptions. Prepared exercise participants are the first testers; both public and responder interfaces are required.
+## Evidence, with its limits
 
-## Larger vision
+| Verified checkpoint | Evidence | Boundary |
+|---|---|---|
+| SOS, receipt, acknowledgment, reply, location correction and restart recovery | [Native walkthrough](experiments/rescue-demo/NATIVE_RELAY.md) | Attended iPhone/iPad simulators and Mac relay |
+| 20/20 signed-relay recovery scenarios, 60 original confirmations | [Report and raw data](experiments/rescue-demo/RELAY_MEASUREMENTS.md) | Sequential loopback contacts on one Mac |
+| Exact encrypted retry, lost response and delayed reverse receipt | [Separate-process relay](experiments/rescue-demo/RELAY_NETWORK.md) | No physical or OS firewall-isolation claim |
+| C++/Swift/controller and harness coverage | [Workflow model](experiments/workflow-model/README.md) | Checkpoint counts and current commands documented there |
 
-Later, evaluate broader network scheduling, indoor floor estimates, firefighter tracking, training replay, and on-device translation/summaries. These are stages of the same project.
+First admission, duplicate custody, first delivery, replay and reverse-receipt timing populations are reported separately. The recorded SOS recovery median of 354 ms includes deliberate failures/restarts and is **not radio or native-app latency**.
 
-**Preferred stack:** Swift/SwiftUI interfaces and native Apple adapters, a shared C++ engine, and an optional C++ relay service on a laptop. The essential local exchange must not require a cloud server.
+Still open: physical-device compatibility and radio/lifecycle tests, agency enrollment, encrypted message storage and independent security audit. SQLite request bodies remain unencrypted. Use synthetic data only.
 
-## Resume work
+## Run it
 
-[Current state and exact next task](docs/CURRENT_STATE.md) is the entry point for “continue from where we left off.” The [task backlog](docs/TODO.md) separates verified portfolio checkpoints from remaining physical/security/product work.
+Open `experiments/rescue-demo/iOS/RescueDemo.xcodeproj` in Xcode. Select `RescueDemo` and an iPhone or iPad simulator, then Run. Signing must remain enabled for Keychain. Deployment target: iOS/iPadOS 18.0; physical installation and older-version compatibility need validation.
 
-## Read the docs
+For setup, commands and two-endpoint pairing, follow the [native README](experiments/rescue-demo/README.md), [secure exchange guide](experiments/rescue-demo/SECURE_EXCHANGE.md) and [relay walkthrough](experiments/rescue-demo/NATIVE_RELAY.md). The native project has no new external dependencies from this redesign.
 
-| Document | Purpose |
-|---|---|
-| [First milestone](docs/FIRST_MILESTONE.md) | Immediate screen designs, device experiment, and acceptance checks |
-| [Design review](docs/DESIGN_REVIEW.md) | Claude findings, Figma evidence, and prototype limitations |
-| [Device inventory](docs/DEVICE_INVENTORY.md) | Verified development tools and missing physical-test inputs |
-| [Product requirements](docs/PRD.md) | Users, workflows, requirements, and first-release boundaries |
-| [System architecture](docs/ARCHITECTURE.md) | Components, ownership, deployment, and trust boundaries |
-| [System design](docs/SYSTEM_DESIGN.md) | Data contracts, delivery semantics, persistence, and failure handling |
-| [Indoor localization research](docs/LOCALIZATION.md) | Sensor experiments, baselines, uncertainty, and evaluation |
-| [Security and privacy](docs/SECURITY_PRIVACY.md) | Enrollment, responder authority, encryption, abuse, and retention |
-| [Validation and pilot](docs/VALIDATION.md) | Tests, drill protocol, evidence, and progression gates |
-| [Business and adoption](docs/BUSINESS.md) | Buyers, competitors, discovery, business hypotheses, and costs |
-| [Roadmap](docs/ROADMAP.md) | Milestones and decisions that unlock each stage |
-| [Detailed tasks](docs/TODO.md) | Ordered work with dependencies and definitions of done |
-| [Research and sources](docs/RESEARCH.md) | Primary sources, limitations, and unresolved feasibility questions |
-| [Decision register](docs/DECISIONS.md) | Accepted direction, provisional defaults, and open decisions |
+The video has its own [editable Remotion source and rendering commands](tools/demo-video/README.md), isolated from the app.
 
-Read current state for the immediate next task; the first milestone retains the original product gates. The PRD and roadmap explain the full scope.
+## Explore the project
 
-## Current assumptions
+- [Architecture](docs/ARCHITECTURE.md) and [protocol/system design](docs/SYSTEM_DESIGN.md)
+- [Product requirements](docs/PRD.md), [security boundaries](docs/SECURITY_PRIVACY.md), [validation](docs/VALIDATION.md)
+- [Research](docs/RESEARCH.md), [decisions](docs/DECISIONS.md), [backlog](docs/TODO.md)
+- [Portfolio script](docs/PORTFOLIO_DEMO.md) and [Earlier Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
 
-- Baseline: **2026-10-07**, version **0.1**.
-- Initial business assumption: U.S. organizations, subject to discovery.
-- First exercises: installed apps, enrolled devices, foreground operation, synthetic requests.
-- Manual location comes first; automatic estimates remain experimental.
-- Live-incident use, 911 integration, and pricing need separate evidence.
-
-## Repository state
-
-The [synthetic networking probe](experiments/network-probe/README.md) has verified build/test commands. Production toolchain setup, physical transport validation and private-message security remain gated. See [probe plan/evidence](docs/NETWORK_PROBE.md) and [protocol/security proposal](docs/PROTOCOL_SECURITY_DRAFT.md).
+For a resumed session, start with [CURRENT_STATE.md](docs/CURRENT_STATE.md). Portfolio demonstrability is the priority; commercialization, sensors and AI remain deferred. Both public and responder audiences are part of the same system.

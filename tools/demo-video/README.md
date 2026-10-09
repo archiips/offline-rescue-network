@@ -18,3 +18,11 @@ The renderer may download Chrome Headless Shell on first use. To use an installe
 Sources consulted: [Remotion API](https://www.remotion.dev/docs/api), [fonts](https://www.remotion.dev/docs/fonts-api/), [CLI](https://www.remotion.dev/docs/cli/render). Alternatives: [Motion Canvas](https://motioncanvas.io/docs/) for procedural diagrams; [Screen Studio](https://screen.studio/guide/exporting-the-video) for editing actual interactions. Remotion was selected for source-controlled scenes and repeatable type/motion rendering; package licensing is separate from the bundled font license, consult Remotion's terms before wider/team commercial use.
 
 The former static saved-history clip remains historical material, not the accepted explanatory-demo design.
+
+README preview reproduction (from repository root, requires ffmpeg):
+
+```sh
+ffmpeg -v error -ss 16 -t 16 -i docs/media/rescue-story.mp4 \
+  -filter_complex "fps=12,scale=960:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=3" \
+  -loop 0 -y docs/media/workflow-preview.gif
+```
