@@ -16,6 +16,9 @@ private final class CoreHandle {
     private var core: CoreHandle?
     private var endpoint: EndpointController?
     private var secureEndpoint: SecureEndpointController?
+    private var relayEndpoint: RelayEndpointController?
+    @Published public private(set) var relayMode = false
+    @Published public private(set) var relayStatus = ""
     private var secureRecordStore: (any SecureRecordStore)?
     @Published public private(set) var secureMode = false
     public var secureCard: SecurePairingCard? { secureEndpoint?.card }
@@ -34,7 +37,7 @@ private final class CoreHandle {
     public func useLocalRole(_ role: EndpointRole) {
         guard let storageURL else { error = "Local exchange needs a saved sample session."; return }
         stopLocalExchange()
-        secureEndpoint = nil; secureMode = false; transport = LocalExchangeTransport()
+        secureEndpoint = nil; relayEndpoint = nil; relayMode = false; secureMode = false; transport = LocalExchangeTransport()
         localRole = role
         endpoint = EndpointController(storageURL: storageURL.deletingLastPathComponent().appendingPathComponent("local-\(role.rawValue).sqlite"), role: role)
         endpoint?.onChange = { [weak self] in self?.refreshEndpoint() }
@@ -44,11 +47,11 @@ private final class CoreHandle {
         }
         refreshEndpoint()
     }
-    public func useSecureRole(_ role: EndpointRole, recordStore: (any SecureRecordStore)? = nil) {
+    public func useSecureRole(_ role: EndpointRole, recordStore: (any SecureRecordStore)? = nil, viaRelay: Bool = false) {
         guard let storageURL else { error = "Secure exchange needs a saved sample session."; return }
         stopLocalExchange()
-        localRole = role; secureMode = true; secureRecordStore = recordStore; endpoint = nil; secureEndpoint = nil; snapshot = nil
-        transport = LocalExchangeTransport(secure: true)
+        localRole = role; secureMode = true; relayMode = viaRelay; relayEndpoint = nil; secureRecordStore = recordStore; endpoint = nil; secureEndpoint = nil; snapshot = nil
+        transport = viaRelay ? LocalExchangeTransport(relayTimeout: .seconds(8)) : LocalExchangeTransport(secure: true)
         do {
             let secure = try SecureEndpointController(rootURL: storageURL.deletingLastPathComponent(), role: role, recordStore: recordStore)
             secureEndpoint = secure; endpoint = secure.endpoint
@@ -61,28 +64,82 @@ private final class CoreHandle {
         do { try secureEndpoint.pair(card); error = ""; objectWillChange.send(); return true }
         catch { self.error = "Pairing rejected: \(error)"; return false }
     }
+    /// Changes only the connection route: identity, pairing and C++ history stay the same.
+    public func useRelayRoute(_ enabled: Bool) {
+        guard secureMode, relayMode != enabled else { return }
+        stopLocalExchange()
+        relayMode = enabled
+        transport = enabled ? LocalExchangeTransport(relayTimeout: .seconds(8)) : LocalExchangeTransport(secure: true)
+        bindSecureEndpoint()
+        error = ""
+    }
     private func bindSecureEndpoint() {
+        relayEndpoint = relayMode ? secureEndpoint.map { RelayEndpointController(secure: $0) } : nil
         endpoint?.onChange = { [weak self] in self?.refreshEndpoint() }
+        let run = exchangeGeneration
+        let relay = relayEndpoint
+        let secure = secureEndpoint
         transport.onIncoming = { [weak self] packet in
-            guard let self, let secure = self.secureEndpoint, self.secureMode else { throw EndpointError(message: "Secure endpoint stopped") }
+            guard let self, run == self.exchangeGeneration, let secure, self.secureMode else {
+                throw EndpointError(message: "Secure endpoint stopped")
+            }
+            if let relay {
+                let acceptance = try relay.receive(packet)
+                self.relayStatus = "" // a custody hint must never outlive newer device facts
+                self.refreshEndpoint()
+                return acceptance
+            }
             return try secure.accept(packet)
         }
     }
+    /// Upload one saved head only. An unsigned custody response never confirms C++ delivery.
+    public func uploadViaRelay(host: String, port: String) async {
+        guard relayMode, let relayEndpoint, transport.active, !exchangeBusy else { return }
+        let host = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        let port = port.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !host.isEmpty, host.utf8.count <= 253,
+              !host.unicodeScalars.contains(where: { CharacterSet.whitespacesAndNewlines.contains($0) || CharacterSet.controlCharacters.contains($0) }),
+              !port.isEmpty, port.utf8.allSatisfy({ (48...57).contains($0) }),
+              let number = UInt16(port), number > 0, let value = NWEndpoint.Port(rawValue: number) else {
+            error = "Enter a relay host and a port from 1 to 65535."; relayStatus = ""; return
+        }
+        let run = exchangeGeneration, channel = transport
+        exchangeBusy = true; error = ""; relayStatus = ""
+        defer { if run == exchangeGeneration { exchangeBusy = false } }
+        do {
+            guard let packet = try relayEndpoint.outgoing() else { relayStatus = "No queued message to upload."; return }
+            let original = try endpoint?.nextPacket()
+            let response = try await channel.exchange(packet.bytes, to: .hostPort(host: NWEndpoint.Host(host), port: value))
+            guard run == exchangeGeneration else { return }
+            guard try RelayCustodyReceipt.id(from: response) == packet.id else { throw RelayProtocolError.wrongPacket }
+            if try endpoint?.nextPacket() == original {
+                relayStatus = "Relay accepted a copy; waiting for device receipt."
+            }
+        } catch {
+            guard run == exchangeGeneration else { return }
+            self.error = "Relay upload stopped; unconfirmed messages stay saved. \(error)"
+        }
+    }
     public func useTraining() {
-        stopLocalExchange(); endpoint = nil; secureEndpoint = nil; secureMode = false; localRole = nil; transport = LocalExchangeTransport()
+        stopLocalExchange(); endpoint = nil; secureEndpoint = nil; relayEndpoint = nil; relayMode = false; secureMode = false; localRole = nil; transport = LocalExchangeTransport()
         retrySavedSession()
     }
-    public func startLocalExchange() {
+    public func startLocalExchange(port: UInt16? = nil) {
         guard let role = localRole, endpoint?.snapshot != nil else { return }
         guard !secureMode || pairedCard != nil else { error = "Pair with the opposite sample endpoint first."; return }
-        do { try transport.start(name: "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")-\(UUID().uuidString.prefix(8))") }
+        // stop() invalidates callback generations; bind again for this explicit listener run.
+        stopLocalExchange()
+        if secureMode { bindSecureEndpoint() }
+        error = ""
+        do { try transport.start(name: "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")-\(UUID().uuidString.prefix(8))",
+                                 advertise: !relayMode, browse: !relayMode, port: port) }
         catch { self.error = "Could not start local exchange: \(error)" }
     }
     public func stopLocalExchange() {
-        exchangeGeneration = UUID(); exchangeBusy = false; peer = nil; transport.stop()
+        exchangeGeneration = UUID(); exchangeBusy = false; peer = nil; relayStatus = ""; transport.stop()
     }
     public func transferQueued(to destination: NWEndpoint) async {
-        guard localRole != nil, let endpoint, transport.active, !exchangeBusy else { return }
+        guard !relayMode, localRole != nil, let endpoint, transport.active, !exchangeBusy else { return }
         let secure = secureEndpoint
         guard !secureMode || secure?.peerCard != nil else { error = "Pair before transferring saved messages."; return }
         let channel = transport
@@ -108,11 +165,12 @@ private final class CoreHandle {
     }
     public func retrySavedSession() {
         if let role = localRole {
+            stopLocalExchange()
             if secureMode {
                 if let secureEndpoint {
                     do { try secureEndpoint.reopen(); endpoint = secureEndpoint.endpoint; bindSecureEndpoint(); refreshEndpoint() }
                     catch { self.error = "Secure reopen failed: \(error)" }
-                } else { useSecureRole(role, recordStore: secureRecordStore) }
+                } else { useSecureRole(role, recordStore: secureRecordStore, viaRelay: relayMode) }
             } else { endpoint?.reopen(); refreshEndpoint() }
             return
         }
@@ -137,7 +195,7 @@ private final class CoreHandle {
                 if let secureEndpoint { try secureEndpoint.perform(action, value: value, reference: reference) }
                 else { endpoint.perform(action, value: value, reference: reference) }
             } catch { self.error = "Action was not saved: \(error)"; return }
-            if let peer, transport.active {
+            if !relayMode, let peer, transport.active {
                 let run = exchangeGeneration
                 Task { guard run == self.exchangeGeneration else { return }; await self.transferQueued(to: peer) }
             }

@@ -12,6 +12,7 @@ struct DemoShell: View {
     @State private var responder = false
     @State private var showingPairing = false
     @AppStorage("sampleConnectionMode") private var preferredMode = 0
+    @AppStorage("sampleRelayRoute") private var preferredRelay = false
     @AppStorage("sampleEndpointRole") private var preferredRole = 0
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
@@ -22,21 +23,28 @@ struct DemoShell: View {
                     Button("Training mode") { preferredMode = 0; demo.useTraining() }
                         .accessibilityAddTraits(demo.localRole == nil ? .isSelected : [])
                     Button("Secure exchange") {
-                        preferredMode = 1; demo.useSecureRole(EndpointRole(rawValue: preferredRole) ?? .publicUser)
+                        preferredMode = 1; demo.useSecureRole(EndpointRole(rawValue: preferredRole) ?? .publicUser, viaRelay: preferredRelay)
                     }.accessibilityAddTraits(demo.localRole != nil ? .isSelected : [])
                 }.buttonStyle(.bordered)
                 if let role = demo.localRole {
                     HStack {
-                        Button("Public endpoint") { preferredRole = 0; demo.useSecureRole(.publicUser) }
+                        Button("Public endpoint") { preferredRole = 0; demo.useSecureRole(.publicUser, viaRelay: preferredRelay) }
                             .accessibilityAddTraits(role == .publicUser ? .isSelected : [])
-                        Button("Responder endpoint") { preferredRole = 1; demo.useSecureRole(.responder) }
+                        Button("Responder endpoint") { preferredRole = 1; demo.useSecureRole(.responder, viaRelay: preferredRelay) }
                             .accessibilityAddTraits(role == .responder ? .isSelected : [])
                     }.buttonStyle(.bordered)
                     HStack {
                         Button(demo.pairedCard == nil ? "Pair endpoints" : "View pairing") { showingPairing = true }
                         Text(demo.pairedCard == nil ? "Not paired" : "Paired sample peer").font(.caption).foregroundStyle(.secondary)
                     }
-                    LocalConnectionControls(transport: demo.transport)
+                    Picker("Connection route", selection: Binding(get: { demo.relayMode }, set: {
+                        preferredRelay = $0; demo.useRelayRoute($0)
+                    })) {
+                        Text("Direct").tag(false)
+                        Text("Via relay").tag(true)
+                    }.pickerStyle(.segmented)
+                    if demo.relayMode { RelayConnectionControls(transport: demo.transport) }
+                    else { LocalConnectionControls(transport: demo.transport) }
                 } else {
                 Toggle("Simulated connection", isOn: Binding(get: { demo.snapshot?.connected ?? false }, set: { demo.setConnected($0) }))
                     .disabled(demo.snapshot == nil)
@@ -75,7 +83,7 @@ struct DemoShell: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemGroupedBackground))
-        .onAppear { if preferredMode == 1 && demo.localRole == nil { demo.useSecureRole(EndpointRole(rawValue: preferredRole) ?? .publicUser) } }
+        .onAppear { if preferredMode == 1 && demo.localRole == nil { demo.useSecureRole(EndpointRole(rawValue: preferredRole) ?? .publicUser, viaRelay: preferredRelay) } }
         .onChange(of: scenePhase) { _, phase in if phase == .background { demo.stopLocalExchange() } }
         .sheet(isPresented: $showingPairing) { SecurePairingSheet().environmentObject(demo) }
         .confirmationDialog(demo.localRole == nil ? "Clear this training session?" : "Start a new secure sample session? Keys and pairing will change. Reset and re-pair both endpoints. Previous sample files remain on disk.", isPresented: $confirmingReset, titleVisibility: .visible) {
@@ -197,4 +205,67 @@ private func formattedFingerprint(_ fingerprint: String) -> String {
     return stride(from: 0, to: characters.count, by: 8).map { offset in
         String(characters[offset..<min(offset + 8, characters.count)])
     }.joined(separator: " ")
+}
+
+
+/// Same explicit relay controls for both audiences; custody is never presented as delivery.
+struct RelayConnectionControls: View {
+    @EnvironmentObject private var demo: DemoController
+    @ObservedObject var transport: LocalExchangeTransport
+    @State private var showingConnection = false
+    @AppStorage("sampleRelayHost") private var host = "127.0.0.1"
+    @AppStorage("sampleRelayPort") private var port = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+        HStack {
+            Button(transport.active ? "Stop relay exchange" : "Start relay exchange") {
+                if transport.active { demo.stopLocalExchange() } else { demo.startLocalExchange() }
+            }.disabled(demo.snapshot == nil || demo.pairedCard == nil)
+            Button("Relay connection") { showingConnection = true }
+        }
+        if let listening = transport.hostPort {
+            Text("Listening on port \(listening.rawValue) · keep this app open")
+                .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+        } else { Text(transport.status).font(.caption).foregroundStyle(.secondary) }
+        if !demo.relayStatus.isEmpty { Text(demo.relayStatus).font(.caption) }
+        }
+        .sheet(isPresented: $showingConnection) {
+            NavigationStack {
+                Form {
+                    Section("Manual relay address") {
+                        TextField("Relay host", text: $host)
+                            .textInputAutocapitalization(.never).autocorrectionDisabled()
+                            .onChange(of: host) { _, _ in if host.count > 253 { host = String(host.prefix(253)) } }
+                        TextField("Relay port", text: $port).keyboardType(.numberPad)
+                            .onChange(of: port) { _, _ in if port.count > 5 { port = String(port.prefix(5)) } }
+                        Text("Use the relay Mac's address. 127.0.0.1 is for Simulator on the same Mac.").font(.caption)
+                    }
+                    Section("This endpoint") {
+                        Text(demo.localRole == .responder ? "Responder endpoint" : "Public endpoint")
+                        if let listening = transport.hostPort { Text("Listening port: \(listening.rawValue)").textSelection(.enabled) }
+                        Text(transport.status).foregroundStyle(.secondary)
+                        Button(transport.active ? "Stop relay exchange" : "Start relay exchange") {
+                            if transport.active { demo.stopLocalExchange() } else { demo.startLocalExchange() }
+                        }.disabled(demo.snapshot == nil || demo.pairedCard == nil)
+                        Text("Configure the Mac relay with both public pairing cards and each endpoint's listening port. Restarting the listener may change its port.").font(.caption)
+                    }
+                    Section("Saved messages") {
+                        Text("\(demo.snapshot?.pendingTransfers ?? 0) queued on this device")
+                        Button("Upload oldest queued message") { Task { await demo.uploadViaRelay(host: host, port: port) } }
+                            .disabled(!transport.active || transport.hostPort == nil || demo.exchangeBusy || demo.pairedCard == nil || (demo.snapshot?.pendingTransfers ?? 0) == 0)
+                        if demo.exchangeBusy { ProgressView("Uploading saved message") }
+                        if !demo.relayStatus.isEmpty { Text(demo.relayStatus) }
+                        if !demo.error.isEmpty { Text(demo.error).foregroundStyle(.red) }
+                        Text("A relay can claim it saved a copy; that claim is unverified. Your message stays queued until the other device's signed receipt returns. A human acknowledgment is separate.").font(.caption)
+                    }
+                    Section("Recovery") {
+                        Text("Keep both endpoints in Via relay mode. Stop ends this contact, keeping queued messages saved. Networking stays stopped after background or restart.").font(.caption)
+                        Text("For a missing, expired or full retry cache, use Reset in the main view to start a new sample session. Keys and pairing change; re-pair both endpoints and update the relay. Previous files remain, but pending messages do not migrate.").font(.caption)
+                    }
+                }
+                .navigationTitle("Relay connection")
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showingConnection = false } } }
+            }
+        }
+    }
 }
