@@ -97,6 +97,12 @@ Final local state: both project simulators remain open, paired, in Via relay, wi
 
 Python orchestration adds a child-factory seam to the existing smoke scenario; no Swift/C++/UI/protocol change. Fresh checks: 47/47 Python (no skips: 20 new + 13 relay + 14 plain), 96/96 Swift, 43/43 fatal-UBSan CTest. A separate independent audit reconstructed all summaries and 60 event/receipt-correlated intervals and matched 30 source hashes. Captured from clean source 5152edb; host/source hashes before/after match. Actual Claude Opus 5.5 with explicit medium effort reviewed design/code/fixes; follow-up found no remaining Critical/Important findings. Residual capture/cleanup/provenance limitations are in the report/ledger. Simulator GUI was absent during capture; no native rerun was needed or claimed.
 
+## Active presentation redesign — 2026-10-09
+
+The user rejected the 30-second saved-history cut as two static pictures with no explanation. Active task: research motion/demo tools; redesign the native public and responder interface hierarchy; make a substantive animated explanatory demo; improve README with demo, screenshots and clear explanations. Preserve both audiences, all workflow actions, saved sessions and truthful transport/device/human states. No new production transport/security behavior is requested. User authorized Claude Code delegation and requested durable checkpoints due to low remaining usage.
+
+Implementation/design/research/ownership and resume checklist: [presentation redesign plan](superpowers/plans/2026-10-09-presentation-redesign.md). Work is IN PROGRESS; inspect Git and that ledger before acting. The old clip remains historical evidence only, not an accepted demo. Parent owns video/README/docs; Claude owns iOS presentation files. Physical testing remains separate, pending exact iPad model/OS and device readiness.
+
 ## Exact next action
 
 A [30-second saved-session recording](../experiments/rescue-demo/evidence/2026-10-09-native-history-review.mp4) now packages both native audiences, saved acknowledgment/receipt facts and reported-floor provenance. Captured on 2026-10-09 from existing paired synthetic history; no new exchange, reset or re-pairing occurred. Both project simulators were reopened and networking remains stopped. The H.264 export is 1600×1200, fully decoded without errors and visually inspected; it is not a recording of live custody/delivery transitions.
