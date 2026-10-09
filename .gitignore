@@ -43,3 +43,6 @@ xcuserdata/
 # Python test orchestration bytecode
 __pycache__/
 *.pyc
+
+# Persistent isolated task workspaces
+.worktrees/

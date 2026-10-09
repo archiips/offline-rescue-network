@@ -55,6 +55,10 @@ iOS keys use a stable app-scoped data-protection Keychain namespace, non-synchro
 
 Preset synthetic data only. Saved bodies/old sample files are unencrypted; agency verification, encrypted storage, independent audit, physical lock/radio/older OS compatibility and forward secrecy remain unestablished. Existing measured loopback timings describe the plain baseline, not secure exchange.
 
+## In-progress relay checkpoint — recovery after interruption
+
+The first durable opaque relay queue/scenario was implemented in a temporary worktree but was not committed before the laptop restarted and cleared that directory. Published secure checkpoint remains intact. Reconstruct and freshly verify [relay foundation specification](superpowers/specs/2026-10-08-relay-queue.md) and [execution plan](superpowers/plans/2026-10-08-relay-queue.md) in persistent ignored `.worktrees/relay-queue` on `feat/relay-queue`. The prior passing output is historical, not evidence for reconstructed files. Complete review/docs/publication; preserve both native interfaces. Full isolated relay-network task remains open.
+
 ## Exact next action
 
 Continue the **bounded relay/disruption demonstration and urgent-message scheduling** portfolio task in [TODO](TODO.md), as a separately researched/designed checkpoint. Start with the secure envelope, fixed inner IDs, saved outbox and retry invariants. Define an isolated public→relay→responder topology and return path, enforce that the relay has no endpoint decryption keys, bound hops/retries/storage and prove urgent scheduling without starving messages or losing receipt dependencies. Compare queue/transport approaches using local code and current primary sources, write and critique a plan before building. Do not assume the current direct-only UI already relays.
