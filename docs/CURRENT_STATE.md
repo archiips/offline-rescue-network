@@ -107,6 +107,14 @@ Fresh verification: signed simulator build succeeded; 96/96 Swift tests passed a
 
 [Design/research and execution ledger](superpowers/plans/2026-10-09-presentation-redesign.md) records ownership and acceptance. Final media/link verification is recorded there. Inspect current Git state on resume; do not redo completed UI, networking or measurements.
 
+## Active reference-led revision — 2026-10-09
+
+The user rejected the published UI and 64-second slide/diagram film as well. Do not treat either as an accepted final presentation. Requested direction: inspect Appshots, Mobbin, Reprise, Dribbble SwiftUI, swiftui.design and latent-spaces/brag plus YouTube/Reddit; deliver polished native UI and a live product demo with purposeful motion. [Active plan and research](superpowers/plans/2026-10-09-live-product-redesign.md).
+
+Claude CLI Opus 5.5/medium is revising only the three iOS view files; parent owns research/docs/video. CLI prompt/result live in ignored local-artifacts/live-redesign. Check process/result/modelUsage before starting another delegation. The user explicitly selected **Dark operational console**. Initial Claude prompt preceded that response; apply the dark-console follow-up before verification/publication. Preserve both audiences, all workflow actions and existing secure sessions. The app's transport/crypto/store layer is unchanged.
+
+Capture blocker at task start: computer-use Chrome and IAB unavailable; native Simulator getApp failed with “Sky Computer Use native pipe startup failed.” simctl still lists both project simulators booted. Continue independent source/build/screenshot work; do not replace requested footage with another diagram film or fake delivery. Record fresh training interactions in a separate simulator when native control returns, explicitly label the simulated link and preserve existing secure peer history.
+
 ## Exact next action
 
 The user reports owning an iPhone 17 and an iPad; the tablet model/OS and current physical availability remain unconfirmed. Prepare physical testing once both devices are available and their OS versions are known. The deployment target is iOS/iPadOS 18.0. First bounded checkpoint: signed synthetic direct SOS/device receipt/human acknowledgment/reply on a local network without internet, followed by disconnect/restart and lifecycle observations. Use the existing native setup instructions and record the physical evidence separately. No-shared-access-point transport requires a separate capability decision and physical check. Do not keep asking for hardware while it is unavailable.
