@@ -242,6 +242,14 @@ private struct SecureRecord: Codable {
         endpoint.reopen()
     }
 
+    /// Module-internal relay adapter context, after the same current-record, history and pairing checks as
+    /// every sealed operation. Keys stay in memory; callers must not persist or print them.
+    func relayContext() throws -> (identity: SecureIdentity, peer: SecurePairingCard, envelope: SecureEnvelope) {
+        let envelope = try paired()
+        guard let peerCard else { throw SecureExchangeError.notPaired }
+        return (identity, peerCard, envelope)
+    }
+
     private func paired() throws -> SecureEnvelope {
         try requireCurrent()
         try requireHistory()

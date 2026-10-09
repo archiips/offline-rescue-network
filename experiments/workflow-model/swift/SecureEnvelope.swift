@@ -161,6 +161,14 @@ public struct SecureEnvelope: Sendable {
         return header + ciphertext + signature
     }
 
+    /// Public-key-only check a relay can make without decrypting: size, magic, both pins and sender signature.
+    static func isSigned(_ input: Data, sender: SecurePairingCard, recipient: SecurePairingCard) -> Bool {
+        guard (minimumPayload...maximumPayload).contains(input.count) else { return false }
+        let packet = Data(input)
+        guard packet.prefix(4) == magic, packet[4..<36] == sender.digest, packet[36..<68] == recipient.digest else { return false }
+        return sender.signingKey.isValidSignature(packet.suffix(64), for: signatureDomain + packet.prefix(packet.count - 64))
+    }
+
     public func open(_ input: Data) throws -> Data {
         guard (Self.minimumPayload...Self.maximumPayload).contains(input.count) else { throw SecureExchangeError.packetSize }
         let packet = Data(input)

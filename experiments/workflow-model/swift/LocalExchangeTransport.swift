@@ -83,9 +83,11 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     @Published public private(set) var active = false
     /// Saves an incoming packet and returns its committed receipt. Nil or throwing closes without a response.
     public var onIncoming: ((Data) throws -> Data)?
+    /// Bonjour type for the explicit signed-relay mode; distinct from direct plain and secure exchange.
+    public nonisolated static let relayServiceType = "_rescue-relay._tcp"
     private let timeout: Duration
     private let payloadLimit: Int
-    private let discoveryType: String
+    let discoveryType: String
     private var generation = UUID()
     private var listener: NWListener?
     private var browser: NWBrowser?
@@ -103,10 +105,19 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     }
     var pendingSessions: Int { sessions.count }
 
-    public init(timeout: Duration = .seconds(8), secure: Bool = false) {
+    public convenience init(timeout: Duration = .seconds(8), secure: Bool = false) {
+        self.init(timeout: timeout, payloadLimit: secure ? 4276 : 4096, discoveryType: secure ? "_rescue-sec._tcp" : Self.serviceType)
+    }
+
+    /// Relay mode: ORL1/ORA1/ORC1 frames up to 4276 bytes on `_rescue-relay._tcp`; same deadlines and limits.
+    public convenience init(relayTimeout timeout: Duration) {
+        self.init(timeout: timeout, payloadLimit: 4276, discoveryType: Self.relayServiceType)
+    }
+
+    private init(timeout: Duration, payloadLimit: Int, discoveryType: String) {
         self.timeout = timeout
-        payloadLimit = secure ? 4276 : 4096
-        discoveryType = secure ? "_rescue-sec._tcp" : Self.serviceType
+        self.payloadLimit = payloadLimit
+        self.discoveryType = discoveryType
     }
 
     private nonisolated static func parameters() -> NWParameters {
