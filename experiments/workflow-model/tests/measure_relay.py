@@ -114,8 +114,8 @@ def run_trial(binary, number):
             try:
                 return super().quit()
             finally:
-                lifecycle.append(dict(role=self.name, operation='quit', completed=not self.alive(),
-                                      elapsed_ns=time.perf_counter_ns()-before))
+                lifecycle.append(dict(role=self.name, operation='quit', completed=not self.alive(), graceful=self.process.returncode == 0,
+                                      returncode=self.process.returncode, elapsed_ns=time.perf_counter_ns()-before))
 
         def command(self, text, expected=(), allow=()):
             before = time.perf_counter_ns()
@@ -144,10 +144,10 @@ def run_trial(binary, number):
         result['cleanup_failed'] = 'cleanup' in str(error).lower() or any('cleanup' in note.lower() for note in getattr(error, '__notes__', []))
         result['error_type'] = type(error).__name__
         # Never copy arbitrary exception text: pairing command errors may embed a public card.
-        result['error'] = (re.sub(r'[A-Za-z0-9+/=]{80,}', '[redacted]', str(error))
-                           if isinstance(error, HarnessError) else 'External scenario operation failed')
-        result['cleanup_notes'] = [re.sub(r'[A-Za-z0-9+/=]{80,}', '[redacted]', note)
+        result['error'] = type(error).__name__ + ': scenario validation failed; see last fact and command records'
+        result['cleanup_notes'] = ['Cleanup reported an error; roles=' + ','.join(re.findall(r'\b[01]\b', note))
                                    for note in getattr(error, '__notes__', [])]
+    result['cleanup_status'] = 'unknown' if result['interrupted'] else ('failed' if result['cleanup_failed'] else 'completed')
     result.update(elapsed_ns=time.perf_counter_ns()-start, facts=facts, fact_times=fact_times, lifecycle=lifecycle,
                   scenario_complete=facts == smoke.FACTS, commands=recorder.commands,
                   confirmations=recorder.confirmations)
@@ -163,7 +163,10 @@ def summary(values):
 
 
 def build_report(trials, metadata, planned=None):
-    capture_valid = metadata.get('host_sha256') == metadata.get('host_sha256_after', metadata.get('host_sha256'))
+    capture_valid = (metadata.get('dirty_worktree') is False
+                     and metadata.get('source_sha256') == metadata.get('source_sha256_after')
+                     and metadata.get('host_sha256') is not None
+                     and metadata.get('host_sha256') == metadata.get('host_sha256_after'))
     passed = [t for t in trials if t['passed']]
     groups = {}
     coverage = {}
@@ -183,7 +186,8 @@ def build_report(trials, metadata, planned=None):
             if command['metric'] != 'control':
                 groups.setdefault(command['metric'], []).append(command['elapsed_ns'])
         for confirmation in trial['confirmations']:
-            groups.setdefault(confirmation['action']+'_delayed_confirmation', []).append(confirmation['elapsed_ns'])
+            metric = 'sos_fault_recovery_confirmation' if confirmation['action'] == 'sos' else confirmation['action']+'_delayed_confirmation'
+            groups.setdefault(metric, []).append(confirmation['elapsed_ns'])
     counts = dict(attempted=len(trials), passed=len(passed), failed=len(trials)-len(passed))
     if planned is not None:
         counts.update(planned=planned, not_run=planned-len(trials))
@@ -192,7 +196,7 @@ def build_report(trials, metadata, planned=None):
                 counts=counts,
                 metric_coverage=coverage, incomplete_commands_by_action=incomplete,
                 percentile='nearest rank: ceil(0.95*n), one-based',
-                timing_scope='Python command-to-STATE observations; delayed confirmations include restart/contact gaps; scenario includes setup and cleanup',
+                timing_scope='Python command-to-STATE observations; SOS confirmation includes refused upload, killed-process restart, failed flush and lost acceptance; ack/reply confirmations include scripted restart/contact gaps; scenario includes setup and cleanup',
                 passed_trial_metrics={k: summary(v) for k, v in sorted(groups.items())} if capture_valid else {}, trials=trials)
 
 
@@ -209,7 +213,7 @@ def environment(binary, configuration):
         return subprocess.check_output(['git', '-C', str(root), *args], text=True, timeout=5).strip()
     compiler = subprocess.check_output(['swift', '--version'], text=True, timeout=15).strip()
     return dict(captured_utc=datetime.now(timezone.utc).isoformat(), os=platform.system(), os_version=platform.mac_ver()[0],
-                architecture=platform.machine(), python=platform.python_version(), compiler=compiler,
+                architecture=platform.machine(), python=platform.python_version(), swift_on_path_version=compiler,
                 build_configuration_declared=configuration, load_average_before=os.getloadavg(),
                 transport='TCP 127.0.0.1; sequential nonoverlapping endpoint contacts on one Mac',
                 clock=dict(name='perf_counter_ns', monotonic=clock.monotonic, resolution_seconds=clock.resolution),
@@ -247,6 +251,12 @@ def main():
     except OSError:
         metadata['host_sha256_after'] = None
     metadata['load_average_after'] = os.getloadavg()
+    root = Path(__file__).resolve().parents[3]
+    try:
+        metadata['source_sha256_after'] = {name: hashlib.sha256((root/name).read_bytes()).hexdigest()
+                                           for name in metadata['source_sha256']}
+    except OSError:
+        metadata['source_sha256_after'] = None
     report = build_report(trials, metadata, planned=args.trials)
     try:
         write_report(args.output, report)

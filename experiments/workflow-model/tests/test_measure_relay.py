@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -75,7 +76,7 @@ class ReportTests(unittest.TestCase):
     def test_failed_trial_retained_excluded_from_validated_timing_summary(self):
         trials = [dict(number=1, passed=True, commands=[dict(metric='upload_custody', elapsed_ns=10)], confirmations=[], elapsed_ns=100),
                   dict(number=2, passed=False, error_type='HarnessError', commands=[dict(metric='upload_custody', elapsed_ns=999)], confirmations=[], elapsed_ns=1000)]
-        report = measure.build_report(trials, {})
+        report = measure.build_report(trials, {'host_sha256': 'same', 'host_sha256_after': 'same', 'dirty_worktree': False, 'source_sha256': {}, 'source_sha256_after': {}})
         self.assertEqual(report['counts'], {'attempted': 2, 'passed': 1, 'failed': 1})
         self.assertEqual(report['passed_trial_metrics']['upload_custody']['max_ns'], 10)
         self.assertEqual(report['trials'][1]['commands'][0]['elapsed_ns'], 999)
@@ -98,7 +99,7 @@ class ReportTests(unittest.TestCase):
                 result = measure.run_trial(binary, 1)
             self.assertFalse(result['passed'])
             self.assertEqual(result['commands'][0]['action'], 'sos')
-            self.assertIn('cleanup', result['cleanup_notes'][0])
+            self.assertIn('cleanup', result['cleanup_notes'][0].lower())
 
     def test_unexpected_scenario_exception_and_interrupt_are_preserved(self):
         for error in (KeyError('missing field'), KeyboardInterrupt()):
@@ -134,7 +135,7 @@ class ReportTests(unittest.TestCase):
             output = Path(folder) / 'result.json'
             argv = ['measure_relay.py', '--host', str(binary), '--configuration', 'debug', '--trials', '3', '--output', str(output)]
             trial = dict(number=1, passed=False, interrupted=True, cleanup_failed=False, facts=[], commands=[], confirmations=[], elapsed_ns=100)
-            with patch.object(measure, 'environment', return_value={}), patch.object(measure, 'run_trial', return_value=trial), patch('sys.argv', argv):
+            with patch.object(measure, 'environment', return_value={'host_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(), 'dirty_worktree': False, 'source_sha256': {}}), patch.object(measure, 'run_trial', return_value=trial), patch('sys.argv', argv):
                 self.assertEqual(measure.main(), 1)
             report = json.loads(output.read_text())
             self.assertEqual(report['counts'], {'attempted': 1, 'passed': 0, 'failed': 1, 'planned': 3, 'not_run': 2})
@@ -150,7 +151,7 @@ class ReportTests(unittest.TestCase):
             def remove_host(*args):
                 binary.unlink()
                 return dict(number=1, passed=True, interrupted=False, cleanup_failed=False, facts=[], commands=[], confirmations=[], elapsed_ns=100)
-            with patch.object(measure, 'environment', return_value={'host_sha256': 'before'}), patch.object(measure, 'run_trial', side_effect=remove_host), patch('sys.argv', argv):
+            with patch.object(measure, 'environment', return_value={'host_sha256': 'before', 'dirty_worktree': False, 'source_sha256': {}}), patch.object(measure, 'run_trial', side_effect=remove_host), patch('sys.argv', argv):
                 self.assertEqual(measure.main(), 1)
             self.assertFalse(json.loads(output.read_text())['capture_valid'])
 
@@ -161,7 +162,7 @@ class ReportTests(unittest.TestCase):
             binary.chmod(0o755)
             output = Path(folder) / 'result.json'
             argv = ['measure_relay.py', '--host', str(binary), '--configuration', 'debug', '--trials', '3', '--output', str(output)]
-            with patch.object(measure, 'environment', return_value={}), patch.object(measure, 'run_trial', side_effect=KeyboardInterrupt()), patch('sys.argv', argv):
+            with patch.object(measure, 'environment', return_value={'host_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(), 'dirty_worktree': False, 'source_sha256': {}}), patch.object(measure, 'run_trial', side_effect=KeyboardInterrupt()), patch('sys.argv', argv):
                 self.assertEqual(measure.main(), 1)
             report = json.loads(output.read_text())
             self.assertTrue(report['interrupted'])
@@ -170,9 +171,40 @@ class ReportTests(unittest.TestCase):
     def test_failed_trial_metric_coverage_is_visible(self):
         trials = [dict(number=1, passed=True, commands=[dict(metric='upload_custody', elapsed_ns=10)], confirmations=[], elapsed_ns=100),
                   dict(number=2, passed=False, commands=[dict(metric='upload_custody', elapsed_ns=999), dict(metric='command_error', action='flush', elapsed_ns=1000)], confirmations=[], elapsed_ns=2000)]
-        report = measure.build_report(trials, {})
+        report = measure.build_report(trials, {'host_sha256': 'same', 'host_sha256_after': 'same', 'dirty_worktree': False, 'source_sha256': {}, 'source_sha256_after': {}})
         self.assertEqual(report['metric_coverage']['upload_custody'], {'passed_trial_samples': 1, 'failed_trial_samples': 1})
         self.assertEqual(report['incomplete_commands_by_action'], {'flush': 1})
+
+    def test_dirty_or_changed_source_capture_is_invalid(self):
+        base = dict(host_sha256='same', host_sha256_after='same', dirty_worktree=False, source_sha256={'file': 'before'}, source_sha256_after={'file': 'before'})
+        self.assertTrue(measure.build_report([], base)['capture_valid'])
+        self.assertFalse(measure.build_report([], dict(base, dirty_worktree=True))['capture_valid'])
+        self.assertFalse(measure.build_report([], dict(base, source_sha256_after={'file': 'after'}))['capture_valid'])
+
+    def test_interrupt_cleanup_status_unknown_and_error_output_redacted(self):
+        with patch.object(measure.smoke, 'run', side_effect=KeyboardInterrupt()):
+            trial = measure.run_trial(Path('/unused'), 1)
+        self.assertEqual(trial['cleanup_status'], 'unknown')
+        with patch.object(measure.smoke, 'run', side_effect=HarnessError('expected store in /private/tmp/private-root; location=Floor4 FINGERPRINT 1234 5678')):
+            trial = measure.run_trial(Path('/unused'), 1)
+        self.assertNotIn('/private/tmp', trial['error'])
+        self.assertNotIn('Floor4', trial['error'])
+        self.assertNotIn('1234', trial['error'])
+
+    def test_quit_lifecycle_distinguishes_forced_exit(self):
+        def scenario(binary, report, child_factory):
+            child = child_factory([binary], 'public', timeout=.5)
+            child.quit()
+            raise HarnessError('synthetic stop')
+        with tempfile.TemporaryDirectory() as folder:
+            binary = Path(folder) / 'host'
+            binary.write_text('#!/usr/bin/env python3\nimport time\nprint("READY mode=fake", flush=True)\ntime.sleep(30)\n')
+            binary.chmod(0o755)
+            with patch.object(measure.smoke, 'run', side_effect=scenario):
+                trial = measure.run_trial(binary, 1)
+            quit_record = [r for r in trial['lifecycle'] if r['operation'] == 'quit'][0]
+            self.assertFalse(quit_record['graceful'])
+            self.assertNotEqual(quit_record['returncode'], 0)
 
     def test_exclusive_publication_preserves_existing_and_dangling_symlink(self):
         with tempfile.TemporaryDirectory() as folder:
