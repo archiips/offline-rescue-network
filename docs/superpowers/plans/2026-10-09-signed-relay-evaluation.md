@@ -1,0 +1,38 @@
+# Signed relay evaluation plan and execution ledger
+
+Goal: reproducible, honestly scoped signed-relay measurements for the existing public/responder portfolio workflow, with no application/protocol change.
+
+## Discovery and design
+
+Base: ba1a7cb. Reuse the eleven-fact `relay_network_smoke.run` scenario: refused upload, killed public/relay restart, absent responder, dropped acceptance after commit, responder restart/exact retry, delayed reverse receipt, separate acknowledgment/reply and final persisted invariants. Both native audiences and their UI remain unchanged. Physical testing, native timings, correction load, background delivery, agency enrollment and production security are outside this checkpoint.
+
+Alternatives: duplicating the scenario risks divergent recovery assertions; adding timing to Swift would alter the measured binary and protocol-facing scope. Choose a Python measurement runner with an optional child factory in the existing smoke runner. The default still resolves `Child` at call time, preserving existing callers/tests. No dependency additions.
+
+Measure Python `perf_counter_ns` before each host command and after its matching STATE. Upload success is command-to-untrusted-custody-response, not device delivery. Separate flush results (failed, dropped, delivered event, delivered receipt); require exact result/ID semantics from the existing scenario. Delayed-contact SOS/ack/reply intervals start before the action and end at a later source STATE with pending=0 after its reverse receipt. Include restart/contact gaps and host/Python overhead; never call them radio latency. Scenario elapsed includes initialization and cleanup. Raw command records include action, role, elapsed nanoseconds, observed status/result/IDs, not pairing cards, keys or scratch paths.
+
+Run 20 fresh complete scenarios, no warmup removal or retry of a failed trial. Keep all attempted trials, partial measurements and error/cleanup notes. Summaries use completed validated trials only with explicit failed/attempted denominators; failures are also listed independently. Nearest-rank p95 = sorted sample at ceil(0.95*n), alongside min/median/max/n. A scenario pass requires eleven facts and all three confirmation intervals. One failure yields nonzero CLI status. Output must be a new file; use existing exclusive report writer. Environment records macOS/architecture/Python/compiler, source revision/dirty status, recursive relevant Swift/C++/header/package/harness hashes and host hash. Store committed synthetic JSON evidence only.
+
+## Sources and self-review
+
+Official Python docs checked 2026-10-09: https://docs.python.org/3/library/time.html#time.perf_counter_ns documents integer performance-counter differences and inclusion of sleep. https://docs.python.org/3/library/statistics.html#statistics.quantiles documents quantile conventions; use explicitly defined nearest rank instead of an implicit default. Existing host CLI source establishes command/STATE boundaries, and existing smoke checks establish topology and durability. No new transport/security claim depends on external inference.
+
+Correctness: timestamps must include only one command; source confirmation must follow receipt, not custody. Simplicity: retain smoke assertions rather than recreate routing. Security/privacy: hash public source/binary only, retain synthetic IDs/status, never serialize cards/Keychain records. Maintainability: instrumentation stays in test orchestration. Testing: deterministic fake subprocesses exercise command framing, failure recording and confirmation guards; real signed hosts prove complete instrumented scenarios. UX: existing native journey evidence remains applicable; no UI changes require simulator reopening.
+
+## Checkpoints and acceptance
+
+- [ ] Baseline: all 13 smoke tests with real host; record sandbox-only failures separately.
+- [ ] Test first: deterministic classification/confirmation/partial failure/statistics tests must fail before implementation. Add factory seam and timing runner; all harness tests pass.
+- [ ] Verify: 20 actual signed-relay scenarios, raw JSON and recomputed summaries/hashes; retain failure denominators. Existing 13 relay and 14 measurement checks pass with hosts. Swift checks remain unchanged and should be run against the built package.
+- [ ] Independent review: Claude Opus 5.5, explicit medium, verify returned model metadata and no fallback. Reproduce/fix material findings before capture/publication.
+- [ ] Report: exact populations, command-to-observed-state boundaries, failure/retry counts, host/source fingerprints and no physical/native latency inference. Update README/current state/TODO/decisions; inspect diff and secrets/ignores, commit and push authorized checkpoint.
+
+## Execution ledger
+
+User authorized execution and Claude delegation, then explicitly approved sharing public harness/current-state files after automatic review blocked the initial call. Persistent ignored worktree: `.worktrees/signed-relay-evaluation`, branch `task/signed-relay-evaluation`. Scratch build: `/private/tmp/rescue-signed-eval-swift`. Initial sandbox denied socket binds and compiler cache; escalated baseline/build used normal local permissions. No product failure inferred from those denials.
+
+
+Design review: Claude response metadata identifies `claude-opus-5-5` (firstParty), invocation explicitly medium with no fallback. Accepted: separate duplicate custody/repeat delivery from first admissions/deliveries; correlate event and reverse receipt IDs before source confirmation; retain lifecycle timings and fact checkpoints; stop on cleanup failure/interruption with not-run denominator; hash binary before/after; commit code before final capture. Existing host source confirms UPLOADED/FLUSH/error emit before STATE and custody response follows `service.admit`. SOS fault-recovery, acknowledgment and reply populations remain distinct. Constructor and command failures keep partial elapsed records. Rejected as unnecessary: modifying Swift timestamps or adding physical/UI runs for a Python-only checkpoint.
+
+Test-first: initial new suite failed importing absent runner. Nine checks passed after implementation and correcting a fake READY fixture (the real Child requires `READY ` prefix). Additional tests reproduced missing duplicate classification, exception/interruption handling, cleanup/scenario distinction and host-change invalidation before implementation. One existing expectation changed from first delivery to repeat delivery because its fixture deliberately dropped the prior acceptance; retained the assertion with the corrected meaning.
+
+Verification before code checkpoint: 15 new Python tests pass; existing full Python suite passed (40 tests at its earlier 13-new-test state, no skips); 96/96 Swift and 43/43 fatal-UBSan CTest pass. Instrumented one-trial preflight passed all eleven facts and three ID-correlated confirmations. Preflight is not the final measured population.

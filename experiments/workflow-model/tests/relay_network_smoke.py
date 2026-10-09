@@ -191,7 +191,8 @@ def delete_keychain_items(folders):
     return failures
 
 
-def run(binary, report=print):
+def run(binary, report=print, child_factory=None):
+    make_child = child_factory or Child
     facts = []
     def fact(name, detail):
         require(name == FACTS[len(facts)], 'fact order: ' + name)
@@ -210,14 +211,14 @@ def run(binary, report=print):
 
         def endpoint(role):
             name = ('public', 'responder')[role]
-            child = Child([binary, 'endpoint', role, folders[role], ports[name], ports['relay']], name)
+            child = make_child([binary, 'endpoint', role, folders[role], ports[name], ports['relay']], name)
             children[name].append(child)
             card = child.wait(lambda line: line.startswith('CARD '))[0][5:]
             child.command('state')
             return child, card
 
         def relay():
-            child = Child([binary, 'relay', relay_store, ports['relay'], cards[0], ports['public'], cards[1], ports['responder']], 'relay')
+            child = make_child([binary, 'relay', relay_store, ports['relay'], cards[0], ports['public'], cards[1], ports['responder']], 'relay')
             children['relay'].append(child)
             return child
 
