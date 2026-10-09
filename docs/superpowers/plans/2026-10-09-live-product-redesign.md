@@ -21,8 +21,8 @@ Critique: orange alone must not carry status; text/icons still required. Layout 
 ## Milestones and acceptance
 - [x] Inspect local baseline, supplied references, motion/story tools and limitations; record revised brief before building.
 - [x] Implement native presentation revision; independent signed build/96-controller suite and static rendered phone/tablet review. Native interaction replay remains pending.
-- [ ] Record actual app interactions in a separate fresh training simulator, labeled simulated link; existing secure samples are preserved. Show review/send → waiting → receipt → responder acknowledgment/reply. Do not substitute diagram slides for footage.
-- [ ] Composite real footage with purposeful smooth reframing, readable labels, brief hook/outro and restrained motion. At least 70% of running time must contain moving actual app footage. An interactive web replica is rejected because it would not be the native product.
+- [x] Record actual app interactions in a separate fresh training simulator, labeled simulated link; existing secure samples are preserved. Show review/send → waiting → receipt → responder acknowledgment/reply. Do not substitute diagram slides for footage.
+- [x] Composite real footage with purposeful smooth reframing, readable labels, brief hook/outro and restrained motion. At least 70% of running time must contain moving actual app footage. An interactive web replica is rejected because it would not be the native product.
 - [ ] Review scene/transition frames and decode full export; update README/media only after the new footage is verified. Persist exact resume state even if tooling blocks capture.
 
 ## Ownership / validation
@@ -44,3 +44,13 @@ Style steering: user selected Dark operational console while first Claude pass w
 Remaining task is actual interaction capture/editing. Need restored native computer-use connection, not more permission or a new transport implementation. Observations 11 (medium mismatch) and 12 (delegation tool boundary) are logged for the next skill review; no installed skill changed.
 
 Final review: 109 local link targets resolve; TypeScript check and whitespace checks pass. Source action-inventory comparison retains SOS/correction/follow-up/withdrawal and acknowledgment/assignment/disposition/reopen/reply/resolve calls. This is source review, not a substitute for pending interactive replay. Final static captures show the compact dark header and retained sample histories.
+
+2026-10-09 resume: actual native training take captured through restored Computer Use; queued/device/human/reply sequence observed. Raw and normalized footage saved; decode passed. Full QuickTime playback inspection blocked by ScreenCaptureKit -3811. Composition/edit/publication remain pending; see LIVE_CAPTURE.md.
+
+## Approved edit execution — 2026-10-09
+
+User explicitly requested completing the motion-designed demo after the capture checkpoint. Continue the existing approved actual-footage/dark-console plan. Keep delivery causality intact in the real take. The native footage occupies the main 1370×945 stage throughout; a narrow caption rail explains seven observed beats. Manrope, graphite #090d12, white #f5f6f8, muted #b0b9c4, amber #f6b653 and receipt blue #b7cee0 match the selected direction. Smooth camera holds follow floor selection, review, queue, setup and reply; no invented pointer or delivery animation.
+
+Critique: avoid masking native facts with captions, keep both audiences available, keep training disclosure outside the camera crop, and retain the original raw take. No new dependencies, native changes or timing/radio claims. Validate TypeScript, render, inspect meaningful/mid-transition frames, fully decode and review playback where Computer Use permits. Only then replace README's stale capture-blocked language. Official Remotion OffthreadVideo/interpolate documentation checked 2026-10-09; use existing pinned packages.
+
+Final motion edit: 44 seconds replaces the provisional 40-second cut; the last eight seconds use a later actual reply-view pickup. Corrected early queued caption and receipt zoom clipping after frame inspection. TypeScript/input guard/render (1320 frames)/full decode pass. Poster and sampled frames inspected. README links the artifact. Final-export playback remains open after QuickTime timeouts and Safari ScreenCaptureKit -3811; do not mark the final review milestone done. Source APIs: https://www.remotion.dev/docs/offthreadvideo and https://www.remotion.dev/docs/interpolate, checked 2026-10-09.

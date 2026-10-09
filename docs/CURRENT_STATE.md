@@ -119,7 +119,7 @@ Capture blocker: Chrome/IAB unavailable; native Simulator getApp and a reset/inv
 
 ## Exact next action
 
-Restore the computer-use native connection, then use a **separate fresh training simulator** in landscape to record actual review/send → queued/waiting → simulated link restored → device receipt → human acknowledgment/reply. Keep simulated-link disclosure visible. Do not reset/re-pair the existing secure samples. Retune the provisional LiveTake camera timing against observed native actions, inspect playback/transition frames, decode and publish only verified actual footage. The source/checklist and rejected-asset status are already saved; do not restart research or rebuild transport.
+The real native motion edit is now rendered at `docs/media/rescue-live.mp4`; see the latest motion-edit checkpoint below. Next, review full playback of this exact cut when Computer Use playback works, addressing concrete pacing/readability issues. Do not redo capture/research/transport or reset/re-pair existing secure peers. Training labels remain visible; physical range is unmeasured.
 
 Physical testing follows separately when hardware is available:
 
@@ -137,3 +137,17 @@ Full physical, encrypted-storage, enrollment, independent-audit, device-compatib
 4. Update this file, the relevant task/evidence entries and decisions after verification. Review ignore coverage and staged files, then use the existing authorization for a scoped public commit/push.
 
 The remaining product documents describe the larger vision and evidence gates. Their aspirations are not current app capabilities; this file and linked measured evidence resolve that distinction.
+
+## Live recording resumed — 2026-10-09
+
+Computer Use restored and actual training workflow captured on a separate fresh landscape iPad (`Rescue Live Training`, B3A7FEEA-2F53-4974-8A69-CD124ADA2EBE). Existing secure samples preserved. Review/send → queued/no receipt → restored simulated link → device receipt → explicit human acknowledgment → reply arrival were observed through native UI. Raw take is in experiments/rescue-demo/evidence/2026-10-09-live-training-raw.mp4; orientation/30fps-normalized input is tools/demo-video/public/live-take.mp4 (44.300s, 1920×1324), fully decoded without diagnostics. See tools/demo-video/LIVE_CAPTURE.md for capture details.
+
+Next: inspect full playback and transition frames, retune the provisional LiveTake edit against this real footage, then render/review before README replacement/publication. QuickTime Computer Use playback inspection failed with ScreenCaptureKit -3811; no full playback claim. Fresh training simulator retains completed conversation and clear queue; do not reset existing secure peers. Final editorial milestones remain open.
+
+## Motion edit checkpoint — 2026-10-09
+
+The actual-footage motion demo is rendered at docs/media/rescue-live.mp4 (44 seconds, 1080p30, silent captions). Real native footage throughout, eased camera moves, seven caption chapters, persistent training/simulated-link labels. README links video/poster. TypeScript, input guard, render and full FFmpeg decode pass; representative/transition frames reviewed and timing/clipping corrected. Original capture preserved. No native behavior changes.
+
+The final eight seconds use `tools/demo-video/public/live-reply.mp4` (source seconds 2–10), a later native capture of the same conversation with the public reply in view. Original pickup: `experiments/rescue-demo/evidence/2026-10-09-live-reply-raw.mp4`. The clock jump is an editorial cut, not a delivery interval.
+
+Full final-export playback remains unverified: QuickTime open/rebind timed out; Safari alternate returned ScreenCaptureKit -3811. Next action is full playback review of this exact rendered cut, adjusting only concrete pacing/readability issues. Do not redo capture/research or claim physical-range evidence. The broader optional custody recording remains open because this training film does not show actual relay custody. Location remains preset building + manually reported floor; physical range is unmeasured.

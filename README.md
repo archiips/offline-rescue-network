@@ -4,7 +4,9 @@ A person asks for help. A responder receives, acknowledges and replies. One C++ 
 
 [Run the native app](experiments/rescue-demo/README.md#run-in-xcode) · [Inspect the evidence](experiments/rescue-demo/RELAY_MEASUREMENTS.md) · [Current state](docs/CURRENT_STATE.md)
 
-A live native workflow demo is being prepared; interaction capture is currently blocked by the computer-use connection. The earlier illustrated film was rejected as the intended demo format; [capture and editing checklist](tools/demo-video/LIVE_CAPTURE.md) tracks the replacement. The current interface is shown below.
+[![Watch the native workflow demo](docs/media/live-poster.png)](docs/media/rescue-live.mp4)
+
+[Watch the 44-second native demo](docs/media/rescue-live.mp4): real review/send, queued waiting, restored simulated link, device receipt, human acknowledgment and reply, with smooth editorial reframing and captions. Training mode is labeled throughout. [Capture, edit and review record](tools/demo-video/LIVE_CAPTURE.md).
 
 A portfolio prototype using preset synthetic data. Simulator/Mac local exchange is demonstrated; physical offline-radio behavior and operational readiness are unverified. A usable local communication path is required. The app does not contact emergency services.
 
@@ -26,7 +28,13 @@ The primary screens focus on the request and conversation. Setup contains traini
 
 Handling stays separate: open, assigned or resolved. An acknowledgment does not imply dispatch. An original Floor 1 report remains in history when the person later reports Floor 4.
 
-The planned live demo shows actual review/send, queued waiting, device receipt, human acknowledgment and reply. Training footage will be labeled as a simulated link. The [earlier illustrated film](docs/media/rescue-story.mp4) is retained as historical material, not the accepted live demo.
+The recorded live demo shows actual review/send, queued waiting, device receipt, human acknowledgment and reply. Training footage is labeled as a simulated link. The [earlier illustrated film](docs/media/rescue-story.mp4) is retained as historical material, not the accepted live demo.
+
+## Location and reach today
+
+The demo uses the preset synthetic building “Training Building A.” The public user selects a reported floor, including Unknown floor, and can send a correction. No GPS, automatic floor detection or sensor estimate is implemented.
+
+There is no verified range in metres. Current exchange requires a reachable local network path; simulator/Mac tests do not establish physical Wi-Fi or peer-to-peer range. Relay custody supports later contacts, but neither forwarding nor proximity guarantees delivery. Physical range and no-shared-access-point behavior remain separate test gates.
 
 ## How it works
 

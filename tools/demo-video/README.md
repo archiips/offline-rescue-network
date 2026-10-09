@@ -28,10 +28,15 @@ ffmpeg -v error -ss 16 -t 16 -i docs/media/rescue-story.mp4 \
 ```
 
 
-## Live native revision (in progress)
+## Live native motion edit
 
-The user rejected the illustrated film as the desired demo medium. The next cut must show actual native interaction footage. `src/live.tsx` is a provisional dark-console framing composition, separate from the historical illustrated film. Its camera timing must be retuned against observed actions in the real take, not treated as evidence of events.
+`src/live.tsx` renders the actual 44-second native training take to `docs/media/rescue-live.mp4` at 1920×1080 / 30fps. Real footage stays visible throughout. Smooth eased camera holds follow reported-floor selection, review, queued state and responder actions; an animated caption rail explains the sequence. No app pixels, tap events or delivery facts are reconstructed. The cut is silent and captioned.
 
-Record a continuous fresh **training** workflow in a separate simulator: review/send while simulated link is off → show queued/waiting → turn link on → show device receipt → acknowledge in responder → send reply → show public result. On wide iPad, both native audiences can remain visible. Preserve existing secure paired samples. Record at least 40 seconds, trim operator dead time without reversing causal order, retain readable state holds, and put the reviewed actual recording at `public/live-take.mp4`. Label training throughout; this is not a secure radio benchmark.
+The original raw capture is `experiments/rescue-demo/evidence/2026-10-09-live-training-raw.mp4`; normalized clockwise/30fps source is `public/live-take.mp4`. First 36 seconds preserve the original causal sequence; the last eight seconds use a later actual conversation-view pickup (`public/live-reply.mp4`, seconds 2–10). Pickup raw file: `experiments/rescue-demo/evidence/2026-10-09-live-reply-raw.mp4`. No new message or pairing occurred. The clock jump is an editorial cut. The source reports 44.30 seconds after normalization. Capture/limits: [LIVE_CAPTURE.md](LIVE_CAPTURE.md).
 
-`npm run render:live` refuses to render without a real input video. Once recording works, retune camera beats, inspect every meaningful state and mid-transition, then decode the complete export. No replacement demo is claimed until that happens. Computer-use connection startup currently blocks interaction capture; simulator CLI build/capture of static screens is still available.
+```sh
+npm run typecheck
+npm run render:live -- --browser-executable='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+```
+
+The guard checks input existence/duration (44 seconds minimum), not authenticity or story quality. Final render and full FFmpeg decode passed; chapter and transition frames inspected. Full final-export playback could not be verified through Computer Use: QuickTime timed out and Safari returned ScreenCaptureKit -3811. Human playback review remains open. The earlier illustrated film remains historical and separate.
