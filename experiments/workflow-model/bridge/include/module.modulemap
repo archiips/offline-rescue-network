@@ -1,0 +1,5 @@
+module RescueDemoBridge {
+    header "RescueDemoBridge.h"
+    header "RescueRelay.h"
+    export *
+}
