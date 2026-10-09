@@ -84,7 +84,7 @@ struct FactTile: View {
                 .accessibilityHidden(true)
             Text(title).font(.caption).foregroundStyle(.secondary)
             Text(value).font(.subheadline.weight(.semibold))
-                .lineLimit(1).minimumScaleFactor(0.75)
+                .lineLimit(1).minimumScaleFactor(0.5)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

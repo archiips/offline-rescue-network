@@ -1,0 +1,15 @@
+When internet is unavailable, a person still needs a clear path to a responder. This prototype explores that local exchange.
+
+The person selects a reported floor, reviews the sample SOS, and sends. The request is saved before transfer.
+
+A relay stores an encrypted copy. It cannot read the private request, and custody does not confirm responder delivery.
+
+The responder device saves the request before returning a signed receipt. Device delivery is not a human acknowledgment.
+
+A responder acknowledges the request and sends a reply. Those are separate messages. Acknowledgment does not mean help was dispatched.
+
+If a contact fails, the original remains saved. After restart, an operator reconnects and retries the exact encrypted message.
+
+Twenty Mac loopback recovery scenarios confirmed sixty original messages. Physical radio behavior and private data readiness remain unverified.
+
+The native phone and tablet share one C plus plus engine. Explore the code, evidence, and setup in the repository.

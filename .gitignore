@@ -46,3 +46,12 @@ __pycache__/
 
 # Persistent isolated task workspaces
 .worktrees/
+
+# Isolated video-authoring dependencies
+node_modules/
+
+# Generated narration intermediates
+tools/demo-video/public/voice-*.aiff
+
+# Remotion render cache
+.cache/
