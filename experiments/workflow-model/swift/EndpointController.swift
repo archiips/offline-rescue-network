@@ -97,6 +97,22 @@ public struct EndpointError: Error, Equatable, Sendable {
         refresh(nil)
     }
 
+    /// Original event only when this exact receipt is already committed. Read-only; used to correlate
+    /// a late relay receipt after Direct already confirmed it, without trusting a relay's claimed ID.
+    public func confirmedOriginal(for receipt: Data) throws -> Data? {
+        guard let handle else { throw EndpointError(message: Self.unavailable) }
+        var length = 0
+        let bytes = receipt.withUnsafeBytes { raw in
+            rc_endpoint_confirmed_original(handle, raw.bindMemory(to: UInt8.self).baseAddress, raw.count, &length)
+        }
+        guard let bytes else {
+            guard length == 0 else { throw EndpointError(message: "Saved receipt lookup failed") }
+            return nil
+        }
+        defer { rc_free(bytes) }
+        return Data(bytes: bytes, count: length)
+    }
+
     private static let unavailable = "Local exchange storage unavailable"
     private static func describe(_ code: Int32) -> String {
         switch code {

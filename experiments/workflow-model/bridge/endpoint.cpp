@@ -102,5 +102,18 @@ int rc_endpoint_confirm(rc_endpoint* e,const unsigned char* packet,size_t length
   std::erase_if(next.pending,[&receipt](const Event& event){return event.id==receipt.reference;});return e->publish(std::move(next));
  }catch(...){return e->fail(Result::Invalid);}
 }
+unsigned char* rc_endpoint_confirmed_original(const rc_endpoint* e,const unsigned char* packet,size_t length,size_t* originalLength){
+ if(!originalLength)return nullptr;
+ *originalLength=1;
+ if(!e || !packet)return nullptr;
+ try{
+  const auto receipt=rescue_wire::decode({packet,length});
+  const auto& events=e->state.model.events();
+  if(receipt.kind!=Kind::Receipt || std::find(events.begin(),events.end(),receipt)==events.end()){*originalLength=0;return nullptr;}
+  const auto original=std::find_if(events.begin(),events.end(),[&](const Event& event){return event.id==receipt.reference && event.author==e->actor && event.kind!=Kind::Receipt;});
+  if(original==events.end()){*originalLength=0;return nullptr;}
+  const auto bytes=rescue_wire::encode(*original);auto* output=copy(bytes);*originalLength=bytes.size();return output;
+ }catch(...){return nullptr;}
+}
 char* rc_endpoint_snapshot(const rc_endpoint* e){if(!e)return nullptr;try{auto s="{\"role\":"+quote(e->actor)+",\"pendingTransfers\":"+std::to_string(e->state.pending.size())+",\"error\":"+quote(e->error)+",\"state\":"+deviceJSON(e->state.model,e->actor.c_str())+"}";auto* p=static_cast<char*>(std::malloc(s.size()+1));if(!p)return nullptr;std::memcpy(p,s.c_str(),s.size()+1);return p;}catch(...){return nullptr;}}
 int rc_endpoint_reset(rc_endpoint* e){if(!e)return -1;try{return e->publish(State(e->actor));}catch(...){return -1;}}

@@ -71,7 +71,7 @@ private final class CoreHandle {
         relayMode = enabled
         transport = enabled ? LocalExchangeTransport(relayTimeout: .seconds(8)) : LocalExchangeTransport(secure: true)
         bindSecureEndpoint()
-        error = ""
+        if endpoint != nil { refreshEndpoint() }
     }
     private func bindSecureEndpoint() {
         relayEndpoint = relayMode ? secureEndpoint.map { RelayEndpointController(secure: $0) } : nil

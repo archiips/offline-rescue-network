@@ -126,3 +126,10 @@ Adopt a bounded custom ORL1/ORA1 sample contract around existing ORS1 CryptoKit 
 Endpoint cache admission never prunes/reseals expired mappings. ORF1 signs the mapping and packet, ORG1 detects missing/mismatched cache files, and guards are read with fixed bounds. Explicit new-session recovery rotates identity and requires re-pairing while retaining prior stores. One active owner per root/role remains required; hostile local file deletion and same-user process isolation are outside the sample guarantee.
 
 Separate Mac processes demonstrate sequential contacts rather than physical or firewall isolation. Eleven actual-process facts and43 CTest/89 Swift/13 relay Python checks pass; native app builds with signing. Both audiences remain required; native controls are the next checkpoint. Physical/private-data/commercial gates remain open. [Evidence](../experiments/rescue-demo/RELAY_NETWORK.md).
+
+
+## Native relay controls and mixed-route receipts — 2026-10-08
+
+Expose the existing signed relay adapter through shared manual controls for public iPhone and responder iPad. Keep one identity/history/outbox across route switches; stop and fence old callbacks, disable Bonjour/direct fallback in relay mode and upload one oldest cached event only. Custody is an untrusted transient hint, never device receipt or human acknowledgment. Host/port and route preferences persist; listeners do not auto-start. Cache loss/expiry/full recovery explicitly resets/re-pairs while preserving prior files.
+
+A reproduced review finding showed a delayed relay receipt blocking replies after Direct had already confirmed its event. A read-only C++ bridge now resolves the original only for the exact receipt in committed history. The adapter still checks the mapping-bound signed outgoing cache and receipt correlation before acceptance. Disabling route switching was rejected because it would remove the preserved direct journey. No wire/store-format change or arbitrary duplicate bypass. Native controls/controller tests/build are verified; full native relay exercise awaits explicit attended pairing approval. [Evidence](../experiments/rescue-demo/NATIVE_RELAY.md).

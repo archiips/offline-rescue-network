@@ -1,0 +1,24 @@
+# Native relay controls
+
+Checkpoint2026-10-08. Both public iPhone and responder iPad interfaces expose the signed relay adapter from [the separate-process checkpoint](RELAY_NETWORK.md). Native signed UI plus shared-controller real-socket tests are verified. The full simulator-to-Mac relay exercise is still pending attended pairing approval; do not infer that evidence from a build or the controller tests.
+
+## Use the controls
+
+1. Choose Secure exchange, select the public or responder role, then Via relay. Changing Direct/Via relay stops networking but preserves that endpoint's identity, pairing, request and saved outbox. Training remains separate.
+2. In Pair endpoints, exchange the two public cards directly and compare their complete fingerprints. Trust only the checked opposite role. This is manual sample trust, not firefighter enrollment. Give those public cards, not private keys, to the Mac relay configuration.
+3. Start relay exchange on an endpoint. Its listening port appears in the main view and Relay connection sheet. Keep the app foregrounded. The relay needs the current host/listening port of both endpoints; restarting a listener can change its port.
+4. In Relay connection, enter the Mac relay host and port. `127.0.0.1` applies only to Simulator on that same Mac. Use the existing `rescue-relay-host relay` command from RELAY_NETWORK.md with the cards and endpoint ports. Bonjour is disabled on the native relay route; configure contacts manually.
+5. Send the preset SOS from the public interface, then use Upload oldest queued message. This uploads one saved head, never an automatic batch. A matching relay response says it accepted a copy; the claim is untrusted and the original stays queued. The relay operator uses `flush` to forward one item. Later flushes carry the encrypted device receipt back.
+6. Device receipt changes delivery to Received by responder device. An explicit responder acknowledgment changes it to Acknowledged by responder. A reply is another event with its own receipt. Responder uploads use the same controls.
+7. Stop/background/restart stops networking and invalidates pending callbacks, retaining saved messages. Route preference survives launch, networking does not start automatically. Session-only custody hints clear on stop/route/new incoming facts. A late custody response cannot overwrite a committed device receipt. A delayed relay receipt after Direct confirmation is accepted only when it matches exact committed history and the signed cached relay event, so it does not block later replies.
+
+Invalid host/port is rejected before upload. Socket errors, wrong-ID custody and lost responses retain the outbox. Expired/full/lost retry cache requires explicit Reset/new secure sample session and re-pairing both endpoints/relay. This rotates keys and does not migrate pending messages; prior epoch files remain on disk. Reset asks for confirmation in the app. No plaintext fallback.
+
+## Fresh evidence and limits
+
+- 96/96 Swift tests: seven new native-controller checks cover route/history/identity preservation, reset/reopen and unpaired start, input rejection, wrong custody, exact retry/no automatic or direct send, route switch while awaiting custody, delayed SOS/receipt/ack/reply over actual loopback sockets custody arriving after a signed receipt and delayed relay receipts after Direct confirmation/reopen without blocking acknowledgment. The mixed-route test retains a newer pending message while accepting the old receipt. C++ checks also reject changed/generated receipts and malformed/null lookup input without mutation. These use real C++ stores/Apple crypto with test record stores, not the iOS Keychain.
+- 43/43 fatal-UBSan CTest;13/13 actual relay-process Python checks (11 named facts);14/14 existing measurement-harness tests; signed native simulator build.
+- iPhone17 Pro/iPad Pro11 M5, iOS26.4: rendered route controls and scrollable connection/recovery sheets inspected on both devices; unpaired Start/Upload restrictions observed. Fresh synthetic identities were created through normal confirmed Reset, retaining historical files. The trust toggle remains off. Both endpoint UI/controller code is shared.
+- Native end-to-end pairing/relay delivery remains unverified for this checkpoint because automatic approval review requires explicit action-time permission to establish paired trust. No trust was installed through a workaround. Physical radio, lock/background operation, older versions, independent audit, encrypted local storage and agency enrollment remain open.
+
+The default native build command is in README.md and the full commands/review history are in [the plan](../../docs/superpowers/plans/2026-10-08-native-relay.md). Keep simulator evidence separate from the older direct native exchange walkthrough and from plain-loopback timing measurements. No new latency or radio-range claim.

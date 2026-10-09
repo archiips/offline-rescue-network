@@ -31,7 +31,7 @@ struct ResponderView: View {
                 }
                 Conversation(state: state, publicSide: false, acknowledge: { demo.perform(.acknowledge, reference: $0) })
             } else {
-                ContentUnavailableView("No requests received", systemImage: "tray", description: Text(demo.localRole == nil ? "Send a sample SOS from the Public view. Disconnected requests wait until the simulated connection returns." : "Start local exchange on a separate Public endpoint and transfer its sample SOS. Queued messages remain saved until a receipt returns."))
+                ContentUnavailableView("No requests received", systemImage: "tray", description: Text(demo.localRole == nil ? "Send a sample SOS from the Public view. Disconnected requests wait until the simulated connection returns." : demo.relayMode ? "Start relay exchange on both endpoints. Upload the Public endpoint’s sample SOS, then forward it from the relay Mac. Queued messages stay saved until a device receipt returns." : "Start local exchange on a separate Public endpoint and transfer its sample SOS. Queued messages remain saved until a receipt returns."))
             }
         }.navigationTitle("Responder").navigationBarTitleDisplayMode(.inline)
     }

@@ -49,6 +49,8 @@ private func address(_ port: UInt16) -> NWEndpoint { .hostPort(host: "127.0.0.1"
     pair.a.reset()
     #expect(pair.a.relayMode && pair.a.secureCard != card && pair.a.pairedCard == nil)
     #expect(pair.a.snapshot?.pendingTransfers == 0)
+    pair.a.startLocalExchange()
+    #expect(!pair.a.transport.active && !pair.a.error.isEmpty)
     pair.a.useTraining()
     #expect(!pair.a.relayMode && !pair.a.secureMode)
 }
@@ -179,4 +181,42 @@ private func address(_ port: UInt16) -> NWEndpoint { .hostPort(host: "127.0.0.1"
     await pair.a.uploadViaRelay(host: "127.0.0.1", port: String(port))
     #expect(pair.a.snapshot?.pendingTransfers == 0 && pair.a.snapshot?.publicState.originalDelivery == .deviceReceived)
     #expect(pair.a.relayStatus.isEmpty)
+}
+
+@Test @MainActor func nativeRelayDelayedReceiptAfterDirectConfirmationDoesNotBlockReply() async throws {
+    let pair = try NativePair(); defer { pair.stop() }
+    let publicCard = try #require(pair.a.secureCard), responderCard = try #require(pair.b.secureCard)
+    let service = try RelayService(storageURL: pair.root.appendingPathComponent("mixed-relay.sqlite"),
+                                   publicCard: publicCard, responderCard: responderCard)
+    let server = LocalExchangeTransport(relayTimeout: .seconds(2)); defer { server.stop() }
+    server.onIncoming = { try service.admit($0) }
+    try server.start(name: "NativeMixedRouteTest", advertise: false, browse: false)
+    let port = try await ready(server)
+    pair.a.perform(.sos, value: "SYNTHETIC mixed route")
+    pair.a.startLocalExchange(); _ = try await ready(pair.a.transport)
+    await pair.a.uploadViaRelay(host: "127.0.0.1", port: String(port))
+    pair.a.useRelayRoute(false); pair.b.useRelayRoute(false)
+    pair.a.startLocalExchange(); _ = try await ready(pair.a.transport)
+    pair.b.startLocalExchange(); let directPort = try await ready(pair.b.transport)
+    await pair.a.transferQueued(to: address(directPort))
+    #expect(pair.a.snapshot?.pendingTransfers == 0)
+    pair.a.perform(.followUp, value: "SYNTHETIC later pending message")
+    pair.a.useRelayRoute(true); pair.b.useRelayRoute(true)
+    pair.a.retrySavedSession() // confirmation must survive reopen, not just an in-memory exception
+    pair.a.startLocalExchange(); let aPort = try await ready(pair.a.transport)
+    pair.b.startLocalExchange(); let bPort = try await ready(pair.b.transport)
+    let deliver: (Data, EndpointRole) async throws -> Data = { bytes, role in
+        try await server.exchange(bytes, to: address(role == .publicUser ? aPort : bPort))
+    }
+    _ = try await service.flush { try await deliver($0, $1) }
+    let delayed = try await service.flush { try await deliver($0, $1) }
+    guard case .delivered = delayed else { Issue.record("Previously confirmed receipt blocked relay queue"); return }
+    #expect(pair.a.snapshot?.pendingTransfers == 1) // late receipt must not confirm the newer head
+    pair.b.perform(.acknowledge)
+    await pair.b.uploadViaRelay(host: "127.0.0.1", port: String(port))
+    _ = try await service.flush { try await deliver($0, $1) }
+    _ = try await service.flush { try await deliver($0, $1) }
+    #expect(pair.a.snapshot?.publicState.originalDelivery == .humanAcknowledged)
+    #expect(pair.b.snapshot?.pendingTransfers == 0)
+    #expect(try service.count() == 0)
 }

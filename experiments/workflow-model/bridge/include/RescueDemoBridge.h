@@ -15,6 +15,9 @@ int rc_endpoint_perform(rc_endpoint*, int action, const char* value, const char*
 unsigned char* rc_endpoint_next(const rc_endpoint*, size_t* length);
 int rc_endpoint_accept(rc_endpoint*, const unsigned char* packet, size_t length, unsigned char** receipt, size_t* receipt_length);
 int rc_endpoint_confirm(rc_endpoint*, const unsigned char* receipt, size_t length);
+/* Read-only: exact committed receipt -> original event. Null/length 0 means no match;
+   null/length 1 means invalid input/allocation failure. Owned output: rc_free. */
+unsigned char* rc_endpoint_confirmed_original(const rc_endpoint*, const unsigned char* receipt, size_t length, size_t* original_length);
 char* rc_endpoint_snapshot(const rc_endpoint*);
 int rc_endpoint_reset(rc_endpoint*);
 /* Packet outputs are owned allocations freed by rc_free. Null next + length 0 means empty.

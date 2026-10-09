@@ -26,6 +26,16 @@ int main(int argc,char** argv){
  if(scenario=="exchange"){
   action(p.get(),RC_SOS,"Sample floor");check(has(c.get(),"\"hasRequest\":false"),"remote stays empty before exchange");
   auto packet=next(p.get()),receipt=accept(c.get(),packet);check(has(p.get(),"\"originalDelivery\":0"),"sender waiting before receipt");check(rc_endpoint_confirm(p.get(),receipt.data(),receipt.size())==0,"durable receipt");
+  size_t originalLength=0;auto* original=rc_endpoint_confirmed_original(p.get(),receipt.data(),receipt.size(),&originalLength);
+  check(original && std::vector<unsigned char>(original,original+originalLength)==packet,"committed receipt resolves exact original");rc_free(original);
+  auto changed=rescue_wire::decode(receipt);changed.text="Different receipt";auto changedBytes=rescue_wire::encode(changed);const auto unchanged=snap(p.get());
+  check(!rc_endpoint_confirmed_original(p.get(),changedBytes.data(),changedBytes.size(),&originalLength) && originalLength==0,"changed receipt cannot resolve history");
+  check(!rc_endpoint_confirmed_original(c.get(),receipt.data(),receipt.size(),&originalLength) && originalLength==0,"locally generated receipt does not resolve peer original");
+  const unsigned char malformed[]={'X'};
+  check(!rc_endpoint_confirmed_original(p.get(),malformed,sizeof(malformed),&originalLength) && originalLength==1,"malformed lookup reports failure");
+  check(!rc_endpoint_confirmed_original(p.get(),nullptr,0,&originalLength) && originalLength==1,"null lookup reports failure");
+  check(!rc_endpoint_confirmed_original(p.get(),receipt.data(),receipt.size(),nullptr),"null output pointer rejects");
+  check(snap(p.get())==unchanged,"receipt lookup never mutates state");
   check(has(p.get(),"\"originalDelivery\":1"),"device receipt");action(c.get(),RC_ACKNOWLEDGE);check(has(p.get(),"\"originalDelivery\":1"),"human action not remotely visible before exchange");transfer(c.get(),p.get());check(has(p.get(),"\"originalDelivery\":2"),"human ack received");
   action(c.get(),RC_REPLY,"Sample reply");transfer(c.get(),p.get());action(p.get(),RC_CORRECTION,"Sample floor 4");transfer(p.get(),c.get());action(c.get(),RC_ASSIGN,"Sample team");transfer(c.get(),p.get());action(c.get(),RC_RESOLVE,"Sample completion");transfer(c.get(),p.get());action(p.get(),RC_WITHDRAWAL,"Sample withdrawal");transfer(p.get(),c.get());check(has(c.get(),"\"lateUpdate\":true"),"late flag local");action(c.get(),RC_DISPOSITION,"Sample decision");transfer(c.get(),p.get());action(c.get(),RC_REOPEN,"Sample reopen");transfer(c.get(),p.get());
  }else if(scenario=="retry"){

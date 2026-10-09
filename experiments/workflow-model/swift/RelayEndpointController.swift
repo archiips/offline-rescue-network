@@ -70,7 +70,8 @@ import CryptoKit
 
     /// Records the receipt's correlation before confirming, so a retry after confirmation (pending removed)
     /// still proves it answers this endpoint's own saved packet; C++ history then makes confirmation idempotent.
-    /// A saved memo bypasses the pending-head check only when it binds exactly this packet.
+    /// A saved memo binds exactly this packet. Otherwise use the pending head or the original of an
+    /// exact receipt already committed through Direct; both must still match a signed cached relay event.
     private func recordReceipt(_ packet: RelayPacket, raw: Data, context: Context, now: Int64) throws {
         let cache = try openCache(context)
         let own = context.identity.card
@@ -82,7 +83,7 @@ import CryptoKit
             guard saved == packet else { throw RelayProtocolError.cacheMismatch }
             return
         }
-        guard let head = try secure.endpoint.nextPacket() else { throw RelayProtocolError.correlation }
+        guard let head = try secure.endpoint.confirmedOriginal(for: raw) ?? secure.endpoint.nextPacket() else { throw RelayProtocolError.correlation }
         let sentID = Self.cacheID(kind: .event, own: own, peer: context.peer, raw: head, correlation: Data(count: 32))
         guard let sentItem = try cache.lookup(id: sentID) else { throw RelayProtocolError.correlation }
         // The saved event may have expired since delivery; its receipt still answers it.

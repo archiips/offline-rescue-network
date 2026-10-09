@@ -1,6 +1,6 @@
 # Product requirements
 
-> Signed relay checkpoint (2026-10-08): [separate-process evidence](../experiments/rescue-demo/RELAY_NETWORK.md) verifies signed bounded routing, durable exact retries and delayed reverse receipts over sequential Mac loopback contacts. Native relay controls, physical/OS isolation and full-product gates remain open.
+> Signed relay checkpoint (2026-10-08): [separate-process evidence](../experiments/rescue-demo/RELAY_NETWORK.md) verifies signed bounded routing, durable exact retries and delayed reverse receipts over sequential Mac loopback contacts. [Native relay controls](../experiments/rescue-demo/NATIVE_RELAY.md) are implemented with controller/socket tests and a signed app build; attended native relay pairing/round trip, physical/OS isolation and full-product gates remain open.
 
 > Bounded portfolio checkpoint (2026-10-08): [secure exchange evidence](../experiments/rescue-demo/SECURE_EXCHANGE.md) now establishes manually paired signed/encrypted Apple endpoints with C++ durable state. Full-product enrollment, private storage and physical gates remain open; CryptoKit is an Apple adapter, not portable C++ cryptography.
 
@@ -30,7 +30,7 @@ The eventual public user must not need a fire-department employee account. Open 
 
 ## 3. Current delivery scope and longer-term stages
 
-For the portfolio version, success means both interfaces run, independent endpoints exchange SOS/acknowledgment/replies, interrupted delivery recovers without fabricated statuses, and documented tests/demos support every résumé claim. Those local capabilities are implemented in the sample app; physical offline verification remains pending. Reproducible plain-loopback measurements and bounded signed relay scheduling are now verified in separate experiments. Next add explicit native relay controls. Encryption/identity review precedes any private data. On-device language assistance is optional later work. Selling to organizations, discovery interviews and pilot operations are not prerequisites for this deliverable.
+For the portfolio version, success means both interfaces run, independent endpoints exchange SOS/acknowledgment/replies, interrupted delivery recovers without fabricated statuses, and documented tests/demos support every résumé claim. Those local capabilities are implemented in the sample app; physical offline verification remains pending. Reproducible plain-loopback measurements and bounded signed relay scheduling are now verified in separate experiments. Native relay controls are implemented; the attended simulator-to-Mac relay exercise is next. Encryption/identity review precedes any private data. On-device language assistance is optional later work. Selling to organizations, discovery interviews and pilot operations are not prerequisites for this deliverable.
 
 The following table preserves the larger product roadmap; it is not the current execution order.
 

@@ -227,7 +227,8 @@ struct RelayConnectionControls: View {
             Text("Listening on port \(listening.rawValue) · keep this app open")
                 .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
         } else { Text(transport.status).font(.caption).foregroundStyle(.secondary) }
-        if !demo.relayStatus.isEmpty { Text(demo.relayStatus).font(.caption) }
+        if demo.exchangeBusy { ProgressView("Uploading saved message").font(.caption) }
+        if transport.active && !demo.relayStatus.isEmpty { Text(demo.relayStatus).font(.caption) }
         }
         .sheet(isPresented: $showingConnection) {
             NavigationStack {
@@ -254,7 +255,7 @@ struct RelayConnectionControls: View {
                         Button("Upload oldest queued message") { Task { await demo.uploadViaRelay(host: host, port: port) } }
                             .disabled(!transport.active || transport.hostPort == nil || demo.exchangeBusy || demo.pairedCard == nil || (demo.snapshot?.pendingTransfers ?? 0) == 0)
                         if demo.exchangeBusy { ProgressView("Uploading saved message") }
-                        if !demo.relayStatus.isEmpty { Text(demo.relayStatus) }
+                        if transport.active && !demo.relayStatus.isEmpty { Text(demo.relayStatus) }
                         if !demo.error.isEmpty { Text(demo.error).foregroundStyle(.red) }
                         Text("A relay can claim it saved a copy; that claim is unverified. Your message stays queued until the other device's signed receipt returns. A human acknowledgment is separate.").font(.caption)
                     }

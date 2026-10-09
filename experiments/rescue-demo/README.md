@@ -5,7 +5,7 @@ A runnable SwiftUI iPhone/iPad app with **public and responder views backed by t
 - **Training mode:** one process owns two models and a simulated link, saved together in the original v1 SQLite session.
 - **Secure exchange:** each app instance owns one role, one model and a separate v2 SQLite outbox. Real foreground Network-framework sockets carry signed/encrypted sample packets between checked opposite-role peers; Bonjour discovery names remain untrusted. Each receiver commits before returning a device receipt.
 
-Only preset synthetic requests, locations and responses are exposed. One request per key epoch and coordinated reset/re-pair. Both modes preserve histories and pending originals across restart. Role selection is a sample control; checked public cards establish manual peer trust, not firefighter credentials. Storage remains unencrypted and physical offline radio behavior is unverified. Follow the current [secure exchange walkthrough and evidence](SECURE_EXCHANGE.md); [plain local exchange](LOCAL_EXCHANGE.md) retains the earlier diagnostic baseline.
+Only preset synthetic requests, locations and responses are exposed. One request per key epoch and coordinated reset/re-pair. Both modes preserve histories and pending originals across restart. Role selection is a sample control; checked public cards establish manual peer trust, not firefighter credentials. Storage remains unencrypted and physical offline radio behavior is unverified. Secure exchange now offers Direct and Via relay routes. [Native relay controls](NATIVE_RELAY.md) document manual upload/listening and the verification boundary. Follow the [secure exchange walkthrough and evidence](SECURE_EXCHANGE.md) for direct exchange; [plain local exchange](LOCAL_EXCHANGE.md) retains the earlier diagnostic baseline.
 
 ## Run in Xcode
 
@@ -15,7 +15,7 @@ Open `iOS/RescueDemo.xcodeproj`, select the `RescueDemo` scheme and an iPhone or
 xcodebuild -project experiments/rescue-demo/iOS/RescueDemo.xcodeproj \
   -scheme RescueDemo -sdk iphonesimulator \
   -destination 'generic/platform=iOS Simulator' \
-  -derivedDataPath /private/tmp/rescue-native-derived CODE_SIGNING_ALLOWED=NO build
+  -derivedDataPath /private/tmp/rescue-native-derived CODE_SIGNING_ALLOWED=YES build
 swift test --package-path experiments/workflow-model \
   --scratch-path /private/tmp/rescue-native-swift
 cmake -S experiments/workflow-model -B /private/tmp/rescue-native-cmake \

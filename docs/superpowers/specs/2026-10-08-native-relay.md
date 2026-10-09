@@ -1,6 +1,6 @@
 # Native relay controls
 
-One portfolio app for public iPhone and responder iPad: manually paired endpoints exchange an SOS, device receipt, human acknowledgment and reply via the already verified Mac relay. C++ owns workflow/outbox/cache/custody; Swift owns Apple crypto, networking and native presentation. Synthetic presets only. No new dependencies or C++ protocol change.
+One portfolio app for public iPhone and responder iPad: manually paired endpoints exchange an SOS, device receipt, human acknowledgment and reply via the already verified Mac relay. C++ owns workflow/outbox/cache/custody; Swift owns Apple crypto, networking and native presentation. Synthetic presets only. No new dependencies or C++ wire/store-format change. Review added one read-only bridge lookup for exact already-committed receipts so mixed Direct/relay contacts remain idempotent without bypassing signed cache correlation.
 
 ## Discovery and chosen design
 
