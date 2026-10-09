@@ -4,6 +4,8 @@ One public iPhone interface sends a synthetic SOS; a responder iPad interface re
 
 This is a presentation script for the [verified native walkthrough](../experiments/rescue-demo/NATIVE_RELAY.md), not a new recording or measurement. Allow setup time before the three-minute presentation. Use preset synthetic data only.
 
+[Watch the 30-second saved-session review](../experiments/rescue-demo/evidence/2026-10-09-native-history-review.mp4). Captured on 2026-10-09 from the existing paired iPhone/iPad simulator session, it shows both audiences, the public acknowledgment summary, responder acknowledgment/reply receipts and original versus corrected reported floor. Networking remains stopped. This silent, labeled history review does not show new custody/delivery transitions; the live three-minute sequence below remains a separate presentation option.
+
 ## Prepare before presenting
 
 Use one Mac with Xcode and two iOS simulators. The recorded exercise used iPhone 17 Pro and iPad Pro 11-inch (M5), both iOS 26.4. Simulator loopback is the demonstrated topology; physical offline radio remains unverified.
