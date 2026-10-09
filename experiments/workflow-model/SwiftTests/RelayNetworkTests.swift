@@ -232,7 +232,11 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
     let raw = try #require(try net.publicSecure.endpoint.nextPacket())
     let context = try net.publicSecure.relayContext()
     let id = RelayEndpointController.cacheID(kind: .event, own: context.identity.card, peer: context.peer, raw: raw, correlation: Data(count: 32))
-    #expect(try RelayQueue(storageURL: net.publicUser.cacheURL).lookup(id: id)?.payload == first.bytes)
+    func saved() throws -> RelayPacket {
+        try RelayCacheRecord.open(try #require(try RelayQueue(storageURL: net.publicUser.cacheURL).lookup(id: id)).payload,
+                                  mapping: id, owner: context.identity.card)
+    }
+    #expect(try saved() == first)
 
     // A later cache write (receipt for a newer inbound event) must not prune the expired pending mapping.
     net.clock.now = first.expiry - 2_000
@@ -242,7 +246,7 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
     net.clock.now = first.expiry + 1
     _ = try RelayAcceptance(bytes: net.publicUser.receive(ack.bytes))
     #expect(try net.publicUser.cacheCount() == 2)
-    #expect(try RelayQueue(storageURL: net.publicUser.cacheURL).lookup(id: id)?.payload == first.bytes)
+    #expect(try saved() == first)
     #expect(throws: RelayProtocolError.cacheExpired) { try net.publicUser.outgoing() }
 }
 
@@ -252,12 +256,14 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
     let raw = try #require(try net.publicSecure.endpoint.nextPacket())
     let (identity, peer, envelope) = try net.publicSecure.relayContext()
     let id = RelayEndpointController.cacheID(kind: .event, own: identity.card, peer: peer, raw: raw, correlation: Data(count: 32))
+    #expect(try net.publicUser.cacheCount() == 0) // creates the guarded cache
     let cache = try RelayQueue(storageURL: net.publicUser.cacheURL)
-    // A validly signed packet of the wrong kind stored under the event mapping.
+    // A validly signed packet of the wrong kind, in a validly bound record, stored under the event mapping.
     let wrongKind = try RelayPacket.make(kind: .receipt, priority: .ordinary, expiry: net.clock.now + 600, correlation: randomBytes(32),
                                          sealed: try envelope.seal(raw), identity: identity, recipient: peer)
     #expect(try cache.cacheAdmit(id: id, flow: RelayEndpointController.hex(Data(SHA256.hash(data: raw))), priority: .ordinary,
-                                 expiry: wrongKind.expiry, hops: 2, payload: wrongKind.bytes, now: net.clock.now) == .admitted)
+                                 expiry: wrongKind.expiry, hops: 2,
+                                 payload: RelayCacheRecord.seal(wrongKind, mapping: id, identity: identity), now: net.clock.now) == .admitted)
     #expect(throws: RelayProtocolError.cacheMismatch) { try net.publicUser.outgoing() }
     #expect(try cache.count() == 1)
 
@@ -273,12 +279,14 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
     let id2 = RelayEndpointController.cacheID(kind: .event, own: context.identity.card, peer: context.peer, raw: raw2, correlation: Data(count: 32))
     let unrelated = try RelayPacket.make(kind: .event, priority: .urgent, expiry: net.clock.now + 600, correlation: Data(count: 32),
                                          sealed: try context.envelope.seal(Data("unrelated".utf8)), identity: context.identity, recipient: context.peer)
+    #expect(try net.publicUser.cacheCount() == 0)
     let fresh = try RelayQueue(storageURL: net.publicUser.cacheURL)
     _ = try fresh.cacheAdmit(id: id2, flow: RelayEndpointController.hex(Data(SHA256.hash(data: raw2))), priority: .urgent,
-                             expiry: unrelated.expiry, hops: 2, payload: unrelated.bytes, now: net.clock.now)
+                             expiry: unrelated.expiry, hops: 2,
+                             payload: RelayCacheRecord.seal(unrelated, mapping: id2, identity: context.identity), now: net.clock.now)
     #expect(throws: RelayProtocolError.cacheMismatch) { try net.publicUser.outgoing() }
     // Stale previous-epoch packets are not addressed to the new peer.
-    let old = try RelayPacket(bytes: try #require(try cache.lookup(id: id)).payload)
+    let old = try RelayCacheRecord.open(try #require(try cache.lookup(id: id)).payload, mapping: id, owner: identity.card)
     #expect(throws: (any Error).self) { try net.responder.receive(old.bytes) }
 }
 
@@ -545,4 +553,172 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
     }
     guard case .delivered(sos.id, 1, _?) = outcome else { Issue.record("socket delivery failed: \(outcome)"); return }
     #expect(net.requests() == 1 && net.pending(net.publicSecure) == 1)
+}
+
+// MARK: Cache record binding, cache guard and relay metadata
+
+/// Runs one SQL statement against a sample store, binding `blob` to the first parameter when given.
+private func execute(_ url: URL, _ sql: String, blob: Data? = nil) throws {
+    var db: OpaquePointer?
+    defer { sqlite3_close(db) }
+    var statement: OpaquePointer?
+    guard sqlite3_open(url.path, &db) == SQLITE_OK, sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+        throw RelayError(code: .storage, message: "test SQL unavailable")
+    }
+    defer { sqlite3_finalize(statement) }
+    if let blob {
+        _ = blob.withUnsafeBytes { sqlite3_bind_blob(statement, 1, $0.baseAddress, Int32($0.count), unsafeBitCast(-1, to: sqlite3_destructor_type.self)) }
+    }
+    guard sqlite3_step(statement) == SQLITE_DONE, sqlite3_changes(db) == 1 else { throw RelayError(code: .storage, message: "test SQL failed: \(sql)") }
+}
+
+@MainActor @Test func legitimateCachedRecordTransplantedToAnotherMappingIsRejected() throws {
+    let net = try RelayNet()
+    #expect(try net.publicSecure.perform(.sos, value: "Training Building A · Floor 1"))
+    _ = try net.responder.receive(try #require(try net.publicUser.outgoing()).bytes)
+    let context = try net.responderSecure.relayContext()
+    func mapping() throws -> String {
+        RelayEndpointController.cacheID(kind: .event, own: context.identity.card, peer: context.peer,
+                                        raw: try #require(try net.responderSecure.endpoint.nextPacket()), correlation: Data(count: 32))
+    }
+    #expect(try net.responderSecure.perform(.reply, value: "Team at door A"))
+    let first = try #require(try net.responder.outgoing())
+    let firstID = try mapping()
+    let returned = try #require(try RelayAcceptance(bytes: net.publicUser.receive(first.bytes)).returned)
+    _ = try net.responder.receive(returned) // C++ confirms the first reply
+    #expect(try net.responderSecure.perform(.reply, value: "Team at door B"))
+    let second = try #require(try net.responder.outgoing())
+    let secondID = try mapping()
+    #expect(second.bytes.count == first.bytes.count && second.expiry == first.expiry && firstID != secondID)
+    // Typed-valid unsigned row metadata beside an intact record is not trusted either.
+    let secondFlow = try #require(try RelayQueue(storageURL: net.responder.cacheURL).lookup(id: secondID)).flow
+    for (change, revert) in [("attempts=1", "attempts=0"), ("flow='\(String(repeating: "0", count: 64))'", "flow='\(secondFlow)'")] {
+        try execute(net.responder.cacheURL, "UPDATE relay_items SET \(change) WHERE id='\(secondID)'")
+        #expect(throws: RelayProtocolError.cacheMismatch, "\(change)") { try net.responder.outgoing() }
+        try execute(net.responder.cacheURL, "UPDATE relay_items SET \(revert) WHERE id='\(secondID)'")
+    }
+    #expect(try net.responder.outgoing() == second)
+    // Copy the intact, legitimately written first record over the second mapping's payload.
+    let cache = try RelayQueue(storageURL: net.responder.cacheURL)
+    try execute(net.responder.cacheURL, "UPDATE relay_items SET payload=? WHERE id='\(secondID)'",
+                blob: try #require(try cache.lookup(id: firstID)).payload)
+    #expect(throws: RelayProtocolError.cacheMismatch) { try net.responder.outgoing() }
+    #expect(net.pending(net.responderSecure) == 1)
+}
+
+@MainActor @Test func receiptMemoForAnotherCorrelationCannotBypassPendingHeadCheck() throws {
+    let net = try RelayNet()
+    #expect(try net.publicSecure.perform(.sos, value: "Training Building A · Floor 1"))
+    let sos = try #require(try net.publicUser.outgoing())
+    let receipt = try RelayPacket(bytes: try #require(try RelayAcceptance(bytes: net.responder.receive(sos.bytes)).returned))
+    _ = try net.publicUser.receive(receipt.bytes)
+    #expect(net.pending(net.publicSecure) == 0)
+    let context = try net.publicSecure.relayContext()
+    let raw = try context.envelope.open(receipt.sealed)
+    let memo = try #require(try RelayQueue(storageURL: net.publicUser.cacheURL).lookup(
+        id: RelayEndpointController.receiptMemoID(own: context.identity.card, peer: context.peer, raw: raw, correlation: receipt.correlation)))
+    #expect(memo.payload != receipt.bytes) // stored as a bound cache record, not the bare peer packet
+    // A genuinely responder-signed copy carrying another correlation, plus a transplanted intact memo under its mapping.
+    let responderIdentity = net.responderSecure.identity
+    let forged = try RelayPacket.make(kind: .receipt, priority: .ordinary, expiry: receipt.expiry, correlation: randomBytes(32),
+                                      sealed: try SecureEnvelope(identity: responderIdentity, peer: net.publicSecure.card).seal(raw),
+                                      identity: responderIdentity, recipient: net.publicSecure.card)
+    let forgedID = RelayEndpointController.receiptMemoID(own: context.identity.card, peer: context.peer, raw: raw, correlation: forged.correlation)
+    #expect(try RelayQueue(storageURL: net.publicUser.cacheURL).cacheAdmit(id: forgedID, flow: memo.flow, priority: .ordinary, expiry: memo.expiry,
+                                                                        hops: 2, payload: memo.payload, now: net.clock.now) == .admitted)
+    #expect(throws: RelayProtocolError.cacheMismatch) { try net.publicUser.receive(forged.bytes) }
+    // A genuine reseal with the same raw receipt, correlation and expiry is not the packet the memo binds.
+    let resealed = try RelayPacket.make(kind: .receipt, priority: .ordinary, expiry: receipt.expiry, correlation: receipt.correlation,
+                                        sealed: try SecureEnvelope(identity: responderIdentity, peer: net.publicSecure.card).seal(raw),
+                                        identity: responderIdentity, recipient: net.publicSecure.card)
+    #expect(throws: RelayProtocolError.cacheMismatch) { try net.publicUser.receive(resealed.bytes) }
+    _ = try net.publicUser.receive(receipt.bytes)
+    // A memo whose bound packet differs from the redelivered one is rejected too, not bypassed.
+    let memoID = RelayEndpointController.receiptMemoID(own: context.identity.card, peer: context.peer, raw: raw, correlation: receipt.correlation)
+    try execute(net.publicUser.cacheURL, "UPDATE relay_items SET expiry=expiry+1 WHERE id='\(memoID)'")
+    #expect(throws: RelayProtocolError.cacheMismatch) { try net.publicUser.receive(receipt.bytes) }
+}
+
+@MainActor @Test func cacheGuardFailsClosedOnMissingOrMismatchedFilesWithoutRecreatingThem() throws {
+    // Guard deleted while the cache remains.
+    let net = try RelayNet()
+    #expect(try net.publicSecure.perform(.sos, value: "Training Building A · Floor 1"))
+    let sos = try #require(try net.publicUser.outgoing())
+    let guardURL = net.publicUser.cacheGuardURL
+    #expect(FileManager.default.fileExists(atPath: guardURL.path))
+    let guardBytes = try Data(contentsOf: guardURL)
+    #expect(guardBytes.count == 68 && guardBytes.prefix(4) == Data("ORG1".utf8))
+    #expect(guardBytes.range(of: net.publicSecure.card.digest) != nil && guardBytes.range(of: net.responderSecure.card.digest) != nil)
+    try FileManager.default.removeItem(at: guardURL)
+    try net.restartPublic()
+    #expect(throws: RelayProtocolError.cacheGuard) { try net.publicUser.outgoing() }
+    #expect(!FileManager.default.fileExists(atPath: guardURL.path))
+
+    // Guard naming another peer.
+    var other = guardBytes
+    other.replaceSubrange(36..<68, with: Data(repeating: 0xab, count: 32))
+    try other.write(to: guardURL)
+    #expect(throws: RelayProtocolError.cacheGuard) { try net.publicUser.outgoing() }
+    try guardBytes.write(to: guardURL)
+    #expect(try net.publicUser.outgoing() == sos)
+
+    // Retained handle: a cache deleted underneath it is not silently recreated or written detached.
+    try FileManager.default.removeItem(at: net.publicUser.cacheURL)
+    #expect(throws: RelayProtocolError.cacheGuard) { try net.publicUser.outgoing() }
+    #expect(throws: RelayProtocolError.cacheGuard) { try net.publicUser.receive(sos.bytes) }
+    #expect(!FileManager.default.fileExists(atPath: net.publicUser.cacheURL.path))
+    // Zero-length cache beside its guard.
+    try Data().write(to: net.publicUser.cacheURL)
+    try net.restartPublic()
+    #expect(throws: RelayProtocolError.cacheGuard) { try net.publicUser.outgoing() }
+    #expect(try Data(contentsOf: net.publicUser.cacheURL).isEmpty && net.pending(net.publicSecure) == 1)
+
+    // Explicit new session rotates the epoch and starts a fresh guarded cache.
+    net.publicSecure = try SecureEndpointController.newSession(rootURL: net.root.appendingPathComponent("public"), role: .publicUser,
+                                                               recordStore: net.publicRecord)
+    try net.responderSecure.resetSession()
+    try net.publicSecure.pair(net.responderSecure.card.base64)
+    try net.responderSecure.pair(net.publicSecure.card.base64)
+    let clock = net.clock
+    net.publicUser = RelayEndpointController(secure: net.publicSecure, clock: { clock.now })
+    #expect(try net.publicUser.outgoing() == nil)
+    #expect(try net.publicSecure.perform(.sos, value: "Training Building A · Floor 1"))
+    #expect(try net.publicUser.outgoing() != nil && net.publicUser.cacheGuardURL != guardURL)
+}
+
+@MainActor @Test func unpairedEndpointCreatesNoCacheOrGuard() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent("rescue-unpaired-\(UUID().uuidString)", isDirectory: true)
+    defer { try? FileManager.default.removeItem(at: root) }
+    let secure = try SecureEndpointController(rootURL: root, role: .publicUser, recordStore: RelayRecordStore())
+    let endpoint = RelayEndpointController(secure: secure)
+    #expect(throws: SecureExchangeError.notPaired) { try endpoint.outgoing() }
+    #expect(throws: SecureExchangeError.notPaired) { try endpoint.cacheCount() }
+    #expect(throws: SecureExchangeError.notPaired) { try endpoint.receive(Data(count: 400)) }
+    #expect(!FileManager.default.fileExists(atPath: endpoint.cacheURL.path) && !FileManager.default.fileExists(atPath: endpoint.cacheGuardURL.path))
+}
+
+@MainActor @Test func flushRefusesRowsWhoseUnsignedMetadataDiffersFromThePacket() async throws {
+    let net = try RelayNet()
+    #expect(try net.publicSecure.perform(.sos, value: "Training Building A · Floor 1"))
+    let sos = try net.upload(net.publicUser)
+    let url = net.relay.storageURL
+    // Each typed-valid change is reverted after the refused flush; none may reach the destination.
+    let tampering = [("urgency=0", "urgency=1"), ("expiry=expiry+1", "expiry=expiry-1"), ("hops=1", "hops=2"),
+                     ("flow='\(String(repeating: "0", count: 64))'", "flow='\(RelayService.flow(for: sos))'"),
+                     ("id='\(String(repeating: "e", count: 64))'", "id='\(sos.id)'")]
+    for (change, revert) in tampering {
+        try execute(url, "UPDATE relay_items SET \(change) WHERE id='\(sos.id)'")
+        #expect(isFailed(try await net.flush()), "\(change)")
+        #expect(net.delivered.isEmpty, "\(change)")
+        try execute(url, "UPDATE relay_items SET \(revert) WHERE id='\(change.hasPrefix("id=") ? String(repeating: "e", count: 64) : sos.id)'")
+    }
+    // Metadata changed while the destination answers: acceptance not used, original retained, no reverse receipt.
+    let outcome = try await net.relay.flush { bytes, _ in
+        try execute(url, "UPDATE relay_items SET urgency=0 WHERE id='\(sos.id)'")
+        return try net.responder.receive(bytes)
+    }
+    #expect(isFailed(outcome))
+    #expect(try net.relay.count() == 1 && net.inspect().lookup(id: sos.id)?.priority == .ordinary)
+    try execute(url, "UPDATE relay_items SET urgency=1 WHERE id='\(sos.id)'")
+    guard case .delivered(sos.id, 7, _?) = try await net.flush() else { Issue.record("genuine row not delivered"); return }
 }

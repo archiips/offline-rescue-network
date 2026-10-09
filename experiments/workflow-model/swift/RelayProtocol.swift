@@ -6,7 +6,7 @@ import CryptoKit
 
 public enum RelayProtocolError: Error, Equatable, Sendable, CustomStringConvertible, LocalizedError {
     case malformed, policy, wrongSender, wrongRecipient, badSignature, innerMismatch, expired, expiryTooFar
-    case wrongPacket, returnInvalid, correlation, cacheMismatch, cacheExpired, plaintextSize, busy, unknownPeer
+    case wrongPacket, returnInvalid, correlation, cacheMismatch, cacheExpired, plaintextSize, busy, unknownPeer, cacheGuard, custodyMismatch
 
     public var description: String {
         switch self {
@@ -26,6 +26,8 @@ public enum RelayProtocolError: Error, Equatable, Sendable, CustomStringConverti
         case .plaintextSize: "Message too large for a relay packet"
         case .busy: "A relay flush is already in progress"
         case .unknownPeer: "Relay accepts only the two pinned opposite-role cards"
+        case .custodyMismatch: "Saved relay row metadata differs from its signed packet; not forwarded"
+        case .cacheGuard: "Saved relay cache missing or not for this pairing; nothing was recreated. Start a new secure session"
         }
     }
     public var errorDescription: String? { description }
@@ -92,15 +94,20 @@ public struct RelayPacket: Equatable, Sendable {
 
     /// Requires exact sender/recipient pins, both signatures and now < expiry <= now + horizon.
     public func verify(from senderCard: SecurePairingCard, to recipientCard: SecurePairingCard, now: Int64) throws {
+        try authenticate(from: senderCard, to: recipientCard)
+        guard expiry > now else { throw RelayProtocolError.expired }
+        let (remaining, overflow) = expiry.subtractingReportingOverflow(now)
+        guard !overflow, remaining <= Self.acceptedHorizon else { throw RelayProtocolError.expiryTooFar }
+    }
+
+    /// Pins and both signatures, without the time window (for this endpoint's own saved packets).
+    func authenticate(from senderCard: SecurePairingCard, to recipientCard: SecurePairingCard) throws {
         guard sender == senderCard.digest else { throw RelayProtocolError.wrongSender }
         guard recipient == recipientCard.digest else { throw RelayProtocolError.wrongRecipient }
         guard senderCard.signingKey.isValidSignature(bytes.suffix(64), for: Self.signatureDomain + bytes.prefix(bytes.count - 64)) else {
             throw RelayProtocolError.badSignature
         }
         guard SecureEnvelope.isSigned(sealed, sender: senderCard, recipient: recipientCard) else { throw RelayProtocolError.innerMismatch }
-        guard expiry > now else { throw RelayProtocolError.expired }
-        let (remaining, overflow) = expiry.subtractingReportingOverflow(now)
-        guard !overflow, remaining <= Self.acceptedHorizon else { throw RelayProtocolError.expiryTooFar }
     }
 
     static func make(kind: RelayKind, priority: RelayPriority, expiry: Int64, correlation: Data, sealed: Data,
@@ -185,6 +192,33 @@ public struct RelayAcceptance: Sendable {
         bytes += Data([UInt8(truncatingIfNeeded: body.count >> 8), UInt8(truncatingIfNeeded: body.count)]) + body
         return bytes + (try! signer.signature(for: signatureDomain + bytes))
     }
+}
+
+/// ORF1 endpoint-local cache record, never sent: magic4, ORL1 length2, ORL1 358...4096, Ed25519 signature64
+/// by this endpoint over the domain, the exact 64-character cache mapping ID and every preceding byte. Binding
+/// the mapping ID means an intact record cannot be moved to another mapping (raw message, kind, cards,
+/// correlation). Sizes 428...4166 fit the C++ payload limit 4276. Signed only when the cache is written.
+enum RelayCacheRecord {
+    static let overhead = 70
+    private static let magic = Data("ORF1".utf8)
+    private static let signatureDomain = Data("offline-rescue/ORF1/cache-binding".utf8)
+
+    static func seal(_ packet: RelayPacket, mapping: String, identity: SecureIdentity) -> Data {
+        let bytes = magic + Data([UInt8(packet.bytes.count >> 8), UInt8(packet.bytes.count & 0xff)]) + packet.bytes
+        return bytes + (try! identity.signingKey.signature(for: signed(bytes, mapping: mapping)))
+    }
+
+    /// The bound ORL1, after exact framing and this endpoint's own signature for `mapping` verify.
+    static func open(_ input: Data, mapping: String, owner: SecurePairingCard) throws -> RelayPacket {
+        let record = Data(input)
+        guard (overhead + RelayPacket.minimumSize...overhead + RelayPacket.maximumSize).contains(record.count),
+              record.prefix(4) == magic, Int(record[4]) << 8 | Int(record[5]) == record.count - overhead,
+              owner.signingKey.isValidSignature(record.suffix(64), for: signed(record.prefix(record.count - 64), mapping: mapping))
+        else { throw RelayProtocolError.cacheMismatch }
+        return try RelayPacket(bytes: record[6..<(record.count - 64)])
+    }
+
+    private static func signed(_ bytes: Data, mapping: String) -> Data { signatureDomain + Data(mapping.utf8) + bytes }
 }
 
 /// ORC1 upload response: magic4 + ORL1 SHA256 32. Unsigned; claims only local relay admission, never delivery.

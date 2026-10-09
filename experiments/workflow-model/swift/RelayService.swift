@@ -54,10 +54,15 @@ public enum RelayFlushOutcome: Equatable, Sendable {
             let packet = try RelayPacket(bytes: item.payload)
             let (from, to) = try route(packet)
             try packet.verify(from: from, to: to, now: clock())
+            // Row metadata is unsigned; it must match the signed packet before anything is forwarded.
+            guard item.id == packet.id, item.flow == Self.flow(for: packet), item.priority == packet.priority,
+                  item.expiry == packet.expiry, item.remainingHops == Int(RelayPacket.hops) - 1 else {
+                throw RelayProtocolError.custodyMismatch
+            }
             let response = try await send(item.payload, to.role)
             if dropResponse { return .dropped(id: item.id, attempts: item.attempts) }
-            // Uploads may have run during the await; custody must still hold these exact bytes.
-            guard try queue.lookup(id: item.id)?.payload == item.payload else { throw RelayProtocolError.wrongPacket }
+            // Uploads may have run during the await; custody must still hold this exact row and bytes.
+            guard try queue.lookup(id: item.id) == item else { throw RelayProtocolError.wrongPacket }
             let returned = try RelayAcceptance(bytes: response).verify(original: packet, destination: to, origin: from, now: clock())
             // Reverse receipt first: a crash before removal only retries the original, which the destination
             // answers idempotently with the same cached receipt.
@@ -69,9 +74,13 @@ public enum RelayFlushOutcome: Equatable, Sendable {
         }
     }
 
+    /// Custody flow: one FIFO per sender/recipient direction.
+    static func flow(for packet: RelayPacket) -> String {
+        RelayEndpointController.hex(Data(SHA256.hash(data: packet.sender + packet.recipient)))
+    }
+
     private func custody(_ packet: RelayPacket) throws {
-        let flow = RelayEndpointController.hex(Data(SHA256.hash(data: packet.sender + packet.recipient)))
-        _ = try queue.enqueue(id: packet.id, flow: flow, priority: packet.priority, expiry: packet.expiry,
+        _ = try queue.enqueue(id: packet.id, flow: Self.flow(for: packet), priority: packet.priority, expiry: packet.expiry,
                               hops: Int(RelayPacket.hops), payload: packet.bytes, now: clock())
     }
 
