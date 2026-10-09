@@ -87,11 +87,15 @@ Responder Home/return stopped listening and preserved history/trust. Public proc
 
 Final local state: both project simulators remain open, paired, in Via relay, with synthetic history retained and networking stopped. The task's Mac relay was quit normally. Historical sample files were retained. No active task worktree or relay process is needed to resume; read Git rather than assuming a temporary binary/log still exists. Physical radio, OS isolation, background delivery and private-data gates remain unverified.
 
+## Portfolio demo package — 2026-10-09
+
+[Three-minute recruiter demo](PORTFOLIO_DEMO.md) packages the verified native workflow with signed-build/relay setup, a timed speaking script, optional refused-upload recovery, evidence links and scoped résumé wording. README links it directly. This is documentation derived from the existing evidence; no new native exercise or timing run is claimed.
+
 ## Exact next action
 
-The user requested stopping this window after saving the checkpoint. In a new window, start with this file, portfolio TODO and Git. Do not rebuild the completed native relay feature or repeat pairing approval for these already-authorized peers. Next bounded portfolio work: package a short reproducible recruiter-facing demo using the verified walkthrough, then design a measured signed-relay evaluation if useful. Existing plain-loopback timings must not be relabeled as secure/native benchmarks; define the population and failure conditions before measuring. Physical testing can wait. No AI, sensors, agency sales or new transport scope is implied.
+Next bounded portfolio work: design a measured signed-relay evaluation, then implement and run its harness at a separate verified checkpoint. Define command-to-custody, forward delivery and reverse-receipt timing populations separately; preserve deliberate contact delays and failures rather than pooling them into a misleading latency figure. Existing plain direct timings are not secure-relay measurements. Physical testing still waits for device availability. Do not rebuild completed native controls or repeat pairing approval for the already-authorized peers.
 
-Physical tests can still wait. Full NET-03/ENG-07/SEC-01, encrypted storage, enrollment, independent audit, background behavior, device compatibility and private-data gates remain open. AI, sensors and selling to agencies are deferred.
+Full physical, encrypted-storage, enrollment, independent-audit, device-compatibility and private-data gates remain open. AI, sensors and selling to agencies are deferred.
 
 ## Resume checklist
 

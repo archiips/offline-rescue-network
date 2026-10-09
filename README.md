@@ -30,9 +30,13 @@ The Mac demonstration relays encrypted messages between participating endpoints.
 
 - [Signed relay network](experiments/rescue-demo/RELAY_NETWORK.md): separate Mac processes, nonoverlapping contacts, restart/lost-response recovery and delayed encrypted receipts; 11 reproducible facts.
 
+## Show the project
+
+[Three-minute portfolio demo](docs/PORTFOLIO_DEMO.md): setup, presentation script, recovery extension and evidence-backed résumé wording.
+
 ## Current focus
 
-Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Both audiences have manual native relay controls. The attended native relay round trip and restart recovery are verified. Next: package the portfolio walkthrough and choose measured secure-relay evaluation; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
+Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Both audiences have manual native relay controls. The attended native relay round trip and restart recovery are verified. The portfolio walkthrough is packaged. Next: design a measured signed-relay evaluation; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
 
 ## First milestone
 
