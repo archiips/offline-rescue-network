@@ -9,101 +9,159 @@ import RescueDemoState
 
 // MARK: - Visual language
 
+/// Dark operational console. Status is always carried by text and symbols, never amber alone.
 enum Theme {
-    static let navy = Color(red: 0.07, green: 0.13, blue: 0.24)
-    static let navyDeep = Color(red: 0.03, green: 0.18, blue: 0.24)
-    static let teal = Color(red: 0.0, green: 0.52, blue: 0.55)
-    static let amber = Color(red: 0.80, green: 0.40, blue: 0.0)
-    static let cornerRadius: CGFloat = 18
+    static let ink = Color(red: 0.92, green: 0.94, blue: 0.97)
+    static let canvas = Color(red: 0.035, green: 0.050, blue: 0.073)
+    static let surface = Color(red: 0.08, green: 0.105, blue: 0.14)
+    static let sentSurface = Color(red: 0.20, green: 0.16, blue: 0.105)
+    static let accent = Color(red: 0.96, green: 0.69, blue: 0.32)
+    static let bubbleRadius: CGFloat = 20
+    static let readableWidth: CGFloat = 680
 }
 
-/// Rounded grouped surface used for every content block.
-struct Card<Content: View>: View {
-    let title: String?
-    let systemImage: String?
-    let content: Content
-    init(_ title: String? = nil, systemImage: String? = nil, @ViewBuilder content: () -> Content) {
-        self.title = title; self.systemImage = systemImage; self.content = content()
-    }
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let title {
-                Group {
-                    if let systemImage { Label(title, systemImage: systemImage) } else { Text(title) }
-                }
-                .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                .accessibilityAddTraits(.isHeader)
-            }
-            content
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous))
-    }
+extension Animation {
+    /// State-driven motion; nil when Reduce Motion is on so changes apply instantly.
+    static func rescue(_ reduceMotion: Bool) -> Animation? { reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.86) }
 }
 
-/// Eyebrow + title introducing the public or responder surface.
-struct AudienceHeading: View {
-    let eyebrow: String
-    let title: String
-    let systemImage: String
+/// Small uppercase-free section label above a hairline group.
+struct SectionLabel: View {
+    let text: String
+    var trailing: String? = nil
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Label(eyebrow.uppercased(), systemImage: systemImage)
-                .font(.caption.weight(.bold)).foregroundStyle(Theme.teal)
-            Text(title).font(.title2.bold())
+        HStack(alignment: .firstTextBaseline) {
+            Text(text).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Spacer()
+            if let trailing { Text(trailing).font(.subheadline).foregroundStyle(.tertiary) }
         }
-        .accessibilityElement(children: .combine)
+        .padding(.bottom, 8)
         .accessibilityAddTraits(.isHeader)
     }
 }
 
-struct StatusPill: View {
-    let text: String
+/// One row in a thin-separated list: leading symbol, title/subtitle, optional trailing content.
+struct InfoRow<Trailing: View>: View {
     let systemImage: String
-    var attention = false
+    let title: String
+    var subtitle: String? = nil
+    var symbolColor: Color = .secondary
+    @ViewBuilder var trailing: () -> Trailing
     var body: some View {
-        Label(text, systemImage: systemImage)
-            .font(.caption.weight(.semibold))
-            .padding(.horizontal, 10).padding(.vertical, 5)
-            .foregroundStyle(attention ? Color(red: 1, green: 0.78, blue: 0.45) : .white)
-            .background(.white.opacity(attention ? 0.10 : 0.14), in: Capsule())
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.medium))
+                .foregroundStyle(symbolColor)
+                .frame(width: 28)
+                .contentTransition(.symbolEffect(.replace))
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.body)
+                if let subtitle { Text(subtitle).font(.subheadline).foregroundStyle(.secondary).contentTransition(.opacity) }
+            }
+            Spacer(minLength: 8)
+            trailing()
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// One fact among device receipt, human acknowledgment and handling; never merged.
-struct FactTile: View {
+extension InfoRow where Trailing == EmptyView {
+    init(systemImage: String, title: String, subtitle: String? = nil, symbolColor: Color = .secondary) {
+        self.init(systemImage: systemImage, title: title, subtitle: subtitle, symbolColor: symbolColor) { EmptyView() }
+    }
+}
+
+/// One fact among device receipt, human acknowledgment and handling; never merged into one status.
+struct FactLine: View {
     let title: String
     let value: String
     let systemImage: String
     let reached: Bool
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Image(systemName: systemImage).font(.title3)
-                .foregroundStyle(reached ? Theme.teal : Color.secondary)
+        HStack(spacing: 14) {
+            Image(systemName: reached ? "checkmark.circle.fill" : systemImage)
+                .font(.body.weight(.medium))
+                .foregroundStyle(reached ? Theme.ink : Color.secondary)
+                .frame(width: 28)
+                .contentTransition(.symbolEffect(.replace))
                 .accessibilityHidden(true)
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.subheadline.weight(.semibold))
-                .lineLimit(1).minimumScaleFactor(0.5)
+            Text(title)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.body.weight(reached ? .semibold : .regular))
+                .foregroundStyle(reached ? Theme.ink : Color.secondary)
+                .multilineTextAlignment(.trailing)
+                .contentTransition(.opacity)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.vertical, 12)
         .accessibilityElement(children: .combine)
     }
 }
 
-/// Lays facts side by side, stacking them at accessibility text sizes.
-struct FactRow<Content: View>: View {
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @ViewBuilder let content: () -> Content
+/// Inline notice for states that need a decision; icon and text, never color alone.
+struct Notice: View {
+    let text: String
+    let systemImage: String
     var body: some View {
-        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 8)) : AnyLayout(HStackLayout(alignment: .top, spacing: 8))
-        layout { content() }
+        Label { Text(text) } icon: { Image(systemName: systemImage).foregroundStyle(Theme.accent) }
+            .font(.subheadline)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// Wrapping row for status pills so long labels never truncate at large text sizes.
+/// Full-width primary action used for the one dominant call to action on a screen.
+struct PrimaryButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var fill: Color = Theme.accent
+    @Environment(\.isEnabled) private var isEnabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(Theme.canvas)
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(fill.opacity(isEnabled ? 1 : 0.4), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.9 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+/// Compact capsule action for secondary-but-frequent actions; ink fill adapts to dark mode.
+struct CompactButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var prominent = true
+    @Environment(\.isEnabled) private var isEnabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(prominent ? Theme.canvas : Theme.ink)
+            .padding(.horizontal, 16).frame(minHeight: 44)
+            .background(prominent ? AnyShapeStyle(Theme.ink) : AnyShapeStyle(Color(uiColor: .secondarySystemBackground)), in: Capsule())
+            .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
+            .scaleEffect(configuration.isPressed ? 0.97 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+/// Bottom action bar over the content, separated by a hairline.
+struct ActionBar<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 10) { content() }
+                .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 8)
+                .frame(maxWidth: Theme.readableWidth)
+                .frame(maxWidth: .infinity)
+        }
+        .background(Theme.surface)
+    }
+}
+
+/// Wrapping row for status items so long labels never truncate at large text sizes.
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -141,29 +199,34 @@ struct DemoShell: View {
     @AppStorage("sampleEndpointRole") private var preferredRole = 0
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var title: String {
+        switch demo.localRole {
+        case nil: "Offline Rescue"
+        case .responder?: "Responder"
+        default: "Offline Rescue"
+        }
+    }
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                StatusHeader(transport: demo.transport) { showingSetup = true }
+                StatusStrip(transport: demo.transport) { showingSetup = true }
                 RecoveryBanner()
                 content.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle("Offline Rescue")
+            .background(Theme.canvas)
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.navy, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button { showingSetup = true } label: { Label("Setup", systemImage: "slider.horizontal.3") }
-                        .labelStyle(.titleAndIcon)
+                    Button { showingSetup = true } label: { Label("Setup", systemImage: "gearshape") }
                         .accessibilityHint("Mode, role, pairing, route, connection and session reset")
                 }
             }
         }
-        .fontDesign(.rounded)
-        .tint(Theme.teal)
+        .tint(Theme.accent)
+        .preferredColorScheme(.dark)
+        .transaction { if reduceMotion { $0.disablesAnimations = true } }
         .onAppear { if preferredMode == 1 && demo.localRole == nil { demo.useSecureRole(EndpointRole(rawValue: preferredRole) ?? .publicUser, viaRelay: preferredRelay) } }
         .onChange(of: scenePhase) { _, phase in if phase == .background { demo.stopLocalExchange() } }
         .sheet(isPresented: $showingSetup) { SetupSheet().environmentObject(demo) }
@@ -174,12 +237,13 @@ struct DemoShell: View {
     @ViewBuilder private var content: some View {
         if demo.snapshot == nil {
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     ContentUnavailableView("Saved session unavailable", systemImage: "externaldrive.badge.exclamationmark", description: Text("Your sample data has not been replaced. Retry opening it when storage is available."))
                     Button("Retry saved session") { demo.retrySavedSession() }
-                        .buttonStyle(.borderedProminent).controlSize(.large)
+                        .buttonStyle(PrimaryButtonStyle(fill: Theme.ink))
+                        .frame(maxWidth: 320)
                     if demo.secureMode { Button("New secure sample session") { confirmingReset = true }.buttonStyle(.bordered) }
-                }.padding()
+                }.padding(24)
             }
         } else if demo.localRole == nil {
             if sizeClass == .regular {
@@ -191,12 +255,15 @@ struct DemoShell: View {
                 }
             } else {
                 VStack(spacing: 0) {
-                    Picker("Training view", selection: $responder) {
-                        Label("Public", systemImage: "person.fill").tag(false)
-                        Label("Responder", systemImage: "cross.case.fill").tag(true)
+                    Picker("Training view", selection: $responder.animation(.rescue(reduceMotion))) {
+                        Text("Public").tag(false)
+                        Text("Responder").tag(true)
                     }
-                    .pickerStyle(.segmented).padding(.horizontal).padding(.top, 12).padding(.bottom, 4)
-                    if responder { ResponderView() } else { PublicView(floor: $publicFloor, reviewing: $reviewingSOS) }
+                    .pickerStyle(.segmented).padding(.horizontal, 20).padding(.top, 10).padding(.bottom, 2)
+                    Group {
+                        if responder { ResponderView().transition(.opacity) }
+                        else { PublicView(floor: $publicFloor, reviewing: $reviewingSOS).transition(.opacity) }
+                    }
                 }
             }
         } else if demo.localRole == .responder {
@@ -211,74 +278,96 @@ func resetPrompt(training: Bool) -> String {
     training ? "Clear this training session?" : "Start a new secure sample session? Keys and pairing will change. Reset and re-pair both endpoints. Previous sample files remain on disk."
 }
 
-/// Editorial navy header: what this device is, the synthetic disclosure and live connection facts.
-struct StatusHeader: View {
+/// Compact connection strip: link, pairing, queue and storage facts plus the persistent synthetic disclosure.
+struct StatusStrip: View {
     @EnvironmentObject private var demo: DemoController
     @ObservedObject var transport: LocalExchangeTransport
     let openSetup: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var modeTitle: String {
         guard let role = demo.localRole else { return "Training · simulated link" }
-        let side = role == .responder ? "Responder endpoint" : "Public endpoint"
+        let side = role == .responder ? "Responder" : "Public"
         guard demo.secureMode else { return "\(side) · plain diagnostic" }
-        return "\(side) · \(demo.relayMode ? "via relay" : "direct exchange")"
+        return "\(side) · \(demo.relayMode ? "relay" : "direct")"
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(modeTitle).font(.title3.weight(.bold)).foregroundStyle(.white)
-                Text("Synthetic sample data · does not contact emergency services")
-                    .font(.footnote).foregroundStyle(.white.opacity(0.75))
-            }
-            .accessibilityElement(children: .combine)
-            FlowLayout {
-                Button(action: openSetup) { connectionPill }
+        VStack(alignment: .leading, spacing: 6) {
+            FlowLayout(spacing: 14) {
+                Button(action: openSetup) { connectionItem }
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens Setup")
                 if demo.localRole != nil {
-                    if demo.pairedCard == nil { StatusPill(text: "Not paired", systemImage: "person.2.slash", attention: true) }
-                    else { StatusPill(text: "Paired sample peer", systemImage: "person.2.fill") }
+                    if demo.pairedCard == nil { StripItem(text: "Not paired", systemImage: "person.2.slash", attention: true) }
+                    else { StripItem(text: "Paired", systemImage: "person.2") }
                 }
                 if let state = demo.snapshot {
                     if state.pendingTransfers == 0 {
-                        StatusPill(text: "Nothing queued", systemImage: "tray")
+                        StripItem(text: "Queue clear", systemImage: "tray")
                     } else {
-                        StatusPill(text: "\(state.pendingTransfers) queued · no device receipt yet", systemImage: "tray.full.fill", attention: true)
+                        StripItem(text: "\(state.pendingTransfers) awaiting receipt", systemImage: "tray.full", attention: true)
                     }
-                    StatusPill(text: state.persistent ? "Saved on this device" : "Sample memory session", systemImage: state.persistent ? "internaldrive" : "memorychip")
+                    StripItem(text: state.persistent ? "Saved" : "Memory only", systemImage: state.persistent ? "internaldrive" : "memorychip")
                 }
             }
+            Text("\(modeTitle) · Synthetic exercise")
+                .font(.caption2).foregroundStyle(.secondary)
+            Text("Does not contact emergency services")
+                .font(.caption2).foregroundStyle(.secondary)
             if demo.localRole != nil {
                 if let listening = transport.hostPort, demo.relayMode {
                     Text("Listening on port \(listening.rawValue) · keep this app open")
-                        .font(.caption).foregroundStyle(.white.opacity(0.8)).textSelection(.enabled)
-                } else {
-                    Text(transport.status).font(.caption).foregroundStyle(.white.opacity(0.8))
+                        .font(.caption2).foregroundStyle(.secondary).textSelection(.enabled)
+                } else if transport.status != "Stopped" {
+                    Text(transport.status).font(.caption2).foregroundStyle(.secondary)
                 }
                 if transport.active && !demo.relayStatus.isEmpty {
-                    Text(demo.relayStatus).font(.caption).foregroundStyle(.white.opacity(0.8))
+                    Text(demo.relayStatus).font(.caption2).foregroundStyle(.secondary)
                 }
             }
             if demo.exchangeBusy {
-                ProgressView(demo.relayMode ? "Uploading saved message" : "Transferring saved messages")
-                    .font(.caption).tint(.white).foregroundStyle(.white)
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text(demo.relayMode ? "Uploading saved message" : "Transferring saved messages")
+                }
+                .font(.caption2).foregroundStyle(.secondary)
+                .transition(.opacity)
             }
         }
-        .padding(.horizontal).padding(.top, 8).padding(.bottom, 14)
+        .padding(.horizontal, 20).padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(LinearGradient(colors: [Theme.navy, Theme.navyDeep], startPoint: .top, endPoint: .bottom))
-        .animation(reduceMotion ? nil : .smooth, value: demo.snapshot?.pendingTransfers)
-        .animation(reduceMotion ? nil : .smooth, value: demo.exchangeBusy)
+        .background(Theme.canvas)
+        .overlay(alignment: .bottom) { Divider() }
+        .animation(.rescue(reduceMotion), value: demo.snapshot?.pendingTransfers)
+        .animation(.rescue(reduceMotion), value: demo.exchangeBusy)
     }
-    @ViewBuilder private var connectionPill: some View {
+    @ViewBuilder private var connectionItem: some View {
         if demo.localRole == nil {
             let connected = demo.snapshot?.connected ?? false
-            StatusPill(text: connected ? "Simulated link on" : "Simulated link off", systemImage: connected ? "link" : "link.badge.plus", attention: !connected)
+            StripItem(text: connected ? "Simulated link on" : "Simulated link off", systemImage: connected ? "link" : "link.badge.plus", attention: !connected, live: connected)
         } else if transport.active {
-            StatusPill(text: demo.relayMode ? "Relay exchange on" : "Local exchange on", systemImage: "antenna.radiowaves.left.and.right")
+            StripItem(text: demo.relayMode ? "Relay exchange on" : "Local exchange on", systemImage: "antenna.radiowaves.left.and.right", live: true)
         } else {
-            StatusPill(text: "Exchange stopped", systemImage: "antenna.radiowaves.left.and.right.slash", attention: true)
+            StripItem(text: "Stopped", systemImage: "antenna.radiowaves.left.and.right.slash", attention: true)
         }
+    }
+}
+
+struct StripItem: View {
+    let text: String
+    let systemImage: String
+    var attention = false
+    var live = false
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(attention ? Theme.accent : live ? Theme.ink : Color.secondary)
+                .accessibilityHidden(true)
+            Text(text)
+                .foregroundStyle(attention ? Theme.accent : live ? Theme.ink : Color.secondary)
+        }
+        .font(.caption.weight(attention || live ? .semibold : .regular))
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -294,7 +383,7 @@ struct RecoveryBanner: View {
             VStack(alignment: .leading, spacing: 8) {
                 if !demo.error.isEmpty {
                     Label(demo.error, systemImage: "exclamationmark.octagon.fill")
-                        .font(.callout).foregroundStyle(.red)
+                        .font(.subheadline).foregroundStyle(.red)
                 }
                 HStack {
                     if !demo.error.isEmpty && demo.snapshot?.persistent == true {
@@ -305,8 +394,8 @@ struct RecoveryBanner: View {
                 .buttonStyle(.bordered).controlSize(.small)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(Color(uiColor: .secondarySystemGroupedBackground))
+            .padding(.horizontal, 20).padding(.vertical, 10)
+            .background(Color.red.opacity(0.06))
             .overlay(alignment: .bottom) { Divider() }
         }
     }
@@ -340,48 +429,95 @@ private func kindLabel(_ kind: DemoMessageKind) -> (String, String) {
     }
 }
 
+/// Status events render as centered timeline markers; requests, updates and replies as chat bubbles.
+private func isEvent(_ kind: DemoMessageKind) -> Bool {
+    switch kind {
+    case .receipt, .acknowledgment, .assignment, .resolution, .reopen, .withdrawalDisposition: true
+    default: false
+    }
+}
+
+/// Full message history as a conversation. Each new saved message slides in when it actually appears in state.
 struct Conversation: View {
     let state: DeviceSnapshot
     let publicSide: Bool
     let acknowledge: ((String) -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private var motionKey: [String] { state.messages.map { "\($0.id)·\($0.delivery.rawValue)" } }
     var body: some View {
-        Card("Messages & updates", systemImage: "text.bubble") {
+        VStack(alignment: .leading, spacing: 0) {
+            SectionLabel(text: "Conversation", trailing: state.messages.isEmpty ? nil : "\(state.messages.count)")
+            Divider()
             if state.messages.isEmpty {
-                Text("No messages yet.").foregroundStyle(.secondary)
+                Text("No messages yet.").foregroundStyle(.secondary).padding(.vertical, 16)
             }
-            ForEach(Array(state.messages.enumerated()), id: \.element.id) { index, message in
-                if index > 0 { Divider() }
-                messageRow(message)
+            VStack(spacing: 14) {
+                ForEach(state.messages) { message in
+                    Group {
+                        if isEvent(message.kind) { eventRow(message) } else { bubble(message) }
+                    }
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .bottom).combined(with: .opacity), removal: .opacity))
+                }
             }
+            .padding(.top, 16)
         }
+        .animation(.rescue(reduceMotion), value: motionKey)
     }
-    private func messageRow(_ message: MessageSnapshot) -> some View {
+    private func direction(_ message: MessageSnapshot) -> String { message.outgoing ? "You sent" : "Received locally" }
+    private func bubble(_ message: MessageSnapshot) -> some View {
         let (title, icon) = kindLabel(message.kind)
-        return HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.body.weight(.semibold))
-                .foregroundStyle(message.outgoing ? Theme.teal : Theme.navy)
-                .frame(minWidth: 28)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("\(title) · \(message.outgoing ? "You sent" : "Received locally")")
-                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                Text(message.text)
-                if !message.location.isEmpty {
-                    Label(message.location, systemImage: "mappin.and.ellipse").font(.subheadline)
+        return HStack(alignment: .bottom, spacing: 0) {
+            if message.outgoing { Spacer(minLength: 56) }
+            VStack(alignment: message.outgoing ? .trailing : .leading, spacing: 5) {
+                Label("\(title) · \(direction(message))", systemImage: icon)
+                    .font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(message.text)
+                    if !message.location.isEmpty {
+                        Label(message.location, systemImage: "mappin.and.ellipse").font(.subheadline)
+                            .opacity(0.85)
+                    }
                 }
-                if message.outgoing {
-                    Text(deliveryText(message.delivery, publicSide: publicSide)).font(.caption).foregroundStyle(.secondary)
-                }
-                if let acknowledge, !message.outgoing, message.kind.isPublicUpdate, message.kind != .request,
-                   !state.messages.contains(where: { $0.kind == .acknowledgment && $0.reference == message.id }) {
-                    Button("Acknowledge update") { acknowledge(message.id) }
-                        .buttonStyle(.bordered).controlSize(.small).padding(.top, 2)
-                }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                .foregroundStyle(Theme.ink)
+                .background(message.outgoing ? Theme.sentSurface : Theme.surface,
+                            in: RoundedRectangle(cornerRadius: Theme.bubbleRadius, style: .continuous))
+                if message.outgoing { deliveryLine(message) }
+                ackButton(message)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            if !message.outgoing { Spacer(minLength: 56) }
         }
-        .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
+    }
+    private func eventRow(_ message: MessageSnapshot) -> some View {
+        let (title, icon) = kindLabel(message.kind)
+        return VStack(spacing: 3) {
+            Label("\(title) · \(direction(message))", systemImage: icon)
+                .font(.caption.weight(.semibold)).foregroundStyle(Theme.ink)
+            if !message.text.isEmpty {
+                Text(message.text).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            }
+            if !message.location.isEmpty {
+                Label(message.location, systemImage: "mappin.and.ellipse").font(.caption).foregroundStyle(.secondary)
+            }
+            if message.outgoing { deliveryLine(message) }
+            ackButton(message)
+        }
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+    }
+    private func deliveryLine(_ message: MessageSnapshot) -> some View {
+        Label(deliveryText(message.delivery, publicSide: publicSide), systemImage: message.delivery == .waiting ? "clock" : "checkmark")
+            .font(.caption2).foregroundStyle(.secondary)
+            .contentTransition(.opacity)
+    }
+    @ViewBuilder private func ackButton(_ message: MessageSnapshot) -> some View {
+        if let acknowledge, !message.outgoing, message.kind.isPublicUpdate, message.kind != .request,
+           !state.messages.contains(where: { $0.kind == .acknowledgment && $0.reference == message.id }) {
+            Button { acknowledge(message.id) } label: { Label("Acknowledge update", systemImage: "hand.raised") }
+                .buttonStyle(.bordered).controlSize(.small).padding(.top, 2)
+        }
     }
 }
 
@@ -420,8 +556,7 @@ struct SetupSheet: View {
                 Button("Reset session", role: .destructive) { demo.reset() }
             }
         }
-        .fontDesign(.rounded)
-        .tint(Theme.teal)
+        .tint(Theme.accent)
     }
     @ViewBuilder private var trainingSections: some View {
         Section {
@@ -462,7 +597,7 @@ struct SetupSheet: View {
     private var sessionSection: some View {
         Section("Session") {
             if let state = demo.snapshot {
-                LabeledContent("Storage", value: state.persistent ? "Saved on this device" : "Sample memory session")
+                LabeledContent("Storage", value: state.persistent ? "Saved" : "Memory only")
                 LabeledContent("Queued on this device", value: "\(state.pendingTransfers)")
             }
             if !demo.error.isEmpty && !(demo.localRole != nil && demo.relayMode) {
@@ -512,7 +647,7 @@ struct RelayConnectionSections: View {
     @AppStorage("sampleRelayPort") private var port = ""
     var body: some View {
         Section {
-            Text(demo.localRole == .responder ? "Responder endpoint" : "Public endpoint")
+            Text(demo.localRole == .responder ? "Responder" : "Public")
             Button(transport.active ? "Stop relay exchange" : "Start relay exchange") {
                 if transport.active { demo.stopLocalExchange() } else { demo.startLocalExchange() }
             }.disabled(demo.snapshot == nil || demo.pairedCard == nil)

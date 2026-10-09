@@ -2,9 +2,9 @@
 
 A person asks for help. A responder receives, acknowledges and replies. One C++ engine powers both native Apple interfaces, with durable messages and explicit delivery states.
 
-[![Watch the explanatory demo](docs/media/demo-poster.png)](docs/media/rescue-story.mp4)
+[Run the native app](experiments/rescue-demo/README.md#run-in-xcode) · [Inspect the evidence](experiments/rescue-demo/RELAY_MEASUREMENTS.md) · [Current state](docs/CURRENT_STATE.md)
 
-**[Watch the narrated demo →](docs/media/rescue-story.mp4)** · [Run the native app](experiments/rescue-demo/README.md#run-in-xcode) · [Inspect the evidence](experiments/rescue-demo/RELAY_MEASUREMENTS.md) · [Current state](docs/CURRENT_STATE.md)
+A live native workflow demo is being prepared; interaction capture is currently blocked by the computer-use connection. The earlier illustrated film was rejected as the intended demo format; [capture and editing checklist](tools/demo-video/LIVE_CAPTURE.md) tracks the replacement. The current interface is shown below.
 
 A portfolio prototype using preset synthetic data. Simulator/Mac local exchange is demonstrated; physical offline-radio behavior and operational readiness are unverified. A usable local communication path is required. The app does not contact emergency services.
 
@@ -12,7 +12,7 @@ A portfolio prototype using preset synthetic data. Simulator/Mac local exchange 
 
 | Public · iPhone | Responder · iPad |
 |---|---|
-| ![Public native request interface](docs/media/iphone.png) | ![Responder native workspace](docs/media/ipad.png) |
+| ![Public native request interface](docs/media/iphone-dark.png) | ![Responder native workspace](docs/media/ipad-dark.png) |
 | Review an SOS, report a floor and track the reply. | Review reported location, acknowledge and manage the request. |
 
 The primary screens focus on the request and conversation. Setup contains training controls, endpoint role, manual pairing, connection route and relay configuration. Connection and queue state remain visible. Existing histories and identities survive the presentation redesign.
@@ -26,9 +26,7 @@ The primary screens focus on the request and conversation. Setup contains traini
 
 Handling stays separate: open, assigned or resolved. An acknowledgment does not imply dispatch. An original Floor 1 report remains in history when the person later reports Floor 4.
 
-The demo uses animated workflow illustrations to explain these facts, followed by actual native app captures. Editorial timing is not measured transfer latency.
-
-![Animated illustration of relay custody and a delayed device receipt](docs/media/workflow-preview.gif)
+The planned live demo shows actual review/send, queued waiting, device receipt, human acknowledgment and reply. Training footage will be labeled as a simulated link. The [earlier illustrated film](docs/media/rescue-story.mp4) is retained as historical material, not the accepted live demo.
 
 ## How it works
 

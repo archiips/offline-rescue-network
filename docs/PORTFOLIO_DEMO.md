@@ -4,7 +4,7 @@ One public iPhone interface sends a synthetic SOS; a responder iPad interface re
 
 This is a presentation script for the [verified native walkthrough](../experiments/rescue-demo/NATIVE_RELAY.md), not a new recording or measurement. Allow setup time before the three-minute presentation. Use preset synthetic data only.
 
-[Watch the 64-second narrated explanatory demo](media/rescue-story.mp4). Eight animated scenes explain the workflow, recovery and measured scope, followed by actual redesigned native captures. Workflow illustrations are labeled and are not recordings of live transfers. [Editable source and reproduction](../tools/demo-video/README.md).
+The user rejected the [64-second illustrated film](media/rescue-story.mp4) as the desired demo medium. It remains historical material. The replacement must show actual native actions and transitions with polished motion: [active capture/editing checklist](../tools/demo-video/LIVE_CAPTURE.md). Current UI uses the user-selected dark operational-console direction; live capture is blocked by computer-use startup, not transport implementation.
 
 The earlier [30-second saved-history cut](../experiments/rescue-demo/evidence/2026-10-09-native-history-review.mp4) is historical evidence only; it was rejected as an explanatory demo. The live sequence below remains a separate presentation option.
 

@@ -152,3 +152,10 @@ Reuse the verified three-process smoke scenario through a Python child-factory s
 Preserve both native audiences and all workflow actions, while moving technical mode/role/pairing/route/manual connection/reset into Setup. Keep queue, connection, persistence and error state visible. Device receipt, human acknowledgment and handling remain separate. Draft/review state belongs to the shell so layout changes do not discard it.
 
 Choose isolated Remotion authoring for reproducible narrated diagrams and timed type/motion. Motion Canvas is a viable procedural alternative; Screen Studio is better suited to polishing future actual interactions. No video dependency enters the native app. Label workflow illustrations separately from actual captures, keep editorial timing separate from latency evidence, and retain the optional live-recording task. The earlier static cut failed to explain the story despite decoding correctly. [Research](RESEARCH.md#motion-and-demo-authoring--2026-10-09), [implementation ledger](superpowers/plans/2026-10-09-presentation-redesign.md).
+
+
+## Dark console and actual product footage — 2026-10-09
+
+The user rejected the diagram-heavy film and selected a dark operational-console interface. Replace the tall banner/card stacks with graphite surfaces, amber actions, crisp native type, compact status, conversational history and progressively disclosed secondary controls. Preserve both audiences and every workflow/manual transport action.
+
+Use actual native interactions as the next demo's principal content. Apply Brag's product entry/action/result emphasis and purposeful camera framing; do not reconstruct the app in a web imitation. Record a separate fresh training simulator with a visible simulated-link label, preserving existing secure peer history. The final native visual checkpoint builds and passes 96 controller tests; fresh interaction capture is blocked by native computer-use startup. Neither prior film nor prepared composition is accepted live footage. [Research and limitations](superpowers/plans/2026-10-09-live-product-redesign.md).
