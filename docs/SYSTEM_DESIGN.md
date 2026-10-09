@@ -1,6 +1,6 @@
 # System design
 
-> Relay foundation (2026-10-08): [opaque custody evidence](../experiments/rescue-demo/RELAY_QUEUE.md) covers durable C++ ciphertext storage, bounded FIFO-safe priority and an encrypted process-local delayed-contact scenario. Authenticated network routing, isolated socket multi-hop and native relay controls remain open.
+> Signed relay checkpoint (2026-10-08): [separate-process evidence](../experiments/rescue-demo/RELAY_NETWORK.md) verifies signed bounded routing, durable exact retries and delayed reverse receipts over sequential Mac loopback contacts. Native relay controls, physical/OS isolation and full-product gates remain open.
 
 > Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
 

@@ -122,14 +122,13 @@ public struct RelayPacket: Equatable, Sendable {
 
     /// Raw signed encoding without policy checks; `init(bytes:)` and `verify` decide acceptance.
     static func encode(kind: UInt8, urgency: UInt8, expiry: Int64, hops: UInt8, sender: Data, recipient: Data,
-                       correlation: Data, sealed: Data, signer: Curve25519.Signing.PrivateKey) -> Data {
+                       correlation: Data, sealed: Data, signer: Curve25519.Signing.PrivateKey) throws -> Data {
         var bytes = magic + Data([kind, urgency])
         withUnsafeBytes(of: expiry.bigEndian) { bytes.append(contentsOf: $0) }
         bytes.append(hops)
         bytes += sender + recipient + correlation
         bytes += Data([UInt8(truncatingIfNeeded: sealed.count >> 8), UInt8(truncatingIfNeeded: sealed.count)]) + sealed
-        // CryptoKit signing fails only for unusable keys, which SecureIdentity cannot hold.
-        return bytes + (try! signer.signature(for: signatureDomain + bytes))
+        return bytes + (try signer.signature(for: signatureDomain + bytes))
     }
 }
 
@@ -186,11 +185,11 @@ public struct RelayAcceptance: Sendable {
                                           returned: returning?.bytes, signer: identity.signingKey))
     }
 
-    static func encode(original: Data, destination: Data, returned: Data?, signer: Curve25519.Signing.PrivateKey) -> Data {
+    static func encode(original: Data, destination: Data, returned: Data?, signer: Curve25519.Signing.PrivateKey) throws -> Data {
         let body = returned ?? Data()
         var bytes = magic + original + destination
         bytes += Data([UInt8(truncatingIfNeeded: body.count >> 8), UInt8(truncatingIfNeeded: body.count)]) + body
-        return bytes + (try! signer.signature(for: signatureDomain + bytes))
+        return bytes + (try signer.signature(for: signatureDomain + bytes))
     }
 }
 
@@ -203,9 +202,9 @@ enum RelayCacheRecord {
     private static let magic = Data("ORF1".utf8)
     private static let signatureDomain = Data("offline-rescue/ORF1/cache-binding".utf8)
 
-    static func seal(_ packet: RelayPacket, mapping: String, identity: SecureIdentity) -> Data {
+    static func seal(_ packet: RelayPacket, mapping: String, identity: SecureIdentity) throws -> Data {
         let bytes = magic + Data([UInt8(packet.bytes.count >> 8), UInt8(packet.bytes.count & 0xff)]) + packet.bytes
-        return bytes + (try! identity.signingKey.signature(for: signed(bytes, mapping: mapping)))
+        return bytes + (try identity.signingKey.signature(for: signed(bytes, mapping: mapping)))
     }
 
     /// The bound ORL1, after exact framing and this endpoint's own signature for `mapping` verify.

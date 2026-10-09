@@ -125,7 +125,7 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
     // Signed but outside policy: too far in the future, hops other than 2, nonzero event correlation, urgent receipt.
     func signed(kind: UInt8 = 0, urgency: UInt8 = 0, expiry: Int64 = now + 60, hops: UInt8 = 2, correlation: Data = Data(count: 32),
                 inner: Data? = nil, signer: SecureIdentity? = nil) throws -> Data {
-        RelayPacket.encode(kind: kind, urgency: urgency, expiry: expiry, hops: hops, sender: sender.card.digest,
+        try RelayPacket.encode(kind: kind, urgency: urgency, expiry: expiry, hops: hops, sender: sender.card.digest,
                            recipient: recipient.card.digest, correlation: correlation,
                            sealed: try inner ?? envelope.seal(Data([1])), signer: (signer ?? sender).signingKey)
     }
@@ -174,7 +174,7 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
         try RelayAcceptance(bytes: flipped(accepted.bytes, at: 40)).verify(original: event, destination: destination.card, origin: origin.card, now: now)
     }
     // Forged signer, another packet's acceptance, and a destination that is not the packet's recipient.
-    let forged = RelayAcceptance.encode(original: event.digest, destination: destination.card.digest, returned: receipt.bytes,
+    let forged = try RelayAcceptance.encode(original: event.digest, destination: destination.card.digest, returned: receipt.bytes,
                                         signer: SecureIdentity(role: .responder).signingKey)
     #expect(throws: RelayProtocolError.badSignature) {
         try RelayAcceptance(bytes: forged).verify(original: event, destination: destination.card, origin: origin.card, now: now)
@@ -351,7 +351,7 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
     func attempt(_ response: @escaping (Data) throws -> Data) async throws -> RelayFlushOutcome {
         try await net.relay.flush { bytes, _ in try response(bytes) }
     }
-    let forged = RelayAcceptance.encode(original: sos.digest, destination: net.responderSecure.card.digest, returned: nil, signer: rogue.signingKey)
+    let forged = try RelayAcceptance.encode(original: sos.digest, destination: net.responderSecure.card.digest, returned: nil, signer: rogue.signingKey)
     #expect(isFailed(try await attempt { _ in forged }))
     #expect(isFailed(try await attempt { _ in try RelayAcceptance.make(original: sos, identity: rogue, returning: nil).bytes }))
     #expect(isFailed(try await attempt { _ in RelayCustodyReceipt.make(sos) }))
@@ -448,7 +448,7 @@ private func isFailed(_ outcome: RelayFlushOutcome) -> Bool { if case .failed = 
                                               identity: stranger, recipient: net.responderSecure.card)
     #expect(throws: RelayProtocolError.unknownPeer) { try net.relay.admit(strangerPacket.bytes) }
     let publicIdentity = net.publicSecure.identity
-    let selfAddressed = RelayPacket.encode(kind: 0, urgency: 0, expiry: net.clock.now + 600, hops: 2, sender: publicIdentity.card.digest,
+    let selfAddressed = try RelayPacket.encode(kind: 0, urgency: 0, expiry: net.clock.now + 600, hops: 2, sender: publicIdentity.card.digest,
                                            recipient: publicIdentity.card.digest, correlation: Data(count: 32),
                                            sealed: try SecureEnvelope(identity: publicIdentity, peer: net.responderSecure.card).seal(Data([1])),
                                            signer: publicIdentity.signingKey)
@@ -655,6 +655,8 @@ private func execute(_ url: URL, _ sql: String, blob: Data? = nil) throws {
     #expect(!FileManager.default.fileExists(atPath: guardURL.path))
 
     // Guard naming another peer.
+    try Data(repeating: 0, count: 4096).write(to: guardURL)
+    #expect(throws: RelayProtocolError.cacheGuard) { try net.publicUser.outgoing() }
     var other = guardBytes
     other.replaceSubrange(36..<68, with: Data(repeating: 0xab, count: 32))
     try other.write(to: guardURL)

@@ -142,7 +142,17 @@ import CryptoKit
         let expected = Self.guardMagic + context.identity.card.digest + context.peer.digest
         let files = FileManager.default
         let saved: Data?
-        do { saved = files.fileExists(atPath: guardURL.path) ? try Data(contentsOf: guardURL) : nil }
+        do {
+            if files.fileExists(atPath: guardURL.path) {
+                let attributes = try files.attributesOfItem(atPath: guardURL.path)
+                guard attributes[.type] as? FileAttributeType == .typeRegular,
+                      attributes[.size] as? Int == expected.count else { throw RelayProtocolError.cacheGuard }
+                let handle = try FileHandle(forReadingFrom: guardURL)
+                defer { try? handle.close() }
+                // Bound the read even if the file changes after its attributes were checked.
+                saved = try handle.read(upToCount: expected.count + 1)
+            } else { saved = nil }
+        }
         catch { throw RelayProtocolError.cacheGuard }
         let size = (try? files.attributesOfItem(atPath: url.path))?[.size] as? Int
         if let cache, cache.storageURL == url {

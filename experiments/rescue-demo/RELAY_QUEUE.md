@@ -45,3 +45,7 @@ xcodebuild -project experiments/rescue-demo/iOS/RescueDemo.xcodeproj -scheme Res
 The host path above is the verified arm64 Mac layout; inspect the actual scratch build on another architecture. Fresh runs used task-specific `rescue-relay-recovered-*` scratch paths and exited0. Rejected-open descriptor counting avoids disabled Apple SQLite allocation statistics. A maximum-admission/text-row test reproduced signed overflow before safe comparison validation fixed it. Original receipts/identity semantics were retained.
 
 Existing nonempty files must have a complete SQLite header, DELETE-journal format and this queue's version/application ID before SQLite opens. Foreign hot journals stay untouched. Marked relay files may undergo SQLite recovery before strict schema/row validation; header markers are not authentication and do not promise byte preservation for damaged marked files. Real child-process crashes verify both foreign preservation and owned-store rollback. An incomplete initialization with no valid marker fails closed rather than being repaired automatically.
+
+## Subsequent network checkpoint
+
+[Signed separate-process relay](RELAY_NETWORK.md) adds authenticated metadata, exact retry caches, a listener and delayed reverse receipts. This document remains evidence for the earlier foundation; native controls and physical tests are still pending.

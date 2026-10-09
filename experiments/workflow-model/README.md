@@ -56,3 +56,7 @@ The [repeated measurement harness](../rescue-demo/MEASUREMENTS.md) adds Python s
 ## Relay custody foundation
 
 C++ bounded opaque custody, Swift owned-copy bridge and `rescue-relay-scenario` test encrypted delayed contacts and reverse receipts. No network listener/native relay controls are established. See [walkthrough](../rescue-demo/RELAY_QUEUE.md) and [specification](../../docs/superpowers/specs/2026-10-08-relay-queue.md).
+
+## Signed relay processes
+
+[Relay network walkthrough](../rescue-demo/RELAY_NETWORK.md) documents `rescue-relay-host`, signed custody/acceptance, mapping-bound endpoint cache and actual sequential public→relay→responder contacts. Build with `swift build --package-path experiments/workflow-model --product rescue-relay-host`; run the supplied Python harness with the absolute built binary. This is an Apple Swift networking/crypto adapter over C++ state and SQLite, not a cloud backend or a physical mesh demonstration.

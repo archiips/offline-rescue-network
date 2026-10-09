@@ -15,7 +15,7 @@ Working description, not a selected brand. **A runnable SwiftUI rescue demo with
 | Share available phone location information | See uncertainty and the age of each observation |
 | See whether a responder received the request | Acknowledge, reply, and update handling status |
 
-Nearby participating devices can later relay encrypted messages. A responder must become reachable. The app shows when a request is still waiting; a relay receipt does not mean help is dispatched.
+The Mac demonstration relays encrypted messages between participating endpoints. Native relay controls are next. A responder must become reachable. The app shows when a request is still waiting; a relay receipt does not mean help is dispatched.
 
 ## What works today
 
@@ -25,12 +25,14 @@ Nearby participating devices can later relay encrypted messages. A responder mus
 - [Local exchange walkthrough](experiments/rescue-demo/LOCAL_EXCHANGE.md): Bonjour discovery, Mac endpoint CLI, separate-process recovery checks and native simulator evidence. C++ SQLite commits precede device receipts; queued messages survive restart.
 - [Reproducible measurements](experiments/rescue-demo/MEASUREMENTS.md): repeated independent-process exchange, deliberately lost receipts, duplicate checks and inspectable loopback timings.
 - [Secure exchange](experiments/rescue-demo/SECURE_EXCHANGE.md): checked pairing cards, CryptoKit HPKE/signatures, Keychain identity recovery and retained C++ durable receipts. Plain diagnostics remain separate.
-- [Relay queue foundation](experiments/rescue-demo/RELAY_QUEUE.md): durable C++ ciphertext custody, FIFO-safe urgent scheduling and a reproducible encrypted delayed-contact scenario. Process-local evidence; network relay/native controls are next.
+- [Relay queue foundation](experiments/rescue-demo/RELAY_QUEUE.md): durable C++ ciphertext custody, FIFO-safe urgent scheduling and a reproducible encrypted delayed-contact scenario. Historical process-local evidence; see the separate-process checkpoint below.
 - Preset sample data only: message storage remains unencrypted. Physical radio, agency enrollment and independent security audit remain unfinished.
+
+- [Signed relay network](experiments/rescue-demo/RELAY_NETWORK.md): separate Mac processes, nonoverlapping contacts, restart/lost-response recovery and delayed encrypted receipts; 11 reproducible facts.
 
 ## Current focus
 
-Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Next: authenticated isolated relay contacts and native controls; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
+Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Signed separate-process relay contacts are verified. Next: native relay controls for both audiences; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
 
 ## First milestone
 
