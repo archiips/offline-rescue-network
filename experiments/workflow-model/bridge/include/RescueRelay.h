@@ -32,7 +32,8 @@ typedef struct rc_relay_item {
     size_t length;
 } rc_relay_item;
 /* Absolute path <=4096 bytes. Creates an empty queue or opens an exactly validated one; incompatible
-   or damaged files are never replaced. Null on failure. */
+   or damaged files are never replaced. Nonempty headers must carry this format before SQLite opens.
+   Marked relay files may undergo hot-journal recovery before strict validation. Null on failure. */
 rc_relay* rc_relay_open(const char* path);
 void rc_relay_destroy(rc_relay*);
 /* id/flow: 64 lowercase hex chars. urgency 0/1. expiry: positive logical time later than now.

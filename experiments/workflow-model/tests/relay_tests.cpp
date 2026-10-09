@@ -15,6 +15,7 @@
 #include <vector>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/wait.h>
 using Relay=std::unique_ptr<rc_relay,decltype(&rc_relay_destroy)>;
 using Item=std::unique_ptr<rc_relay_item,decltype(&rc_relay_item_free)>;
 using Bytes=std::vector<unsigned char>;
@@ -180,6 +181,37 @@ int main(int argc,char** argv){
         sql(wal,"PRAGMA journal_mode=WAL;");const auto walBytes=fileBytes(wal);
         check(rc_relay_open(wal.c_str())==nullptr && fileBytes(wal)==walBytes,"WAL store rejected and preserved");
         relay=open(path);check(count(relay.get())==0,"relay store still opens");
+    }else if(scenario=="journal"){
+        relay.reset();
+        const auto foreign=(dir/"foreign.sqlite").string();
+        sql(foreign,"CREATE TABLE notes(body); WITH RECURSIVE n(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM n WHERE x<64) INSERT INTO notes SELECT zeroblob(8192) FROM n;");
+        const auto committed=fileBytes(foreign);
+        const auto child=fork();check(child>=0,"fork crash fixture");
+        if(child==0){
+            sqlite3* db=nullptr;
+            if(sqlite3_open(foreign.c_str(),&db)!=SQLITE_OK)_exit(2);
+            if(sqlite3_exec(db,"PRAGMA cache_size=1; PRAGMA cache_spill=ON; BEGIN IMMEDIATE; UPDATE notes SET body=randomblob(8192);",nullptr,nullptr,nullptr)!=SQLITE_OK)_exit(3);
+            _exit(0); // Intentionally abandon the transaction without SQLite cleanup.
+        }
+        int status=0;check(waitpid(child,&status,0)==child && WIFEXITED(status) && WEXITSTATUS(status)==0,"child crashed after writes");
+        const auto before=fileBytes(foreign),journal=fileBytes(foreign+"-journal");
+        check(before!=committed && journal.size()>512,"real spilled transaction needs recovery");
+        check(rc_relay_open(foreign.c_str())==nullptr,"foreign hot journal rejected");
+        check(fileBytes(foreign)==before && fileBytes(foreign+"-journal")==journal,"foreign main file and hot journal preserved before recovery");
+        relay=open(path);r=relay.get();
+        for(unsigned i=1;i<=64;++i)check(enqueue(r,i,i,0,payload(4276,i))==0,"owned recovery fixture");
+        relay.reset();const auto owned=fileBytes(path);
+        const auto writer=fork();check(writer>=0,"fork owned fixture");
+        if(writer==0){
+            sqlite3* db=nullptr;if(sqlite3_open(path.c_str(),&db)!=SQLITE_OK)_exit(2);
+            if(sqlite3_exec(db,"PRAGMA cache_size=1; PRAGMA cache_spill=ON; BEGIN IMMEDIATE; UPDATE relay_items SET attempts=7;",nullptr,nullptr,nullptr)!=SQLITE_OK)_exit(3);
+            _exit(0);
+        }
+        check(waitpid(writer,&status,0)==writer && WIFEXITED(status) && WEXITSTATUS(status)==0,"owned crash after writes");
+        check(fileBytes(path)!=owned && fileBytes(path+"-journal").size()>512,"owned transaction spilled");
+        relay=open(path);r=relay.get();
+        check(count(r)==64 && select(r)->attempts==1,"owned hot journal recovers committed queue and attempts");
+
     }else if(scenario=="descriptors"){
         check(enqueue(r,1,1,0,sealed)==0,"saved");relay.reset();
         const auto junk=(dir/"junk.sqlite").string();{std::ofstream out(junk);out<<"Not a SQLite database, synthetic junk bytes";}

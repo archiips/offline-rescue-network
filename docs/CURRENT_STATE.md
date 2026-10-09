@@ -45,7 +45,7 @@ The stdlib Python harness runs existing Swift/C++ hosts with real loopback socke
 
 Claude Code preference: if used, explicitly request `--model claude-opus-5-5 --effort medium`, no fallback. The review's model metadata confirmed Opus 5.5; follow-up found no blockers. This preference is also in AGENTS.md.
 
-## Latest secure-exchange checkpoint
+## Secure-exchange checkpoint
 
 Native Secure exchange now pins one manually checked opposite-role public card and carries signed/encrypted CryptoKit HPKE envelopes. C++ retains ORX1 parsing, role/action authority, SQLite transactions, delivery facts and dedupe. Each key epoch has a separate UUID-named v2 store; keys and pinned cards persist in Keychain. Training and the explicit plain diagnostic remain separate. No plaintext fallback in secure mode.
 
@@ -55,15 +55,17 @@ iOS keys use a stable app-scoped data-protection Keychain namespace, non-synchro
 
 Preset synthetic data only. Saved bodies/old sample files are unencrypted; agency verification, encrypted storage, independent audit, physical lock/radio/older OS compatibility and forward secrecy remain unestablished. Existing measured loopback timings describe the plain baseline, not secure exchange.
 
-## In-progress relay checkpoint — recovery after interruption
+## Relay foundation checkpoint — 2026-10-08
 
-The first durable opaque relay queue/scenario was implemented in a temporary worktree but was not committed before the laptop restarted and cleared that directory. Published secure checkpoint remains intact. Reconstruct and freshly verify [relay foundation specification](superpowers/specs/2026-10-08-relay-queue.md) and [execution plan](superpowers/plans/2026-10-08-relay-queue.md) in persistent ignored `.worktrees/relay-queue` on `feat/relay-queue`. The prior passing output is historical, not evidence for reconstructed files. Complete review/docs/publication; preserve both native interfaces. Full isolated relay-network task remains open.
+Reconstructed implementation was saved in Git at code checkpoint `c6da60b`, followed by reviewed file-safety hardening and the documentation checkpoint. Recovery used a persistent ignored project-local worktree and local Git checkpoints; design/recovery context is committed. The lost prototype's counts are historical. Fresh reconstructed verification:41/41 sanitizer CTest with fatal UBSan,67/67 Swift,14/14 Python harness,10 named encrypted CLI facts and signed native simulator build. Review found/reproduced a malformed-order counter overflow; comparison validation now rejects it safely. Failed-open descriptor lifetime, ordinary-prerequisite/urgent-follow-up and real crash-journal regressions pass. Claude review used verified Opus 5.5/medium; its file-safety finding was regraded and fixed. Minor follow-ups are recorded in the implementation plan.
+
+[Relay walkthrough](../experiments/rescue-demo/RELAY_QUEUE.md) and [specification](superpowers/specs/2026-10-08-relay-queue.md) define the exact boundary. C++ owns separate SQLite custody,64 retained181...4276-byte items, eight-attempt budget, per-flow FIFO and persisted three-urgent/one-ordinary fairness. Swift copies/free bridge buffers. Queue accepts local trusted metadata and has no keys; runtime endpoint identities use actual CryptoKit and C++ endpoint stores in a process-local delayed-contact/reopen/lost-receipt/reverse-receipt scenario. It is not a relay listener, radio/network-isolation proof or native relay mode. Current Secure exchange/Training and both interfaces retain their existing behavior. Admission/deletion authentication, persistent stable-ID/sealed-retry mapping, routing and physical/private-data gates remain open. Logical `now` is signed64; expiry must be positive and later than now, with no accurate-clock guarantee.
 
 ## Exact next action
 
-Continue the **bounded relay/disruption demonstration and urgent-message scheduling** portfolio task in [TODO](TODO.md), as a separately researched/designed checkpoint. Start with the secure envelope, fixed inner IDs, saved outbox and retry invariants. Define an isolated public→relay→responder topology and return path, enforce that the relay has no endpoint decryption keys, bound hops/retries/storage and prove urgent scheduling without starving messages or losing receipt dependencies. Compare queue/transport approaches using local code and current primary sources, write and critique a plan before building. Do not assume the current direct-only UI already relays.
+Continue the **authenticated isolated relay network** part of the portfolio task. The custody foundation is already implemented; do not rebuild it or count process-local contacts as network multi-hop.
 
-Keep both interfaces, the C++ engine, training mode and synthetic-data restriction. Physical testing can still wait. Full NET-01/SEC-01/ENG-05/product gates remain open. Avoid sales, AI, localization and unrelated infrastructure as immediate prerequisites for the résumé deliverable.
+Research and critique a bounded signed routing/priority contract and persistent stable-ID/exact-ciphertext retry mapping before adapting sockets. Keep relays without endpoint decryption keys. Specify custody versus endpoint receipts and the delayed reverse path, enforce hop/attempt/storage limits and validate an isolated public→relay→responder topology without direct fallback. Exercise disconnected contacts, restart, duplicate/lost receipts and ordinary fairness. Add explicit native relay controls after the standalone path passes. Preserve both interfaces, Training and synthetic-data scope. Physical checks can still wait; full NET-03/ENG-07/SEC-01/product gates remain open. Sales, AI and localization are not immediate prerequisites.
 
 ## Resume checklist
 

@@ -165,11 +165,15 @@ struct rc_relay {
         if(exists)require(fs::is_regular_file(path) && fs::file_size(path)<=4*1024*1024,"Relay file outside bounds.");
         require(!fs::exists(path+"-wal") && !fs::exists(path+"-shm"),"WAL relay stores are unsupported; file preserved.");
         if(fs::exists(path+"-journal"))require(fs::is_regular_file(path+"-journal") && fs::file_size(path+"-journal")<=8*1024*1024,"Relay journal outside bounds.");
-        // Reject WAL-format headers before SQLite can touch them.
-        if(exists && fs::file_size(path)>0){
-            std::ifstream file(path,std::ios::binary);std::array<char,20> header{};file.read(header.data(),header.size());
-            if(file.gcount()==20 && std::string(header.data(),16)==std::string("SQLite format 3\0",16))
-                require(header[18]==1 && header[19]==1,"Unsupported relay database format; file preserved.");
+        // Gate format before SQLite can recover a foreign file's hot rollback journal.
+        const bool nonempty=exists && fs::file_size(path)>0;
+        if(fs::exists(path+"-journal"))require(nonempty,"Orphan relay journal; file preserved.");
+        if(nonempty){
+            std::ifstream file(path,std::ios::binary);std::array<unsigned char,100> header{};
+            file.read(reinterpret_cast<char*>(header.data()),header.size());
+            require(file.gcount()==100 && std::string(reinterpret_cast<char*>(header.data()),16)==std::string("SQLite format 3\0",16),"Invalid relay header; file preserved.");
+            const auto integer=[&](std::size_t offset){return (uint32_t(header[offset])<<24) | (uint32_t(header[offset+1])<<16) | (uint32_t(header[offset+2])<<8) | uint32_t(header[offset+3]);};
+            require(header[18]==1 && header[19]==1 && integer(60)==version && integer(68)==applicationId,"Unsupported relay database format; file preserved.");
         }
         const int opened=sqlite3_open_v2(path.c_str(),&db.handle,SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE,nullptr);
         require(opened==SQLITE_OK,"Could not open relay store.");

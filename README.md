@@ -25,11 +25,12 @@ Nearby participating devices can later relay encrypted messages. A responder mus
 - [Local exchange walkthrough](experiments/rescue-demo/LOCAL_EXCHANGE.md): Bonjour discovery, Mac endpoint CLI, separate-process recovery checks and native simulator evidence. C++ SQLite commits precede device receipts; queued messages survive restart.
 - [Reproducible measurements](experiments/rescue-demo/MEASUREMENTS.md): repeated independent-process exchange, deliberately lost receipts, duplicate checks and inspectable loopback timings.
 - [Secure exchange](experiments/rescue-demo/SECURE_EXCHANGE.md): checked pairing cards, CryptoKit HPKE/signatures, Keychain identity recovery and retained C++ durable receipts. Plain diagnostics remain separate.
+- [Relay queue foundation](experiments/rescue-demo/RELAY_QUEUE.md): durable C++ ciphertext custody, FIFO-safe urgent scheduling and a reproducible encrypted delayed-contact scenario. Process-local evidence; network relay/native controls are next.
 - Preset sample data only: message storage remains unencrypted. Physical radio, agency enrollment and independent security audit remain unfinished.
 
 ## Current focus
 
-Build an impressive, measurable portfolio project first. The immediate sequence is native workflow, durable recovery and real local exchange (available locally) → physical transport checks → relay demonstration and measured results. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
+Build an impressive, measurable portfolio project first. Native workflow, durable secure direct exchange and opaque relay custody are available locally. Next: authenticated isolated relay contacts and native controls; physical checks follow when devices are available. Commercial adoption is deferred; both audiences remain part of one app system. The simulator demo can be developed and shown while physical testing waits.
 
 ## First milestone
 
@@ -37,7 +38,7 @@ A controlled building drill: a person sends an SOS with a confirmed floor; a res
 
 ## Larger vision
 
-Later, evaluate indoor floor estimates, urgent-message scheduling, firefighter tracking, training replay, and on-device translation/summaries. These are stages of the same project.
+Later, evaluate broader network scheduling, indoor floor estimates, firefighter tracking, training replay, and on-device translation/summaries. These are stages of the same project.
 
 **Preferred stack:** Swift/SwiftUI interfaces and native Apple adapters, a shared C++ engine, and an optional C++ relay service on a laptop. The essential local exchange must not require a cloud server.
 

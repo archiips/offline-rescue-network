@@ -52,3 +52,7 @@ The [repeated measurement harness](../rescue-demo/MEASUREMENTS.md) adds Python s
 ## Secure Apple adapter and independent host
 
 [Secure walkthrough](../rescue-demo/SECURE_EXCHANGE.md) adds CryptoKit HPKE/signatures and Keychain identities around this same C++ endpoint. No external production packages; SwiftPM resolves the Apple system frameworks. `rescue-secure-host` owns one manually pinned role and UUID/epoch SQLite store. The original `rescue-exchange-host` and measured plain protocol remain diagnostics.62 Swift checks now retain the original 33, with real signature/card/epoch/Keychain and socket recovery coverage. Run the same `swift test`; the separate `tests/secure_host_smoke.py --host <absolute secure-host>` verifies real-Keychain two-process replay/lost-receipt recovery and cleans only its test-owned keys. These checks do not close physical/private-data gates.
+
+## Relay custody foundation
+
+C++ bounded opaque custody, Swift owned-copy bridge and `rescue-relay-scenario` test encrypted delayed contacts and reverse receipts. No network listener/native relay controls are established. See [walkthrough](../rescue-demo/RELAY_QUEUE.md) and [specification](../../docs/superpowers/specs/2026-10-08-relay-queue.md).

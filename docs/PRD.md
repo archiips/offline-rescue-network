@@ -1,5 +1,7 @@
 # Product requirements
 
+> Relay foundation (2026-10-08): [opaque custody evidence](../experiments/rescue-demo/RELAY_QUEUE.md) covers durable C++ ciphertext storage, bounded FIFO-safe priority and an encrypted process-local delayed-contact scenario. Authenticated network routing, isolated socket multi-hop and native relay controls remain open.
+
 > Bounded portfolio checkpoint (2026-10-08): [secure exchange evidence](../experiments/rescue-demo/SECURE_EXCHANGE.md) now establishes manually paired signed/encrypted Apple endpoints with C++ durable state. Full-product enrollment, private storage and physical gates remain open; CryptoKit is an Apple adapter, not portable C++ cryptography.
 
 > Current execution status (2026-10-08): see [current state / resume](CURRENT_STATE.md) and [portfolio tasks](TODO.md#current-portfolio-tasks). This document retains its product requirements, proposal or dated evidence; it does not claim that all described capabilities are implemented.
