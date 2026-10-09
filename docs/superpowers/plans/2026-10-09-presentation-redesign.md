@@ -29,7 +29,7 @@
 - [x] Signed native build and controller suite; inspect installed iPhone/iPad saved UI without implicit reset. Empty state, accessibility text sizes, dark mode and runtime Split View not exercised.
 - [x] Reproducible motion source and exported narrated/captioned explanatory video; multiple distinct animated scenes, readable type, correct status semantics.
 - [x] README hero, preview, screenshots, setup and scope; local links/media checked.
-- [ ] Review final diff, secret coverage, coherent commit/push and exact CURRENT_STATE handoff.
+- [x] Review final diff, secret coverage, coherent commit/push and exact CURRENT_STATE handoff.
 
 ## Resume immediately if usage ends
 
@@ -59,3 +59,5 @@ Read this file and docs/CURRENT_STATE.md, then git status/log. Parent owns video
 - `ffmpeg -v error -i docs/media/rescue-story.mp4 -f null -` — fully decoded without errors. Eight scene samples and early/late custody/receipt/human transitions visually inspected; actual app capture in final scene confirmed. No claim that audio was independently listened to.
 - A 16-second, 12-fps, 960px animated GIF preview derived from custody/receipt scenes complements the full narrated film in README. It retains the illustration labels.
 - `git diff --check` and staged whitespace/secret-pattern checks — clean before publication. Native app has no video dependencies; no generated database/private log included.
+
+Publication verified: `1467fb1` and preceding presentation checkpoints pushed to authorized `archiips/offline-rescue-network`; local HEAD and remote main matched, workspace clean. This ledger closure is a documentation-only follow-up. Next work is the physical gate when hardware is available, or optional actual live-transition recording; no presentation reimplementation is required.
