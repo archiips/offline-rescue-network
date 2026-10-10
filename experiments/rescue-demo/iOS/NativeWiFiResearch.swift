@@ -10,6 +10,9 @@ import RescueDemoState
     private var manager: CLLocationManager?
     private var pending = false
     func request() {
+        #if RESCUE_NO_WIFI_INFO
+        return
+        #else
         guard !capture.busy, !pending else { return }
         pending = true
         if manager == nil {
@@ -17,6 +20,7 @@ import RescueDemoState
             manager?.delegate = self
         }
         authorize()
+        #endif
     }
     func stop() { pending = false; capture.clear() }
     private func authorize() {

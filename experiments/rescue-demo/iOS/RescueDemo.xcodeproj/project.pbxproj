@@ -160,6 +160,7 @@
 			<array>
 				<string>00000000000000000000000C</string>
 				<string>00000000000000000000000D</string>
+				<string>00000000000000000000002B</string>
 			</array>
 			<key>defaultConfigurationIsVisible</key>
 			<integer>0</integer>
@@ -266,6 +267,7 @@
 			<array>
 				<string>000000000000000000000011</string>
 				<string>000000000000000000000012</string>
+				<string>00000000000000000000002A</string>
 			</array>
 			<key>defaultConfigurationIsVisible</key>
 			<integer>0</integer>
@@ -484,6 +486,60 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>000000000000000000000028</string>
+		</dict>
+		<key>00000000000000000000002A</key>
+		<dict>
+			<key>isa</key>
+			<string>XCBuildConfiguration</string>
+			<key>buildSettings</key>
+			<dict>
+				<key>CLANG_ENABLE_MODULES</key>
+				<string>YES</string>
+				<key>ENABLE_STRICT_OBJC_MSGSEND</key>
+				<string>YES</string>
+			</dict>
+			<key>name</key>
+			<string>PersonalDebug</string>
+		</dict>
+		<key>00000000000000000000002B</key>
+		<dict>
+			<key>isa</key>
+			<string>XCBuildConfiguration</string>
+			<key>buildSettings</key>
+			<dict>
+				<key>CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]</key>
+				<string>PersonalDevice.entitlements</string>
+				<key>CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]</key>
+				<string>Simulator.entitlements</string>
+				<key>INFOPLIST_FILE</key>
+				<string>Info.plist</string>
+				<key>TARGETED_DEVICE_FAMILY</key>
+				<string>1,2</string>
+				<key>CLANG_CXX_LANGUAGE_STANDARD</key>
+				<string>c++20</string>
+				<key>SWIFT_OPTIMIZATION_LEVEL</key>
+				<string>-Onone</string>
+				<key>SWIFT_STRICT_CONCURRENCY</key>
+				<string>complete</string>
+				<key>CODE_SIGN_STYLE</key>
+				<string>Automatic</string>
+				<key>PRODUCT_NAME</key>
+				<string>$(TARGET_NAME)</string>
+				<key>SDKROOT</key>
+				<string>iphoneos</string>
+				<key>SWIFT_VERSION</key>
+				<string>6.0</string>
+				<key>IPHONEOS_DEPLOYMENT_TARGET</key>
+				<string>18.0</string>
+				<key>CODE_SIGN_IDENTITY[sdk=iphonesimulator*]</key>
+				<string>-</string>
+				<key>PRODUCT_BUNDLE_IDENTIFIER</key>
+				<string>com.archiips.rescue.personal</string>
+				<key>SWIFT_ACTIVE_COMPILATION_CONDITIONS</key>
+				<string>$(inherited) DEBUG RESCUE_NO_WIFI_INFO</string>
+			</dict>
+			<key>name</key>
+			<string>PersonalDebug</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

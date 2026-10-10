@@ -8,7 +8,7 @@ The next hardware step needs the iPhone and a second compatible Apple device phy
 
 The user handles unlocking, device trust, Apple account sign-in, development-team selection and any Developer Mode prompts. We can then inspect build/install errors together. Do not send credentials, device identifiers or provisioning profiles to chat or the repository.
 
-Open `experiments/rescue-demo/iOS/RescueDemo.xcodeproj` and use scheme `RescueDemo`. Select the physical device and a valid development team under Signing & Capabilities. The profile must support Access Wi-Fi Information for this build. Do not remove the entitlement or disable signing to report a successful physical install. If that capability cannot be provisioned, record the blocker; a separately scoped messaging-only build is a possible later decision. No account purchase is assumed.
+Open `experiments/rescue-demo/iOS/RescueDemo.xcodeproj` and use scheme `RescueDemo`. Select the physical device and a valid development team under Signing & Capabilities. For the full RescueDemo build, the profile must support Access Wi-Fi Information. The free-account RescuePersonal scheme below omits that optional capability. Do not remove the entitlement or disable signing to report a successful physical install. If that capability cannot be provisioned, use the separately scoped RescuePersonal build; record Wi-Fi context capture as unavailable. No account purchase is assumed.
 
 Apple references, checked 2026-10-09: [physical device workflow](https://developer.apple.com/documentation/xcode/running-your-app-on-simulated-or-physical-devices), [Developer Mode](https://developer.apple.com/documentation/xcode/enabling-developer-mode-on-a-device), [Wi-Fi entitlement](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.developer.networking.wifi-info). Device signing/install remains unverified even if unsigned device compilation passes.
 
@@ -38,3 +38,9 @@ This session establishes installation and basic behavior. It does not establish 
 ## Exit record
 
 Mark each attempted case pass/fail/incomplete with a reason and evidence path. Record remaining signing/device/sensor/network blockers. Before planning Bothell, confirm that the two-device no-internet exchange was actually observed and choose one accessible building with independent floor labels. Keep LOC-01 open until measured data supports it.
+
+## Free-account installation configuration
+
+Use scheme **RescuePersonal** (configuration `PersonalDebug`, bundle `com.archiips.rescue.personal`) for the first free-account device test. It keeps normal development signing, encrypted networking and sensor research, but omits Access Wi-Fi Information and visibly disables connected-network capture. The original Debug/Release Wi-Fi-capable build remains available. Select your own development team locally; no paid membership is required for this bounded setup. This is a separate app sandbox and pairing identity; do not treat its history as the full build's history.
+
+2026-10-09: signed PersonalDebug arm64 build passed and device installation succeeded on the connected iPhone 17. Launch was refused by iOS with a generic code-signature/entitlement/profile-trust security message. Installation is verified; successful launch, Keychain operation and physical communication are not yet verified. User must inspect the on-device prompt/trust state; do not claim this as a working physical exchange.

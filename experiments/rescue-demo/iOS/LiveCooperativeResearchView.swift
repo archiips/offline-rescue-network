@@ -135,6 +135,9 @@ private struct ConnectedNetworkSection: View {
     let clear: () -> Void
     var body: some View {
         Section("Connected Wi-Fi · local only") {
+            #if RESCUE_NO_WIFI_INFO
+            Text("Connected Wi-Fi information is disabled in this free-account build. Local messaging and phone sensors remain available.")
+            #else
             Button("Capture connected Wi-Fi context", action: request).disabled(capture.busy)
             if capture.busy { ProgressView("Reading connected network") }
             Text(capture.status).font(.caption)
@@ -146,6 +149,7 @@ private struct ConnectedNetworkSection: View {
                     Text("Captured \(max(0, now - observation.capturedAt).formatted(.number.precision(.fractionLength(1)))) s ago · \(observation.isFresh(at: now) ? "recent snapshot" : "expired snapshot") · not live").font(.caption)
                 }
             }
+            #endif
             Button("Clear Wi-Fi context", action: clear)
             Text("Precise location permission and signed Wi-Fi capability are required. No AP scan, no RSSI, no surveyed UW floor map. Identifiers are never shared or saved.").font(.caption).foregroundStyle(.secondary)
         }

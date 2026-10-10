@@ -87,3 +87,17 @@ See [secure walkthrough](SECURE_EXCHANGE.md) for current native pairing, encrypt
 Live Wi-Fi context and independently paired phone sensor observations are available in the optional shared [live cooperative research workspace](LIVE_COOPERATIVE_INPUTS.md). No UW floor map or physical accuracy result is established.
 
 For initial physical installation and testing, use the [home session guide](../../docs/testing/HOME_TEST.md). Generic physical iOS compilation passes; signing, installation and hardware behavior remain unverified.
+
+### Free-account physical build
+
+Select **RescuePersonal** in Xcode and your connected physical device, then choose your own development team. Its `PersonalDebug` configuration uses separate bundle `com.archiips.rescue.personal`, normal signing and the same encrypted workflow/sensors. It omits the unsupported Access Wi-Fi Information entitlement and displays connected-network capture as disabled; the original Debug/Release build retains that capability. The separate bundle has its own history/identity. Signing/account selection and on-device verification are required; no paid membership is assumed.
+
+```sh
+xcodebuild -project experiments/rescue-demo/iOS/RescueDemo.xcodeproj \
+  -scheme RescuePersonal -destination 'platform=iOS,id=YOUR_DEVICE_ID' \
+  -derivedDataPath /private/tmp/rescue-personal-derived \
+  DEVELOPMENT_TEAM=YOUR_TEAM_ID -allowProvisioningUpdates \
+  -allowProvisioningDeviceRegistration build
+```
+
+Signed arm64 PersonalDebug build and iPhone installation are verified; the user confirmed opening it after developer trust/verification. This establishes installation, not physical message transfer or sensor accuracy.
