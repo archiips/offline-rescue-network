@@ -28,6 +28,14 @@ Two problems intersect: communication may fail, and indoor location may be ambig
 
 The eventual public user must not need a fire-department employee account. Open public onboarding is a later design question; controlled enrollment in the prototype does not establish a scalable public deployment.
 
+### Emergency onboarding requirement — accepted 2026-10-10
+
+The intended readiness flow is download and register before an outage, preparing credentials for offline use. A public user with the app already installed and registration completed must be able to submit an SOS without copying public cards, comparing fingerprints, scanning a QR code, selecting a peer, or arranging responder pairing during the emergency. Manual pairing is a prototype test mechanism, not an acceptable public emergency workflow. Installation/readiness before an outage remains a separate prerequisite; this requirement does not imply contacting phones without the app.
+
+The intended campus direction is pre-enrolled authorized responders, with locally verifiable credentials and automatic discovery by the public app. This is a design direction, not implemented enrollment or a verified UW partnership. An advertised name or nearby presence must never confer responder authority. Before implementation, specify offline credential validation, expiry/revocation limitations, public-device identity and encrypted reply routing, abuse controls, and behavior when no verified responder is reachable. Keep a submitted request visibly queued without fabricating delivery or acknowledgment. Do not silently downgrade encryption or trust to remove pairing friction.
+
+Acceptance requires a previously unpaired public device to submit a synthetic SOS and receive a separately verified device receipt, human acknowledgment and reply from an authorized responder with internet unavailable, without an emergency-time pairing step. Forged responder advertisements must not create trusted responder status. Relay forwarding is a separate capability and must not be presumed from automatic discovery.
+
 ## 3. Current delivery scope and longer-term stages
 
 For the portfolio version, success means both interfaces run, independent endpoints exchange SOS/acknowledgment/replies, interrupted delivery recovers without fabricated statuses, and documented tests/demos support every résumé claim. Those local capabilities are implemented in the sample app; physical offline verification remains pending. Reproducible plain-loopback measurements and bounded signed relay scheduling are now verified in separate experiments. Native relay controls and the attended simulator-to-Mac relay/restart exercise are verified. Encryption/identity review precedes any private data. On-device language assistance is optional later work. Selling to organizations, discovery interviews and pilot operations are not prerequisites for this deliverable.

@@ -197,3 +197,8 @@ Keep permitted connected-network identifiers local until a surveyed-map design i
 ## 2026-10-09 — free-account physical installation build
 
 The user's Personal Team cannot provision Access Wi-Fi Information. Preserve full Debug/Release capability and add separate PersonalDebug/RescuePersonal with an empty optional-entitlements file, explicit disabled Wi-Fi capture UI and distinct bundle/sandbox. Keep encryption, foreground sensors, checked pairing and local transport unchanged. Account/team selection remains local and is not published. Explicitly share both schemes so the full build remains selectable. Signed physical builds/installations on iPhone 17 and iPad 8th generation are verified; full signed Simulator rebuild passes. iPhone user completed verification/trust; iPad trust and all physical communication/sensor trials remain pending. Free-account setup does not establish Wi-Fi floor mapping or automatic mesh behavior.
+
+
+## 2026-10-10 — no emergency-time public pairing
+
+The user explicitly rejected public-card copying and QR pairing in a real emergency. Make zero emergency-time pairing a firm public workflow requirement; retain manual pins only for controlled prototype testing. Pre-enrolled campus responders with automatically discovered, locally verifiable credentials are the intended direction, subject to a separate security/discovery design. Do not remove identity verification, imply UW authorization, or present automatic discovery/phone hopping as implemented. See [PRD acceptance criteria](PRD.md#emergency-onboarding-requirement--accepted-2026-10-10). This records the product requirement; it does not complete enrollment engineering.

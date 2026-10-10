@@ -326,3 +326,8 @@ Read [PRD](PRD.md), [decisions](DECISIONS.md) and [validation](VALIDATION.md) fo
 ## Task update rule
 
 For completed work, retain the task ID and add dated evidence links/check outcomes below its checkbox. Do not check all tasks for a milestone based on one demo. When evidence changes scope, update the decision register and the affected requirements before editing this backlog.
+
+
+### Public emergency onboarding gate — accepted 2026-10-10
+
+- [ ] Design and verify SOS from a previously unpaired public app without emergency-time card copying, fingerprint comparison, QR scanning or manual peer selection. Prepare authorized responder credentials beforehand; define offline verification/lifecycle, abuse controls and encrypted replies before building. Validate an internet-unavailable SOS/device-receipt/human-acknowledgment/reply round trip and rejection of forged responder authority. See [PRD](PRD.md#emergency-onboarding-requirement--accepted-2026-10-10). Current manual pairing is a controlled-test mechanism; automatic discovery of organization-verified responders and campus enrollment remain unimplemented; automatic exchange between manually pinned test endpoints is a separate checkpoint.

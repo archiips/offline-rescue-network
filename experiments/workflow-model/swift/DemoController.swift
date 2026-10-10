@@ -24,6 +24,7 @@ private final class CoreHandle {
     public var secureCard: SecurePairingCard? { secureEndpoint?.card }
     public var pairedCard: SecurePairingCard? { secureEndpoint?.peerCard }
     private var peer: NWEndpoint?
+    private var automaticExchange: Task<Void, Never>?
     private var exchangeGeneration = UUID()
     @Published public private(set) var transport = LocalExchangeTransport()
     @Published public private(set) var localRole: EndpointRole?
@@ -34,6 +35,7 @@ private final class CoreHandle {
         self.storageURL = storageURL
         retrySavedSession()
     }
+    deinit { automaticExchange?.cancel() }
     public func useLocalRole(_ role: EndpointRole) {
         guard let storageURL else { error = "Local exchange needs a saved sample session."; return }
         stopLocalExchange()
@@ -134,9 +136,31 @@ private final class CoreHandle {
         do { try transport.start(name: "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")-\(UUID().uuidString.prefix(8))",
                                  advertise: !relayMode, browse: !relayMode, port: port) }
         catch { self.error = "Could not start local exchange: \(error)" }
+        if secureMode && !relayMode && transport.active {
+            let run = exchangeGeneration
+            automaticExchange = Task { [weak self] in
+                while !Task.isCancelled {
+                    await self?.transferDiscoveredQueue(generation: run)
+                    do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                }
+            }
+        }
     }
     public func stopLocalExchange() {
+        automaticExchange?.cancel(); automaticExchange = nil
         exchangeGeneration = UUID(); exchangeBusy = false; peer = nil; relayStatus = ""; transport.stop()
+    }
+    /// Discovery is a routing hint only. SecureEndpointController still verifies every receipt.
+    private func transferDiscoveredQueue(generation run: UUID) async {
+        guard run == exchangeGeneration, secureMode, !relayMode, transport.active,
+              !exchangeBusy, (snapshot?.pendingTransfers ?? 0) > 0 else { return }
+        var candidates = transport.peers.map(\.endpoint)
+        if let peer, !candidates.contains(peer) { candidates.insert(peer, at: 0) }
+        for destination in candidates {
+            guard !Task.isCancelled, run == exchangeGeneration, transport.active,
+                  (snapshot?.pendingTransfers ?? 0) > 0 else { return }
+            await transferQueued(to: destination)
+        }
     }
     public func transferQueued(to destination: NWEndpoint) async {
         guard !relayMode, localRole != nil, let endpoint, transport.active, !exchangeBusy else { return }
