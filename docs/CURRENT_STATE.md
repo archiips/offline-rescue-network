@@ -1,6 +1,6 @@
 # Current state and resume instructions
 
-Updated 2026-10-09. This is the entry point for **“continue tasks from where we left off.”** Read it with repository-root AGENTS.md and the current Git state before choosing work. Durable repo files are authoritative; temporary tool sessions and chat memory are not required.
+Updated 2026-10-10. This is the entry point for **“continue tasks from where we left off.”** Read it with repository-root AGENTS.md and the current Git state before choosing work. Durable repo files are authoritative; temporary tool sessions and chat memory are not required.
 
 ## Goal and constraints
 
@@ -119,11 +119,11 @@ Capture blocker: Chrome/IAB unavailable; native Simulator getApp and a reset/inv
 
 ## Exact next action
 
-The foreground native relay and automatic floor research checkpoints below are verified within their documented synthetic/Simulator scope. Next: physical automatic-floor feasibility validation when hardware/building access is available; retain Unknown and separate reported location. Full playback review of `docs/media/rescue-live.mp4` remains a separate editorial follow-up when Computer Use playback works. Do not redo completed capture/transport or reset/re-pair existing secure peers. Physical range remains unmeasured.
+The user no longer has the iPad available (2026-10-10) and explicitly deferred two-device physical testing until a later updated version. Do not block development on reconnecting it or repeatedly ask for hardware. Next development step: discover/research/design the download-and-register-beforehand model, offline-verifiable responder credentials, automatic trusted discovery and encrypted return routing. Complete the repository's pre-build design/security review before implementation; no real campus enrollment, UW authorization or production registration service exists yet. Preserve the public iPhone and responder iPad journeys and the no-emergency-time-pairing requirement.
 
-Physical testing follows separately when hardware is available:
+The automatic foreground direct-send fix is published at `61a191e` and verified by real Mac Bonjour/socket tests plus a signed Simulator build; it has not been installed or physically retested. Existing manual pins remain the controlled-test baseline. The earlier physical iPhone 17/iOS 26.6 and iPad 8th-generation/iPadOS 18.6.2 screenshots establish a functional round trip on internet-connected Wi-Fi only.
 
-The user reports owning an iPhone 17 and an iPad; the tablet model/OS and current physical availability remain unconfirmed. Prepare physical testing once both devices are available and their OS versions are known. The deployment target is iOS/iPadOS 18.0. First bounded checkpoint: signed synthetic direct SOS/device receipt/human acknowledgment/reply on a local network without internet, followed by disconnect/restart and lifecycle observations. Use the existing native setup instructions and record the physical evidence separately. No-shared-access-point transport requires a separate capability decision and physical check. Do not keep asking for hardware while it is unavailable.
+When a second compatible device becomes available, install the latest verified build then, check saved identity/history compatibility rather than promising pairing survives future enrollment changes, and run automatic SOS/device receipt/human acknowledgment/reply without manual Transfer. Follow with controlled no-internet, interruption/retry and lifecycle checks, then a separate no-shared-access-point test. Retain a manual-pinned baseline if the registration version is still incomplete. Physical gates remain open; postponement does not establish offline delivery, range, floor accuracy or phone hopping. Floor accuracy testing resumes when hardware/building access is available. Full playback review of `docs/media/rescue-live.mp4` remains a separate editorial follow-up.
 
 An optional recording of actual live custody/device/human transitions remains distinct from the explanatory animation; see [portfolio script](PORTFOLIO_DEMO.md). Existing saved histories can be reviewed without reset. A fresh exercise requires coordinated explicit reset/re-pairing. Do not mark this live-recording task complete from animated illustrations.
 
@@ -239,3 +239,8 @@ The user accepted a firm requirement: no public-card copying, fingerprint compar
 Root cause of manual Transfer dependence: discovery only populated transport results; `DemoController.peer` was set solely by a manual transfer and cleared on failure. Secure direct mode now owns one cancellable worker while exchange is explicitly running. It checks saved pending messages and discovered candidates, retries after each batch with a two-second pause, and uses existing pinned encrypted envelopes/verified receipts. Names confer no authority. Existing per-connection deadlines, peer caps, bounded batches, durable queues and stop-generation fences remain. Plain diagnostic and manual relay behavior are unchanged. No emergency registration/organization credentials or background delivery was added.
 
 The real Bonjour/socket regression failed before the fix (SOS stayed waiting) and passed after it, including SOS/device receipt/human acknowledgment/reply without a manual Transfer call and stop/restart delivery. A second regression verifies unrelated responders cannot clear the queue and a later valid contact drains it. Full Swift suite and signed native build results are recorded in the execution plan. Physical devices were not available for installing this update at the inventory check; installed phone/iPad versions still require updating and retesting. This is Mac local-discovery evidence, not physical no-internet or router-free verification.
+
+
+## User-directed physical-test deferral — 2026-10-10
+
+The iPad is no longer available. User accepted testing later with the newer version and requested documentation updates. Development may proceed with the registration/trusted-discovery design and local verification while physical gates remain explicitly pending. No new device installation or physical success is claimed. See Exact next action above for the updated sequence.

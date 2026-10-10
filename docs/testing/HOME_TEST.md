@@ -1,10 +1,10 @@
 # First home session
 
-Status: preparation only; no physical result yet. Run this before any Bothell visit. No beacons, campus access or three-device relay setup are needed for the first session.
+Status (2026-10-10): initial physical round trip observed on internet-connected Wi-Fi; offline conditions and updated automatic delivery remain unverified. iPad currently unavailable; user deferred two-device testing until a later updated version. Run this before any Bothell visit. No beacons, campus access or three-device relay setup are needed for the first session.
 
 ## When the user steps in
 
-The next hardware step needs the iPhone and a second compatible Apple device physically available, plus the Mac for initial installation. The project requires iOS/iPadOS 18 or later; the older iPad's model/OS is still unconfirmed. A device listed as unavailable by Xcode is not a connected test endpoint. Do not buy equipment before checking what is available.
+The next hardware step needs the iPhone and a second compatible Apple device physically available, plus the Mac for initial installation. The project requires iOS/iPadOS 18 or later. Previously tested devices were iPhone 17/iOS 26.6 and iPad 8th generation/iPadOS 18.6.2; the iPad is currently unavailable. Resume when the user has a second device, installing the latest verified version then. Check identity/history migration before assuming existing pairing is preserved. A device listed as unavailable by Xcode is not a connected test endpoint. Do not buy equipment before checking what is available.
 
 The user handles unlocking, device trust, Apple account sign-in, development-team selection and any Developer Mode prompts. We can then inspect build/install errors together. Do not send credentials, device identifiers or provisioning profiles to chat or the repository.
 
