@@ -192,6 +192,7 @@ struct DemoShell: View {
     @EnvironmentObject private var demo: DemoController
     @State private var confirmingReset = false
     @State private var responder = false
+    @StateObject private var phoneRelay = NativeRelayHostController(rootURL: URL.applicationSupportDirectory.appendingPathComponent("RescueDemo/phone-relay", isDirectory: true))
     @StateObject private var locationCapture = NativeLocationCapture()
     @State private var publicFloor = "Unknown floor"
     @State private var reviewingSOS = false
@@ -227,15 +228,16 @@ struct DemoShell: View {
             }
         }
         .environmentObject(locationCapture)
+        .environmentObject(phoneRelay)
         .tint(Theme.accent)
         .preferredColorScheme(.dark)
         .transaction { if reduceMotion { $0.disablesAnimations = true } }
         .onAppear { if preferredMode == 1 && demo.localRole == nil { demo.useSecureRole(EndpointRole(rawValue: preferredRole) ?? .publicUser, viaRelay: preferredRelay) } }
-        .onChange(of: scenePhase) { _, phase in if phase == .background { locationCapture.cancel(); demo.stopLocalExchange() } }
+        .onChange(of: scenePhase) { _, phase in if phase == .background { locationCapture.cancel(); phoneRelay.stop(); demo.stopLocalExchange() } }
         .onChange(of: showingSetup) { _, showing in if showing { locationCapture.cancel() } }
         .onChange(of: preferredMode) { _, _ in locationCapture.clear() }
         .onChange(of: preferredRole) { _, _ in locationCapture.clear() }
-        .sheet(isPresented: $showingSetup) { SetupSheet().environmentObject(demo) }
+        .sheet(isPresented: $showingSetup) { SetupSheet().environmentObject(demo).environmentObject(phoneRelay) }
         .confirmationDialog(resetPrompt(training: demo.localRole == nil), isPresented: $confirmingReset, titleVisibility: .visible) {
             Button("Reset session", role: .destructive) { demo.reset() }
         }
@@ -553,6 +555,13 @@ struct SetupSheet: View {
                     Text(training ? "Both sample devices run inside this app over a simulated link." : "This device is one endpoint exchanging signed, encrypted sample messages with a separate paired endpoint.")
                 }
                 if training { trainingSections } else { secureSections }
+                Section {
+                    NavigationLink { PhoneRelayView() } label: {
+                        Label("Host a relay on this device", systemImage: "point.3.connected.trianglepath.dotted")
+                    }
+                } header: { Text("Third-device relay") } footer: {
+                    Text("A separate foreground workspace for carrying encrypted packets. Endpoint networking stops when you enter; identity and history are retained.")
+                }
                 sessionSection
             }
             .navigationTitle("Setup")

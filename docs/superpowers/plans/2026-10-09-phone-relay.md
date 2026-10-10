@@ -1,0 +1,30 @@
+# Controlled foreground phone relay implementation plan
+
+Goal: a third native Apple app instance hosts the existing opaque signed relay between exactly two pinned endpoint cards. User authorized continuation and Claude Opus5.5/medium delegation. Preserve public/responder/training/location flows and existing endpoint trust/history. No arbitrary mesh, radio-range claim, background delivery, automatic forwarding, agency enrollment or plaintext fallback.
+
+## Design / alternatives
+
+Reuse RelayService + bounded C++ SQLite queue + LocalExchangeTransport ORL1 framing. Add portable observable NativeRelayHostController with independent root/profile config and separate queue; thin SwiftUI host workspace reached from Setup. Entering host workspace stops endpoint networking; leaving it or backgrounding stops host networking. No endpoint private keys in relay configuration; only public cards are stored. No new dependency/protocol/C++ migration.
+
+Rejected: invent a mesh protocol or replace TCP with Bluetooth now (unverified physical/lifecycle expansion); embed relay into public/responder workflow authority (mixes custody with receipt); pretend Mac hosts are native third phones (not UI evidence). Manual destination host/ports retain current reachability limits. Nearby discovery/radio testing remain later checkpoints.
+
+Persistent profile binds public/responder cards to a domain-separated SHA256 profile ID and corresponding queue name; A/B/A selects the same saved queue. A new pair gets a new profile, preserving historical queue files. Missing/corrupt config or missing referenced queue fails closed rather than adopting/overwriting unrelated custody. Validate both opposite roles and full cards before writes. Persist no endpoint private keys or decrypted bodies. Contacts may be edited while stopped without changing pair/queue. Never auto-start after reopen. Incoming admission verifies signed routing and commits before custody response. Forward exactly one item per tap; delete only after signed acceptance, preserve reverse receipt. Stop/config changes fence post-await completion before RelayService mutates custody. Generation checks must occur inside send closure after network await, not only after flush returns.
+
+## Tasks / acceptance
+
+- [x] Controller and tests first: configured open/reopen with stopped transport; invalid/swapped/same-role cards no writes; missing/corrupt config/queue fails closed; profile change preserves old custody; actual sockets SOS custody→forward→reverse receipt, explicit ack/reply; stop during pending forward retains exact queued bytes and no stale UI success. Owner Claude or parent; files workflow-model/swift/NativeRelayHostController.swift and SwiftTests/PhoneRelayTests.swift.
+- [x] Native host workspace: separate public-card configuration/review of complete fingerprints, local listening port, durable custody count, two manual destination addresses and one-item forwarding, clear stopped/error states. Hosting never advances public delivery. Stop endpoints on entry and host on exit/background. No private-key entry. Preserve original Setup/public/responder/training views. Parent owns iOS changes.
+- [x] Verification: full Swift suite (actual manifest),43 sanitizer CTest, signed generic simulator build; inspect fresh native third-device host controls/config/restart via Computer Use; reuse existing process harness where relevant. Existing paired secure simulators are not reset. Trust input exercise only synthetic generated public cards; no real private/location data.
+- [x] Independent diff review (Claude verified model metadata), fix findings and rerun relevant checks; update current state/evidence/TODO only bounded completed entry; scoped commit/push after ignore/staged review.
+
+## Self-critique
+
+Correctness: custody differs from device receipt; stop fencing must protect service mutation. Simplicity: single fixed pair per saved profile and explicit contacts. Privacy: public metadata only; unchanged encryption; no logging plaintext. Maintainability: native UI uses tested controller and existing service. Testing: real C++ queue, crypto and sockets; semantic substitutions validly signed where applicable. UX: foreground/manual controls and missing-history errors explicit; preserve both endpoint audiences. No concurrent file overlap; Claude may own new controller/tests only, parent iOS/docs. Source/plan stay in persistent repo. Physical devices unavailable; native simulator evidence is local sockets, not RF.
+
+## Design review / refinement
+
+Claude read-only review verified canonical model claude-opus-5-5, invoked with medium effort. Adopt deterministic pair-bound profile IDs for A/B/A recovery. Retain Stop during a flush (never disable the user's stop control), reject configuration replacement until the in-flight operation exits, and fence inside the send closure to retain custody after stop. Use a separate Setup navigation workspace rather than changing EndpointRole or DemoController modes: stops endpoint networking on entry, host on exit/background, and avoids conflating relay custody with workflow facts. Add an explicit configurable listening port for stable manual contacts. Endpoint contact addresses persist as UI preferences, not queue identity. Native proof will use fresh synthetic Mac endpoints and the native host simulator, preserving existing paired native histories; this is not three physical phones.
+
+## Completion evidence
+
+Implemented controller/tests and native Setup workspace. Full suite:106 Swift Testing +4 XCTest;43 sanitizer CTest; signed native simulator build. Attended Computer Use host SOS/receipt/ack/reply, saved-reply restart recovery, exit and background stop passed. Claude Opus5.5/medium implementation and independent follow-up review verified; review fixes included explicit sheet environment injection, invalid root rejection and truthful async listener status. See PHONE_RELAY.md for exact evidence, commands and remaining filesystem/physical boundaries. Publication follows staged/ignore review.

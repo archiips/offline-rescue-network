@@ -169,3 +169,7 @@ Use validated `ORLOC1:` JSON inside the existing bounded C++ reported-location f
 ## UW Seattle localization progression — 2026-10-09
 
 Preserve automatic floor detection as an explicit future milestone. First investigate existing Wi-Fi/phone-sensor inputs; NFC rejected because tapping is required. Evaluate cooperative participating-phone proximity/UWB graphs against that baseline, with trusted reference observations, uncertainty and independent ground truth. Bluetooth anchors remain a measured fallback, with no purchase or installation decision. UW Seattle is the proposed first research setting, not a confirmed deployment. [Roadmap, sources and evaluation gates](UW_LOCALIZATION_ROADMAP.md). Resume controlled phone relay now; do not conflate location evidence with message reachability.
+
+### 2026-10-09 — Independent foreground native relay workspace
+
+Reuse the existing signed transport/RelayService/C++ queue from a separate Setup workspace, preserving endpoint workflow identities and histories. Bind queues deterministically to the two checked public cards; preserve old profile files and fail closed on damaged configuration. Manual contacts and one-packet forwarding keep custody distinct from destination receipt. Stop fences post-await mutation; exit/background stops networking. No new protocol, dependency, automatic mesh or background promise. [Verified scope and residuals](../experiments/rescue-demo/PHONE_RELAY.md).

@@ -119,7 +119,7 @@ Capture blocker: Chrome/IAB unavailable; native Simulator getApp and a reset/inv
 
 ## Exact next action
 
-The real native motion edit is now rendered at `docs/media/rescue-live.mp4`; see the latest motion-edit checkpoint below. Next, review full playback of this exact cut when Computer Use playback works, addressing concrete pacing/readability issues. Do not redo capture/research/transport or reset/re-pair existing secure peers. Training labels remain visible; physical range is unmeasured.
+The foreground native relay checkpoint below is verified. Next: research and design automatic floor-detection feasibility using the UW roadmap, keeping estimates separate from reported location and returning Unknown when unsupported. Full playback review of `docs/media/rescue-live.mp4` remains a separate editorial follow-up when Computer Use playback works. Do not redo completed capture/transport or reset/re-pair existing secure peers. Physical range remains unmeasured.
 
 Physical testing follows separately when hardware is available:
 
@@ -127,7 +127,7 @@ The user reports owning an iPhone 17 and an iPad; the tablet model/OS and curren
 
 An optional recording of actual live custody/device/human transitions remains distinct from the explanatory animation; see [portfolio script](PORTFOLIO_DEMO.md). Existing saved histories can be reviewed without reset. A fresh exercise requires coordinated explicit reset/re-pairing. Do not mark this live-recording task complete from animated illustrations.
 
-Full physical, encrypted-storage, enrollment, independent-audit, device-compatibility and private-data gates remain open. AI, sensors and selling to agencies are deferred.
+Full physical, encrypted-storage, enrollment, independent-audit, device-compatibility and private-data gates remain open. AI and selling to agencies are deferred; optional coordinate capture is implemented and automatic floor research is next.
 
 ## Resume checklist
 
@@ -158,7 +158,7 @@ The public interface now offers opt-in one-shot Core Location capture, manually 
 
 [Location checkpoint](../experiments/rescue-demo/LOCATION_CAPTURE.md) records 96 existing Swift checks plus4 new XCTest cases,43 sanitizer CTest and signed simulator build passing. Actual encrypted socket regression carries the structured report. Computer Use verified permission/capture/review/send, manual-only correction, restart and denied-permission manual sending on a separate iPad simulator. Fixed transient permission-prompt inactivity cancelling capture. Existing paired secure endpoints/film training history untouched. Local history remains unencrypted and is disclosed.
 
-Next coherent milestone: design a controlled foreground phone relay carrying opaque encrypted envelopes, then physical contact/range/lifecycle testing. Floor inference remains a later feasibility experiment. Do not treat the Mac relay proof as an existing arbitrary-phone mesh or Find My access.
+The controlled foreground native relay is now implemented and verified as documented below. Next coherent milestone: automatic floor-detection feasibility using the UW localization roadmap; physical contact/range/lifecycle tests wait for device availability. Do not treat the Mac relay proof as an existing arbitrary-phone mesh or Find My access.
 
 ### User steering after location checkpoint
 
@@ -167,3 +167,10 @@ Automatic floor detection remains an explicit intended milestone, not an optiona
 ### UW localization discussion preserved
 
 [UW Seattle localization roadmap](UW_LOCALIZATION_ROADMAP.md) records rejected NFC, Wi-Fi/sensor-first automatic floor research, Bluetooth-anchor fallback and cooperative participating-phone graph/UWB ideas, with primary sources, privacy/lifecycle limits and physical evaluation gates. No Wi-Fi floor model, infrastructure access, equipment deployment or arbitrary-phone tracking is implemented. User requested documenting this and resuming the controlled foreground phone-relay milestone.
+
+
+## Controlled foreground native relay checkpoint — 2026-10-09
+
+Setup now offers an independent native relay workspace with checked opposite-role public cards, pair-bound durable queues, manual listen/contact/one-packet-forward controls and stop-on-exit/background. [Evidence and limitations](../experiments/rescue-demo/PHONE_RELAY.md): 106 Swift Testing + 4 XCTest,43 sanitizer CTest, signed simulator build, native SOS/receipt/ack/reply, held-reply restart recovery and background stop. Original endpoint identities/history preserved. No arbitrary mesh or physical range claim.
+
+Exact next implementation direction: discover and research an automatic floor feasibility prototype, preserving manual reported floor separately from estimated floor/confidence/observation time/provenance and returning Unknown when unsupported. Use [UW localization roadmap](UW_LOCALIZATION_ROADMAP.md); do not assume iOS Wi-Fi scans or UW infrastructure access. Hardware/ground-truth evaluation remains a gate. The native host is left stopped with zero custody; fresh synthetic Mac endpoints exited.

@@ -41,7 +41,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Optionally capture one device location to review and attach to your prototype rescue request. Your reported floor remains manual.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Exchange preset synthetic rescue-training messages with another local test endpoint.</string>
+	<string>Exchange reviewed prototype rescue messages with checked local endpoints, or host a foreground relay carrying encrypted packets.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_rescue-demo._tcp</string>
