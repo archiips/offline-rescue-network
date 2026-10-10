@@ -18,6 +18,10 @@ import RescueDemoState
     @Published private(set) var relativeObservedAt: Date?
     @Published private(set) var latestAltitude: Double?
     @Published private(set) var anchor: RelativeFloorAnchor?
+    @Published private(set) var appleSampledAt: Double?
+    @Published private(set) var relativeSampledAt: Double?
+    @Published private(set) var appleReadingID = UUID()
+    @Published private(set) var relativeReadingID = UUID()
     private var samples: [RelativeFloorSample] = []
     private var location: CLLocationManager?
     private var altimeter: CMAltimeter?
@@ -91,10 +95,10 @@ import RescueDemoState
         clock?.cancel(); clock = nil; running = false; fixture = 0
         referenceReady = false; actionStatus = ""
         samples = []; anchor = nil; latestAltitude = nil
-        appleLevel = nil; appleObservedAt = nil
+        appleLevel = nil; appleObservedAt = nil; appleSampledAt = nil
         appleStatus = "Unknown · research stopped; no current floor observation."
         relative = FloorProbe.relative(anchor: nil, samples: [], now: 0)
-        relativeObservedAt = nil
+        relativeObservedAt = nil; relativeSampledAt = nil
         status = "Stopped. Nothing was sent or saved; restart requires a new starting reference."
     }
 
@@ -106,10 +110,10 @@ import RescueDemoState
             manager.startUpdatingLocation()
             appleStatus = "Unknown · waiting for an Apple-provided floor; coverage is not assumed."
         case .denied, .restricted:
-            appleLevel = nil; appleObservedAt = nil
+            appleLevel = nil; appleObservedAt = nil; appleSampledAt = nil
             appleStatus = "Unknown · location permission unavailable. Relative altitude is separate."
         @unknown default:
-            appleLevel = nil; appleObservedAt = nil
+            appleLevel = nil; appleObservedAt = nil; appleSampledAt = nil
             appleStatus = "Unknown · location authorization unavailable."
         }
     }
@@ -122,16 +126,19 @@ import RescueDemoState
         let age = Date().timeIntervalSince(fix.timestamp)
         guard age.isFinite, age >= 0, age <= 10, fix.horizontalAccuracy.isFinite, fix.horizontalAccuracy >= 0,
               let floor = fix.floor, (-20...200).contains(floor.level) else {
-            appleLevel = nil; appleObservedAt = nil
+            appleLevel = nil; appleObservedAt = nil; appleSampledAt = nil
             appleStatus = "Unknown · latest location has no fresh valid floor information."
             return
         }
+        let changed = appleLevel != floor.level || appleObservedAt != fix.timestamp
         appleLevel = floor.level; appleObservedAt = fix.timestamp
+        appleSampledAt = ProcessInfo.processInfo.systemUptime - age
+        if changed { appleReadingID = UUID() }
         appleStatus = "Apple-provided logical level · accuracy/confidence unvalidated here."
     }
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         guard manager === location, running, !synthetic else { return }
-        appleLevel = nil; appleObservedAt = nil
+        appleLevel = nil; appleObservedAt = nil; appleSampledAt = nil
         appleStatus = "Unknown · location sensor unavailable. Relative altitude is separate."
     }
 
@@ -176,7 +183,11 @@ import RescueDemoState
         let now = elapsed
         samples.removeAll { now - $0.elapsed > 10 }
         latestAltitude = samples.last?.altitude
-        relative = FloorProbe.relative(anchor: anchor, samples: samples, now: now)
+        let result = FloorProbe.relative(anchor: anchor, samples: samples, now: now)
+        let sampleTime = result.level == nil ? nil : samples.last.map { began + $0.elapsed }
+        let changed = relative.level != result.level || relativeSampledAt != sampleTime
+        relative = result; relativeSampledAt = sampleTime
+        if changed { relativeReadingID = UUID() }
         relativeObservedAt = relative.level == nil ? nil : samples.last.map { Date().addingTimeInterval($0.elapsed - now) }
         referenceReady = FloorProbe.calibrate(level: 0, height: 3.4, samples: samples, now: now).anchor != nil
         if samples.isEmpty {
@@ -185,7 +196,7 @@ import RescueDemoState
             status = "Foreground research · receiving altitude readings. " + (anchor == nil ? "Starting reference not set." : "Starting reference set; see current estimate below.")
         }
         if let date = appleObservedAt, !(0...10).contains(Date().timeIntervalSince(date)) {
-            appleLevel = nil; appleObservedAt = nil
+            appleLevel = nil; appleObservedAt = nil; appleSampledAt = nil
             appleStatus = "Unknown · Apple floor observation expired after 10 seconds."
         }
     }
@@ -193,7 +204,7 @@ import RescueDemoState
     func applyFixture(_ index: Int) {
         guard synthetic else { return }
         fixture = index
-        appleLevel = nil; appleObservedAt = nil
+        appleLevel = nil; appleObservedAt = nil; appleSampledAt = nil
         appleStatus = "Unknown · synthetic fixture does not simulate Apple venue coverage."
         let baseline = RelativeFloorAnchor(level: 0, altitude: 100, elapsed: 90, floorHeight: 3.4)
         anchor = index == 0 ? nil : baseline

@@ -83,3 +83,5 @@ See [secure walkthrough](SECURE_EXCHANGE.md) for current native pairing, encrypt
 [Controlled native relay hosting](PHONE_RELAY.md) is available from Setup: checked public cards, durable opaque custody and manual foreground forwarding. Native simulator/Mac evidence includes restart recovery and background stop; physical range and arbitrary mesh remain unverified.
 
 [Automatic floor research](FLOOR_RESEARCH.md) is available from Setup for both audiences: optional Apple floor and a C++ relative-altitude feasibility baseline with stable starting reference. Separate labelled fixtures verify logic; physical floor accuracy and UW Wi-Fi positioning remain unverified. Research estimates never replace reported floor or enter SOS automatically.
+
+Live Wi-Fi context and independently paired phone sensor observations are available in the optional shared [live cooperative research workspace](LIVE_COOPERATIVE_INPUTS.md). No UW floor map or physical accuracy result is established.

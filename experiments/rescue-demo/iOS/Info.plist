@@ -39,13 +39,14 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Optionally capture one location to review and attach to a prototype rescue request, or read floor information during foreground floor research without saving or sending it. Your reported floor remains manual.</string>
+	<string>Optionally capture a location to review for an SOS, or study floor and connected Wi-Fi information in foreground research. Research sharing is separately opt-in; your reported floor stays manual.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Exchange reviewed prototype rescue messages with checked local endpoints, or host a foreground relay carrying encrypted packets.</string>
+	<string>Exchange reviewed rescue messages, relay encrypted packets, or explicitly exchange encrypted floor research observations with a separately paired participant.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_rescue-demo._tcp</string>
 		<string>_rescue-sec._tcp</string>
+		<string>_rescue-floor._tcp</string>
 	</array>
 	<key>NSMotionUsageDescription</key>
 	<string>Optionally study relative altitude changes from a known starting floor in foreground research. Estimates are unvalidated and are not sent in rescue messages.</string>

@@ -114,6 +114,11 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         self.init(timeout: timeout, payloadLimit: 4276, discoveryType: Self.relayServiceType)
     }
 
+    /// Independent opt-in research traffic, separate from rescue discovery and payloads.
+    public convenience init(researchTimeout timeout: Duration) {
+        self.init(timeout: timeout, payloadLimit: 4276, discoveryType: "_rescue-floor._tcp")
+    }
+
     private init(timeout: Duration, payloadLimit: Int, discoveryType: String) {
         self.timeout = timeout
         self.payloadLimit = payloadLimit

@@ -86,8 +86,9 @@ struct FloorResearchView: View {
                 } header: { Text("Known starting reference") }
             }
             Section("Cooperative localization") {
+                NavigationLink("Live Wi-Fi + phone inputs") { LiveCooperativeResearchView() }
                 NavigationLink("Wi-Fi + nearby-phone graph replay") { CooperativeGraphResearchView() }
-                Text("Synthetic references and constraints only. Live Wi-Fi and participating-phone inputs are not connected yet.").font(.caption).foregroundStyle(.secondary)
+                Text("Replay uses synthetic references; live inputs have a separate optional workspace. No surveyed UW floor map is connected.").font(.caption).foregroundStyle(.secondary)
             }
             Section("Wi-Fi and next validation") {
                 Text("No UW access-point map or Wi-Fi floor classifier is connected. Campus Wi-Fi coverage alone does not identify a floor.")

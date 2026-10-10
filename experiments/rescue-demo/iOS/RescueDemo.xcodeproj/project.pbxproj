@@ -58,6 +58,8 @@
 				<string>000000000000000000000020</string>
 				<string>000000000000000000000022</string>
 				<string>000000000000000000000024</string>
+				<string>000000000000000000000026</string>
+				<string>000000000000000000000028</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -89,6 +91,8 @@
 				<string>000000000000000000000019</string>
 				<string>000000000000000000000021</string>
 				<string>000000000000000000000023</string>
+				<string>000000000000000000000027</string>
+				<string>000000000000000000000029</string>
 			</array>
 			<key>isa</key>
 			<string>PBXSourcesBuildPhase</string>
@@ -194,6 +198,8 @@
 				<string>6.0</string>
 				<key>TARGETED_DEVICE_FAMILY</key>
 				<string>1,2</string>
+				<key>CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]</key>
+				<string>Device.entitlements</string>
 			</dict>
 			<key>isa</key>
 			<string>XCBuildConfiguration</string>
@@ -230,6 +236,8 @@
 				<string>6.0</string>
 				<key>TARGETED_DEVICE_FAMILY</key>
 				<string>1,2</string>
+				<key>CODE_SIGN_ENTITLEMENTS[sdk=iphoneos*]</key>
+				<string>Device.entitlements</string>
 			</dict>
 			<key>isa</key>
 			<string>XCBuildConfiguration</string>
@@ -440,6 +448,42 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>000000000000000000000024</string>
+		</dict>
+		<key>000000000000000000000026</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>NativeWiFiResearch.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>000000000000000000000027</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000026</string>
+		</dict>
+		<key>000000000000000000000028</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>LiveCooperativeResearchView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>000000000000000000000029</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000028</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>
