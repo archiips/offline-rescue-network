@@ -38,6 +38,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Optionally capture one device location to review and attach to your prototype rescue request. Your reported floor remains manual.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Exchange preset synthetic rescue-training messages with another local test endpoint.</string>
 	<key>NSBonjourServices</key>

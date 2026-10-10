@@ -8,7 +8,7 @@ A person asks for help. A responder receives, acknowledges and replies. One C++ 
 
 [Watch the 44-second native demo](docs/media/rescue-live.mp4): real review/send, queued waiting, restored simulated link, device receipt, human acknowledgment and reply, with smooth editorial reframing and captions. Training mode is labeled throughout. [Capture, edit and review record](tools/demo-video/LIVE_CAPTURE.md).
 
-A portfolio prototype using preset synthetic data. Simulator/Mac local exchange is demonstrated; physical offline-radio behavior and operational readiness are unverified. A usable local communication path is required. The app does not contact emergency services.
+A portfolio prototype validated with synthetic data. Simulator/Mac local exchange is demonstrated; physical offline-radio behavior and operational readiness are unverified. A usable local communication path is required. The app does not contact emergency services.
 
 ## Two interfaces, one workflow
 
@@ -32,7 +32,7 @@ The recorded live demo shows actual review/send, queued waiting, device receipt,
 
 ## Location and reach today
 
-The demo uses the preset synthetic building “Training Building A.” The public user selects a reported floor, including Unknown floor, and can send a correction. No GPS, automatic floor detection or sensor estimate is implemented.
+The public user can optionally capture a one-time device location and review its coordinates, accuracy and observation time before sending. Reported place and floor remain manual; new drafts start with Unknown floor. Both interfaces retain dated observations separately from those reports, including through corrections. Manual-only sending remains available. [Implementation and synthetic Simulator verification](experiments/rescue-demo/LOCATION_CAPTURE.md). Automatic floor detection is not implemented.
 
 There is no verified range in metres. Current exchange requires a reachable local network path; simulator/Mac tests do not establish physical Wi-Fi or peer-to-peer range. Relay custody supports later contacts, but neither forwarding nor proximity guarantees delivery. Physical range and no-shared-access-point behavior remain separate test gates.
 

@@ -36,9 +36,9 @@ struct ResponderView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Sample assistance request · received locally", systemImage: "tray.and.arrow.down")
                         .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                    Text(state.reportedLocation)
+                    LocationSummary(value: state.reportedLocation)
                         .font(.largeTitle.bold())
-                        .accessibilityLabel("Reported location: \(state.reportedLocation)")
+
                         .accessibilityAddTraits(.isHeader)
                     Text("Reported location · as sent by the public device")
                         .font(.subheadline).foregroundStyle(.secondary)

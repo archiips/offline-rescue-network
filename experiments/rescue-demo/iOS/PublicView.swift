@@ -3,12 +3,13 @@ import RescueDemoState
 
 struct PublicView: View {
     @EnvironmentObject private var demo: DemoController
+    @EnvironmentObject private var capture: NativeLocationCapture
     @Binding var floor: String
     @Binding var reviewing: Bool
     @State private var updating = false
     @State private var withdrawing = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private var location: String { "Training Building A · \(floor)" }
+    private var location: String { (try? LocationReport(reported: capture.reported, floor: floor, observation: capture.observation).encoded()) ?? "" }
     private static let floors = ["Unknown floor", "Floor 1", "Floor 2", "Floor 3", "Floor 4"]
     private var hasRequest: Bool { demo.snapshot?.publicState.hasRequest ?? false }
 
@@ -22,10 +23,14 @@ struct PublicView: View {
         }
         .animation(.rescue(reduceMotion), value: hasRequest)
         .onAppear {
-            if let value = demo.snapshot?.publicState.reportedLocation.split(separator: "·").last {
-                floor = value.trimmingCharacters(in: .whitespaces)
+            if let value = demo.snapshot?.publicState.reportedLocation, !value.isEmpty {
+                let report = LocationReport.display(value)
+                if !report.floor.isEmpty { floor = report.floor; capture.reported = report.reported }
+                else if let oldFloor = value.split(separator: "·").last?.trimmingCharacters(in: .whitespaces), Self.floors.contains(oldFloor) { floor = oldFloor }
             }
         }
+        .onDisappear { capture.cancel() }
+        .onChange(of: hasRequest) { _, exists in if !exists { capture.clear() } }
         .sheet(isPresented: $reviewing) { reviewSheet }
         .sheet(isPresented: $updating) { updateSheet }
     }
@@ -45,7 +50,7 @@ struct PublicView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     SectionLabel(text: "Your location")
                     Divider()
-                    InfoRow(systemImage: "building.2", title: "Training Building A", subtitle: "Sample reported location")
+                    locationDraft
                     Divider().padding(.leading, 42)
                     floorRow
                     Divider()
@@ -69,15 +74,39 @@ struct PublicView: View {
         }
         .safeAreaInset(edge: .bottom) {
             ActionBar {
-                Button { reviewing = true } label: { Text("Review sample SOS") }
+                Button { capture.cancel(); capture.frozenReview = location; reviewing = true } label: { Text("Review sample SOS") }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityHint("Opens a review before anything is sent")
+                    .disabled(location.isEmpty)
             }
         }
     }
 
     private func step(_ number: Int, _ title: String, _ detail: String) -> some View {
         InfoRow(systemImage: "\(number).circle", title: title, subtitle: detail)
+    }
+
+    private var locationDraft: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            TextField("Reported building or place", text: $capture.reported)
+                .textInputAutocapitalization(.sentences)
+                .accessibilityLabel("Reported building or place")
+            Text("Manually reported place and floor; device coordinates do not confirm them.")
+                .font(.caption).foregroundStyle(.secondary)
+            if let observation = capture.observation {
+                Text("Device observation\n" + observation.detail).font(.subheadline)
+                Button("Remove device observation") { capture.clear() }
+            }
+            if capture.busy {
+                ProgressView("Getting a one-time location…")
+                Button("Cancel capture") { capture.cancel() }
+            } else {
+                Button(capture.observation == nil ? "Use device location" : "Capture again") { capture.capture() }
+            }
+            if !capture.status.isEmpty { Text(capture.status).font(.caption).foregroundStyle(.secondary) }
+            Text("Optional. Capturing does not send. Sent observations are shared with the responder and saved in this prototype’s unencrypted local history.")
+                .font(.caption).foregroundStyle(.secondary)
+        }.padding(.vertical, 12)
     }
 
     private var floorRow: some View {
@@ -104,7 +133,7 @@ struct PublicView: View {
                             .contentTransition(.symbolEffect(.replace))
                     }
                     .font(.title3.weight(.semibold))
-                    InfoRow(systemImage: "mappin.and.ellipse", title: state.reportedLocation, subtitle: "Reported location", symbolColor: Theme.ink)
+                    LocationSummary(value: state.reportedLocation)
                 }
                 VStack(alignment: .leading, spacing: 0) {
                     SectionLabel(text: "Status")
@@ -161,10 +190,10 @@ struct PublicView: View {
             List {
                 Section {
                     Label("SYNTHETIC assistance request", systemImage: "sos")
-                    Label(location, systemImage: "mappin.and.ellipse")
+                    LocationSummary(value: capture.frozenReview)
                 } header: { Text("Review sample request") }
                 Section {
-                    Button { demo.perform(.sos, value: location); reviewing = false } label: {
+                    Button { demo.perform(.sos, value: capture.frozenReview); reviewing = false } label: {
                         Text("Send sample SOS")
                     }
                     .buttonStyle(PrimaryButtonStyle())
@@ -185,12 +214,14 @@ struct PublicView: View {
         NavigationStack {
             List {
                 Section {
+                    locationDraft
                     Picker("Reported floor", selection: $floor) { ForEach(Self.floors, id: \.self) { Text($0) } }
                         .pickerStyle(.menu)
-                    Button { demo.perform(.correction, value: location); updating = false } label: {
+                    LocationSummary(value: location)
+                    Button { capture.cancel(); demo.perform(.correction, value: location); updating = false } label: {
                         Label("Send location correction", systemImage: "mappin.and.ellipse")
-                    }
-                } header: { Text("Location") } footer: { Text("Sends \(location) as a correction.") }
+                    }.disabled(location.isEmpty)
+                } header: { Text("Location") } footer: { Text("Review the reported place, floor and optional dated observation above before sending a correction.") }
                 Section("Message") {
                     Button { demo.perform(.followUp, value: "SYNTHETIC: assistance still requested"); updating = false } label: {
                         Label("Send sample follow-up", systemImage: "text.bubble")
@@ -202,6 +233,7 @@ struct PublicView: View {
                     }
                 } footer: { Text("A responder records the decision; this only asks.") }
             }
+            .onDisappear { capture.cancel() }
             .navigationTitle("Update request")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { updating = false } } }

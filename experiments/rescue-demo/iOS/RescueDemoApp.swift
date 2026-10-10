@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import CoreLocation
 import RescueDemoState
 
 @main struct RescueDemoApp: App {
@@ -191,7 +192,8 @@ struct DemoShell: View {
     @EnvironmentObject private var demo: DemoController
     @State private var confirmingReset = false
     @State private var responder = false
-    @State private var publicFloor = "Floor 1"
+    @StateObject private var locationCapture = NativeLocationCapture()
+    @State private var publicFloor = "Unknown floor"
     @State private var reviewingSOS = false
     @State private var showingSetup = false
     @AppStorage("sampleConnectionMode") private var preferredMode = 0
@@ -224,11 +226,15 @@ struct DemoShell: View {
                 }
             }
         }
+        .environmentObject(locationCapture)
         .tint(Theme.accent)
         .preferredColorScheme(.dark)
         .transaction { if reduceMotion { $0.disablesAnimations = true } }
         .onAppear { if preferredMode == 1 && demo.localRole == nil { demo.useSecureRole(EndpointRole(rawValue: preferredRole) ?? .publicUser, viaRelay: preferredRelay) } }
-        .onChange(of: scenePhase) { _, phase in if phase == .background { demo.stopLocalExchange() } }
+        .onChange(of: scenePhase) { _, phase in if phase == .background { locationCapture.cancel(); demo.stopLocalExchange() } }
+        .onChange(of: showingSetup) { _, showing in if showing { locationCapture.cancel() } }
+        .onChange(of: preferredMode) { _, _ in locationCapture.clear() }
+        .onChange(of: preferredRole) { _, _ in locationCapture.clear() }
         .sheet(isPresented: $showingSetup) { SetupSheet().environmentObject(demo) }
         .confirmationDialog(resetPrompt(training: demo.localRole == nil), isPresented: $confirmingReset, titleVisibility: .visible) {
             Button("Reset session", role: .destructive) { demo.reset() }
@@ -474,7 +480,7 @@ struct Conversation: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(message.text)
                     if !message.location.isEmpty {
-                        Label(message.location, systemImage: "mappin.and.ellipse").font(.subheadline)
+                        LocationSummary(value: message.location)
                             .opacity(0.85)
                     }
                 }
@@ -498,7 +504,7 @@ struct Conversation: View {
                 Text(message.text).font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
             }
             if !message.location.isEmpty {
-                Label(message.location, systemImage: "mappin.and.ellipse").font(.caption).foregroundStyle(.secondary)
+                LocationSummary(value: message.location).font(.caption).foregroundStyle(.secondary)
             }
             if message.outgoing { deliveryLine(message) }
             ackButton(message)
@@ -740,4 +746,77 @@ private func formattedFingerprint(_ fingerprint: String) -> String {
     return stride(from: 0, to: characters.count, by: 8).map { offset in
         String(characters[offset..<min(offset + 8, characters.count)])
     }.joined(separator: " ")
+}
+
+// MARK: - Optional foreground observation
+
+// Core Location delivers on its creation run loop; this manager is created on MainActor.
+// The imported delegate protocol predates actor annotations; retain runtime isolation checks.
+@MainActor final class NativeLocationCapture: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
+    @Published var observation: DeviceObservation?
+    @Published var status = ""
+    @Published var busy = false
+    @Published var reported = "Training Building A (sample)"
+    @Published var frozenReview = ""
+    private var manager: CLLocationManager?
+    private var timeout: Task<Void, Never>?
+
+    func capture() {
+        cancel()
+        let next = CLLocationManager()
+        manager = next; busy = true; status = "Waiting for location permission or a fix…"
+        next.delegate = self; next.desiredAccuracy = kCLLocationAccuracyBest
+        timeout = Task { [weak self, weak next] in
+            try? await Task.sleep(for: .seconds(30))
+            guard !Task.isCancelled, let self, let next, self.manager === next else { return }
+            self.finish("Location unavailable. You can still report your location manually.")
+        }
+        authorize(next)
+    }
+    private func authorize(_ manager: CLLocationManager) {
+        guard self.manager === manager else { return }
+        switch manager.authorizationStatus {
+        case .notDetermined: manager.requestWhenInUseAuthorization()
+        case .authorizedAlways, .authorizedWhenInUse: manager.requestLocation()
+        case .denied, .restricted: finish("Location access unavailable. Use a reported location, or change permission in Settings.")
+        @unknown default: finish("Location unavailable. Use a reported location.")
+        }
+    }
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) { authorize(manager) }
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard self.manager === manager else { return }
+        let now = Date()
+        let fixes = locations.sorted { $0.timestamp > $1.timestamp }
+        guard let fix = fixes.compactMap({ try? DeviceObservation.capture(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude, accuracy: $0.horizontalAccuracy, observedAt: $0.timestamp, approximate: manager.accuracyAuthorization == .reducedAccuracy, now: now) }).first else {
+            finish("No recent valid fix. Try again or use a reported location."); return
+        }
+        observation = fix
+        finish("Observation captured. Review it before sending.")
+    }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        guard self.manager === manager else { return }
+        finish("Location unavailable. Try again or use a reported location.")
+    }
+    func cancel() {
+        let wasBusy = busy
+        manager?.delegate = nil; manager?.stopUpdatingLocation(); manager = nil
+        timeout?.cancel(); timeout = nil; busy = false
+        if wasBusy { status = "Capture cancelled. No location was sent." }
+    }
+    func clear() { cancel(); observation = nil; status = ""; frozenReview = "" }
+    private func finish(_ message: String) { cancel(); status = message }
+}
+
+struct LocationSummary: View {
+    let value: String
+    var body: some View {
+        let report = LocationReport.display(value)
+        VStack(alignment: .leading, spacing: 6) {
+            Label(report.title, systemImage: "mappin.and.ellipse")
+            if let observation = report.observation {
+                Text("Device observation\n" + observation.detail).font(.caption).foregroundStyle(.secondary)
+                Text("Building and floor are manually reported.").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
 }
