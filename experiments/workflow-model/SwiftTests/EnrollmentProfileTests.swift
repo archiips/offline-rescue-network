@@ -31,3 +31,14 @@ import Testing
     let extended = try EnrollmentProfile.decode(JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys, .withoutEscapingSlashes]))
     #expect(throws: EnrollmentError.self) { try extended.validate(card: identity.card, issuerApproved: true, at: 170) }
 }
+
+@Test func preparedProfileTextImportRequiresExactBoundedJSON() throws {
+    let issuer = Curve25519.Signing.PrivateKey(), identity = SecureIdentity(role: .responder), realm = UUID()
+    let credential = try EnrollmentCredential.issue(card: identity.card, realm: realm, notBefore: 100, expires: 200, issuer: issuer)
+    let profile = try EnrollmentProfile.issue(realm: realm, issuer: issuer, validUntil: 200, credential: credential.bytes)
+    let bytes = try profile.encoded(), text = String(decoding: bytes, as: UTF8.self)
+    #expect(try EnrollmentProfile.decode(Data(text.utf8)).validate(card: identity.card, issuerApproved: true, at: 150).realm == realm)
+    #expect(throws: EnrollmentError.self) { try EnrollmentProfile.decode(Data(text.replacingOccurrences(of: "\"", with: "\u{201c}").utf8)) }
+    #expect(throws: EnrollmentError.self) { try EnrollmentProfile.decode(bytes + Data("\n".utf8)) }
+    #expect(throws: EnrollmentError.self) { try EnrollmentProfile.decode(Data(repeating: 32, count: 4097)) }
+}

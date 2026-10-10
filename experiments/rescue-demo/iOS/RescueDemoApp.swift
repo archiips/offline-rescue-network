@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import CoreLocation
 import UniformTypeIdentifiers
+import UIKit
 import RescueDemoState
 
 @main struct RescueDemoApp: App {
@@ -935,9 +936,13 @@ private struct RegistrationRequestDocument: FileDocument {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         do {
-            guard let secure, controller == nil, inbox == nil else { throw EnrollmentError.busy }
             let file = try FileHandle(forReadingFrom: url); defer { try? file.close() }
-            let bytes = try file.read(upToCount: 4097) ?? Data()
+            stage(try file.read(upToCount: 4097) ?? Data())
+        } catch { draft = nil; self.error = "Profile rejected; preparation unchanged. \(error)" }
+    }
+    func stage(_ bytes: Data) {
+        do {
+            guard let secure, controller == nil, inbox == nil else { throw EnrollmentError.busy }
             let profile = try EnrollmentProfile.decode(bytes)
             _ = try profile.validate(card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
             draft = profile; error = ""
@@ -960,6 +965,42 @@ private struct RegistrationRequestDocument: FileDocument {
     }
 }
 
+/// Preparation JSON must retain exact canonical bytes, without keyboard substitutions.
+private struct RegistrationProfileInput: UIViewRepresentable {
+    @Binding var text: String
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+    func makeUIView(context: Context) -> UITextView {
+        let view = UITextView()
+        view.delegate = context.coordinator
+        view.font = .monospacedSystemFont(ofSize: 14, weight: .regular)
+        view.backgroundColor = .clear
+        view.textColor = .label
+        view.autocapitalizationType = .none
+        view.autocorrectionType = .no
+        view.spellCheckingType = .no
+        view.smartQuotesType = .no
+        view.smartDashesType = .no
+        view.smartInsertDeleteType = .no
+        view.accessibilityLabel = "Issued profile JSON"
+        return view
+    }
+    func updateUIView(_ view: UITextView, context: Context) {
+        context.coordinator.parent = self
+        // Editing owns the buffer; avoid replacing it from a delayed SwiftUI render.
+        // Explicit clear still applies after validation or a role change.
+        if view.text != text && (!view.isFirstResponder || text.isEmpty) { view.text = text }
+    }
+    final class Coordinator: NSObject, UITextViewDelegate {
+        var parent: RegistrationProfileInput
+        init(_ parent: RegistrationProfileInput) { self.parent = parent }
+        func textViewDidChange(_ view: UITextView) {
+            let bounded = String(view.text.prefix(4097))
+            if view.text != bounded { view.text = bounded }
+            parent.text = bounded
+        }
+    }
+}
+
 private struct RegisteredDrillView: View {
     @EnvironmentObject private var demo: DemoController
     @Environment(\.scenePhase) private var phase
@@ -967,6 +1008,7 @@ private struct RegisteredDrillView: View {
     @State private var importing = false
     @State private var exporting = false
     @State private var issuerChecked = false
+    @State private var issuedProfile = ""
     var body: some View {
         Group {
             if let inbox = preparation.inbox {
@@ -998,11 +1040,22 @@ private struct RegisteredDrillView: View {
                     Section {
                         Text("Prepare before an outage").font(.headline)
                         Text("This is a synthetic drill registrar, not a live campus account. An organizer issues a credential for this device. No names, emails or private keys are exported.")
-                        Picker("Device role", selection: Binding(get: { preparation.role.rawValue }, set: { preparation.select($0 == 1 ? .responder : .publicUser); issuerChecked = false })) {
+                        Picker("Device role", selection: Binding(get: { preparation.role.rawValue }, set: { preparation.select($0 == 1 ? .responder : .publicUser); issuerChecked = false; issuedProfile = "" })) {
                             Text("Public").tag(0); Text("Responder").tag(1)
                         }
                         Button("Export registration request") { exporting = true }.disabled(preparation.request.isEmpty)
                         Button("Import organizer-issued profile") { importing = true }.disabled(preparation.request.isEmpty)
+                        DisclosureGroup("Organizer preparation options") {
+                            Text("Use these options only before an outage. Your request contains public device keys; it grants no responder authority by itself.").font(.caption)
+                            Text(preparation.request).font(.caption.monospaced()).textSelection(.enabled).accessibilityLabel("Public registration request")
+                            Text("Issued profile JSON").font(.caption)
+                            RegistrationProfileInput(text: $issuedProfile).frame(height: 120)
+                            Button("Validate issued profile") {
+                                issuerChecked = false
+                                preparation.stage(Data(issuedProfile.utf8))
+                                issuedProfile = ""
+                            }.disabled(issuedProfile.isEmpty || preparation.request.isEmpty)
+                        }
                     }
                     if let draft = preparation.draft {
                         Section("Verify organizer during preparation") {
