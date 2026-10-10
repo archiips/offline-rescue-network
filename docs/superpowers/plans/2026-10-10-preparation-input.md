@@ -13,6 +13,6 @@ Critique: keyboard substitutions can corrupt signed JSON, so native input disabl
 - [x] Full Swift checks:192 Swift Testing +6 XCTest pass, including exact canonical text, quote substitution/trailing newline/oversize rejection and retained socket recovery/fences.
 - [x] Final signed Simulator build succeeds; final installed build preserves exact quote/order, rejects incomplete input and stages the valid profile with approval off.
 - [x] Explicit action-time approval and native registration/inbox walkthrough (empty inbox, stop, saved registration and automatic discovery after relaunch on iPhone Simulator); remaining two-audience round trip and physical gates recorded separately.
-- [ ] Final privacy/diff review and scoped publication.
+- [x] Final staged privacy/diff review and scoped publication: `99e2863` pushed to authorized origin/main; personal Xcode signing changes excluded.
 
 Evidence: TextEditor smart punctuation and rapid editing exposed corruption during actual native entry; bounded UITextView now disables substitutions. Native exact profile was entered via Computer Use and accepted to matching local issuer fingerprint, verification toggle off. User confirmation requested at that step, as required by Computer Use security rules. Never approve macOS SecurityAgent using alternate tools; user handled that earlier prompt directly.
