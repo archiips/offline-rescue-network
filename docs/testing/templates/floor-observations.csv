@@ -1,0 +1,1 @@
+session_id,device_label,observed_at_utc,route,ground_truth_logical_level,ground_truth_method,apple_level,relative_level,local_graph_level,peer_reported_level,peer_observation_id,peer_age_upper_bound_seconds,wifi_capture_status,calibration_age_seconds,outcome,evidence_path,notes

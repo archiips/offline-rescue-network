@@ -85,3 +85,5 @@ See [secure walkthrough](SECURE_EXCHANGE.md) for current native pairing, encrypt
 [Automatic floor research](FLOOR_RESEARCH.md) is available from Setup for both audiences: optional Apple floor and a C++ relative-altitude feasibility baseline with stable starting reference. Separate labelled fixtures verify logic; physical floor accuracy and UW Wi-Fi positioning remain unverified. Research estimates never replace reported floor or enter SOS automatically.
 
 Live Wi-Fi context and independently paired phone sensor observations are available in the optional shared [live cooperative research workspace](LIVE_COOPERATIVE_INPUTS.md). No UW floor map or physical accuracy result is established.
+
+For initial physical installation and testing, use the [home session guide](../../docs/testing/HOME_TEST.md). Generic physical iOS compilation passes; signing, installation and hardware behavior remain unverified.

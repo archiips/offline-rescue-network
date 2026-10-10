@@ -2,6 +2,8 @@
 
 Prepared 2026-10-09. No physical tests have run. Use synthetic rescue content and consenting participants. Hardware availability and iPad model/OS remain unconfirmed; do not repeatedly request unavailable hardware. Public iPhone and responder iPad workflows remain required.
 
+Use the [home session guide and local-only worksheets](testing/HOME_TEST.md) for installation and recording attempts. Templates contain no completed results.
+
 ## 1. Controlled location near home
 
 Start in an accessible room or building near the user, before travelling to campus. Use two supported physical Apple devices with the signed app installed (deployment target iOS/iPadOS 18). Record actual model, OS, app commit, permissions and network configuration. Preserve existing histories; use coordinated fresh exercise identities if a separate test is needed.

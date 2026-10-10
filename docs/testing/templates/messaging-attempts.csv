@@ -1,0 +1,1 @@
+session_id,attempt_id,configuration,source_device,destination_device,event_kind,event_id,timing_population,start_at_utc,device_receipt_at_utc,human_ack_at_utc,reply_at_utc,internet_check,interruption,outcome,evidence_path,notes
