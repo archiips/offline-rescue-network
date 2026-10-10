@@ -36,6 +36,10 @@ private final class AutomaticRecord: SecureRecordStore {
     }
     #expect(user.snapshot?.publicState.originalDelivery == .humanAcknowledged)
     #expect(user.snapshot?.publicState.messages.contains(where: { $0.text == "Synthetic automatic reply" }) == true)
+    // Receiver commit and sender receipt confirmation are separate asynchronous facts.
+    while responder.snapshot?.pendingTransfers != 0 && ContinuousClock.now < deadline {
+        try await Task.sleep(for: .milliseconds(50))
+    }
     #expect(responder.snapshot?.pendingTransfers == 0)
     user.stopLocalExchange()
     user.perform(.followUp, value: "Saved while stopped")

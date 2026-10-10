@@ -287,9 +287,14 @@ final class InboxTestStore: SecureRecordStore {
     try b.confirm(inbox.receive(#require(try b.nextPacket())))
     var received = 0
     publicTransport.onIncoming = { packet in
+        let receipt = try f.users[0].accept(packet)
         received += 1
-        return try f.users[0].accept(packet)
+        return receipt
     }
+    // Unrelated discovery probes can reach this listener during concurrent socket tests.
+    // The fence assertion counts only authenticated application delivery to this peer.
+    #expect(throws: (any Error).self) { try publicTransport.onIncoming?(Data("unrelated discovery probe".utf8)) }
+    #expect(received == 0)
     let name = "RescueRegistered-public-\(f.users[0].card.fingerprint.prefix(16))-\(UUID().uuidString.prefix(8))"
     try publicTransport.start(name: name)
     let deadline = ContinuousClock.now + .seconds(10)
@@ -297,7 +302,10 @@ final class InboxTestStore: SecureRecordStore {
         if case .service(let discovered, _, _, _) = $0.endpoint { return discovered == name }
         return false
     }) && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(50)) }
-    #expect(!inbox.transport.peers.isEmpty)
+    try #require(inbox.transport.peers.contains(where: {
+        if case .service(let discovered, _, _, _) = $0.endpoint { return discovered == name }
+        return false
+    }))
     // Save while the registry is current, then replace it before yielding to the worker.
     try inbox.perform(conversationID: f.users[0].card.fingerprint, action: .reply, value: "Synthetic must stay saved")
     f.registry.data = Data("replaced registry".utf8)
