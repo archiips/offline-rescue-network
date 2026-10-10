@@ -40,3 +40,7 @@ No approved building, access-point inventory, campus API, equipment installation
 - [Phone as iBeacon](https://developer.apple.com/documentation/corelocation/turning-an-ios-device-into-an-ibeacon-device): app must remain foregrounded for that beacon workflow. Custom Bluetooth background behavior is a separate platform-specific question, not a promised capability.
 
 These sources support API constraints, not the hypothesis that the proposed fusion improves UW floor accuracy. That requires the physical comparisons above.
+
+## First research implementation checkpoint
+
+The [foreground floor research prototype](../experiments/rescue-demo/FLOOR_RESEARCH.md) now supplies a C++ relative-altitude baseline with stable known-level calibration, optional Apple logical floor and isolated synthetic cases. Simulator logic/lifecycle checks pass; real altitude, floor accuracy and UW infrastructure remain unverified. Wi-Fi, cooperative phones, beacons and UWB are still future input experiments, not implemented accuracy improvements. Estimates are not sent in rescue messages in this checkpoint.

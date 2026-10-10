@@ -562,6 +562,13 @@ struct SetupSheet: View {
                 } header: { Text("Third-device relay") } footer: {
                     Text("A separate foreground workspace for carrying encrypted packets. Endpoint networking stops when you enter; identity and history are retained.")
                 }
+                Section {
+                    NavigationLink { FloorResearchView() } label: {
+                        Label("Automatic floor research", systemImage: "building.2")
+                    }
+                } header: { Text("Location research") } footer: {
+                    Text("Optional foreground sensor feasibility. Estimates never replace your reported floor or enter messages automatically.")
+                }
                 sessionSection
             }
             .navigationTitle("Setup")

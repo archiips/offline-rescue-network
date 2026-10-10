@@ -39,7 +39,7 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Optionally capture one device location to review and attach to your prototype rescue request. Your reported floor remains manual.</string>
+	<string>Optionally capture one location to review and attach to a prototype rescue request, or read floor information during foreground floor research without saving or sending it. Your reported floor remains manual.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Exchange reviewed prototype rescue messages with checked local endpoints, or host a foreground relay carrying encrypted packets.</string>
 	<key>NSBonjourServices</key>
@@ -47,5 +47,7 @@
 		<string>_rescue-demo._tcp</string>
 		<string>_rescue-sec._tcp</string>
 	</array>
+	<key>NSMotionUsageDescription</key>
+	<string>Optionally study relative altitude changes from a known starting floor in foreground research. Estimates are unvalidated and are not sent in rescue messages.</string>
 </dict>
 </plist>

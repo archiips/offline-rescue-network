@@ -119,7 +119,7 @@ Capture blocker: Chrome/IAB unavailable; native Simulator getApp and a reset/inv
 
 ## Exact next action
 
-The foreground native relay checkpoint below is verified. Next: research and design automatic floor-detection feasibility using the UW roadmap, keeping estimates separate from reported location and returning Unknown when unsupported. Full playback review of `docs/media/rescue-live.mp4` remains a separate editorial follow-up when Computer Use playback works. Do not redo completed capture/transport or reset/re-pair existing secure peers. Physical range remains unmeasured.
+The foreground native relay and automatic floor research checkpoints below are verified within their documented synthetic/Simulator scope. Next: physical automatic-floor feasibility validation when hardware/building access is available; retain Unknown and separate reported location. Full playback review of `docs/media/rescue-live.mp4` remains a separate editorial follow-up when Computer Use playback works. Do not redo completed capture/transport or reset/re-pair existing secure peers. Physical range remains unmeasured.
 
 Physical testing follows separately when hardware is available:
 
@@ -173,4 +173,13 @@ Automatic floor detection remains an explicit intended milestone, not an optiona
 
 Setup now offers an independent native relay workspace with checked opposite-role public cards, pair-bound durable queues, manual listen/contact/one-packet-forward controls and stop-on-exit/background. [Evidence and limitations](../experiments/rescue-demo/PHONE_RELAY.md): 106 Swift Testing + 4 XCTest,43 sanitizer CTest, signed simulator build, native SOS/receipt/ack/reply, held-reply restart recovery and background stop. Original endpoint identities/history preserved. No arbitrary mesh or physical range claim.
 
-Exact next implementation direction: discover and research an automatic floor feasibility prototype, preserving manual reported floor separately from estimated floor/confidence/observation time/provenance and returning Unknown when unsupported. Use [UW localization roadmap](UW_LOCALIZATION_ROADMAP.md); do not assume iOS Wi-Fi scans or UW infrastructure access. Hardware/ground-truth evaluation remains a gate. The native host is left stopped with zero custody; fresh synthetic Mac endpoints exited.
+The automatic floor feasibility prototype is now implemented below; do not rebuild it as a new milestone. Its estimates remain research-only, separate from manual reported floor and messages. Use [UW localization roadmap](UW_LOCALIZATION_ROADMAP.md); do not assume iOS Wi-Fi scans or UW infrastructure access. Hardware/ground-truth evaluation remains a gate. The native host is left stopped with zero custody; fresh synthetic Mac endpoints exited.
+
+
+## Automatic floor research checkpoint — 2026-10-09
+
+[Floor research evidence](../experiments/rescue-demo/FLOOR_RESEARCH.md) records a separate foreground native workspace, optional Apple logical floor, C++ anchored-relative floor baseline, stable calibration, explicit Unknown causes and isolated synthetic fixtures.111 Swift Testing +6 XCTest /47 sanitizer CTest /signed Simulator build pass. Computer Use verified fixtures, denied/unsupported sensor behavior, source isolation, background/exit stop and preserved training history. Physical sensor readings and floor accuracy are unverified. No Wi-Fi classifier, AP map, beacon deployment, arbitrary-phone graph or automatic estimate attachment to SOS.
+
+Three iPad simulator windows are intentional saved sessions: paired responder, Rescue Live Training, and Rescue Location Check. One paired iPhone is also open. This task reused only Location Check; all histories retained. Location Check is left in stopped device research; no need for another simulator or any resets.
+
+Next meaningful floor milestone requires physical supported hardware plus a known multi-floor building and measured spacing: evaluate Apple-floor availability and relative-altitude clock/pressure/transition behavior against independently recorded levels. Hardware is currently unavailable; do not repeatedly request it, claim accuracy, guess UW AP coordinates, or mark LOC-01 complete. See UW roadmap/evidence for the physical protocol. Remaining local portfolio work includes final live-film playback review when Computer Use playback works; a research-mode video can show fixtures only with visible synthetic labels.

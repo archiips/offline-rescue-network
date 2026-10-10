@@ -55,6 +55,9 @@
 				<string>000000000000000000000001</string>
 				<string>000000000000000000000006</string>
 				<string>000000000000000000000018</string>
+				<string>000000000000000000000020</string>
+				<string>000000000000000000000022</string>
+				<string>000000000000000000000024</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -84,6 +87,8 @@
 				<string>000000000000000000000015</string>
 				<string>000000000000000000000017</string>
 				<string>000000000000000000000019</string>
+				<string>000000000000000000000021</string>
+				<string>000000000000000000000023</string>
 			</array>
 			<key>isa</key>
 			<string>PBXSourcesBuildPhase</string>
@@ -108,7 +113,9 @@
 			<key>buildActionMask</key>
 			<integer>2147483647</integer>
 			<key>files</key>
-			<array/>
+			<array>
+				<string>000000000000000000000025</string>
+			</array>
 			<key>isa</key>
 			<string>PBXResourcesBuildPhase</string>
 			<key>runOnlyForDeploymentPostprocessing</key>
@@ -379,6 +386,60 @@
 			<string>PBXBuildFile</string>
 			<key>fileRef</key>
 			<string>000000000000000000000018</string>
+		</dict>
+		<key>000000000000000000000020</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>FloorResearchView.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>000000000000000000000021</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000020</string>
+		</dict>
+		<key>000000000000000000000022</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>NativeFloorResearch.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>000000000000000000000023</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000022</string>
+		</dict>
+		<key>000000000000000000000024</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>text.xml</string>
+			<key>path</key>
+			<string>PrivacyInfo.xcprivacy</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
+		<key>000000000000000000000025</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+			<key>fileRef</key>
+			<string>000000000000000000000024</string>
 		</dict>
 	</dict>
 	<key>rootObject</key>

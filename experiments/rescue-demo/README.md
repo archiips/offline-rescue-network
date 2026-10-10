@@ -81,3 +81,5 @@ This saved-training checkpoint established no physical radio, encrypted exchange
 See [secure walkthrough](SECURE_EXCHANGE.md) for current native pairing, encryption, exact checks and limits.62 Swift checks retain the original 33; C++30/Python14 remain green. Use real measured figures only for their stated baseline; secure latency is unmeasured.
 
 [Controlled native relay hosting](PHONE_RELAY.md) is available from Setup: checked public cards, durable opaque custody and manual foreground forwarding. Native simulator/Mac evidence includes restart recovery and background stop; physical range and arbitrary mesh remain unverified.
+
+[Automatic floor research](FLOOR_RESEARCH.md) is available from Setup for both audiences: optional Apple floor and a C++ relative-altitude feasibility baseline with stable starting reference. Separate labelled fixtures verify logic; physical floor accuracy and UW Wi-Fi positioning remain unverified. Research estimates never replace reported floor or enter SOS automatically.

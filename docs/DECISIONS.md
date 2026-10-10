@@ -173,3 +173,7 @@ Preserve automatic floor detection as an explicit future milestone. First invest
 ### 2026-10-09 — Independent foreground native relay workspace
 
 Reuse the existing signed transport/RelayService/C++ queue from a separate Setup workspace, preserving endpoint workflow identities and histories. Bind queues deterministically to the two checked public cards; preserve old profile files and fail closed on damaged configuration. Manual contacts and one-packet forwarding keep custody distinct from destination receipt. Stop fences post-await mutation; exit/background stops networking. No new protocol, dependency, automatic mesh or background promise. [Verified scope and residuals](../experiments/rescue-demo/PHONE_RELAY.md).
+
+### 2026-10-09 — Research floor estimates remain outside rescue payloads
+
+Use a separate foreground feasibility workspace with optional Apple logical floor and C++-owned relative-altitude baseline. Require an explicit known reference, measured uniform spacing and stable calibration; reject stale/noisy/transitional data with Unknown. Show sources separately and no numeric confidence claims. Do not infer absolute floors from GPS altitude, assume UW Wi-Fi mapping, or overwrite reported location. Synthetic fixtures remain visibly distinct; stop clears reference. [Evidence and unverified physical inputs](../experiments/rescue-demo/FLOOR_RESEARCH.md).
