@@ -46,6 +46,7 @@
 	<array>
 		<string>_rescue-demo._tcp</string>
 		<string>_rescue-sec._tcp</string>
+		<string>_rescue-reg._tcp</string>
 		<string>_rescue-floor._tcp</string>
 	</array>
 	<key>NSMotionUsageDescription</key>

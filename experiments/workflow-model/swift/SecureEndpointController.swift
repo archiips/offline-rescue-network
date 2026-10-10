@@ -250,6 +250,13 @@ private struct SecureRecord: Codable {
         return (identity, peerCard, envelope)
     }
 
+    /// Prepared enrollment may prove identity before a peer is pinned; retain saved-record/history fences.
+    func enrollmentIdentity() throws -> SecureIdentity {
+        try requireCurrent()
+        try requireHistory()
+        return identity
+    }
+
     private func paired() throws -> SecureEnvelope {
         try requireCurrent()
         try requireHistory()

@@ -83,6 +83,9 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
     @Published public private(set) var active = false
     /// Saves an incoming packet and returns its committed receipt. Nil or throwing closes without a response.
     public var onIncoming: ((Data) throws -> Data)?
+    /// Optional untrusted name hint, configured before start. Filtering precedes the peer cap;
+    /// it never authenticates a device or changes receipt verification.
+    public var discoveryNameContains: String?
     /// Bonjour type for the explicit signed-relay mode; distinct from direct plain and secure exchange.
     public nonisolated static let relayServiceType = "_rescue-relay._tcp"
     private let timeout: Duration
@@ -119,6 +122,11 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         self.init(timeout: timeout, payloadLimit: 4276, discoveryType: "_rescue-floor._tcp")
     }
 
+    /// Prepared-credential drill service, separate from manual pairing, relay and research traffic.
+    public convenience init(registrationTimeout timeout: Duration) {
+        self.init(timeout: timeout, payloadLimit: 4276, discoveryType: "_rescue-reg._tcp")
+    }
+
     private init(timeout: Duration, payloadLimit: Int, discoveryType: String) {
         self.timeout = timeout
         self.payloadLimit = payloadLimit
@@ -131,8 +139,11 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         return parameters
     }
     /// Peer names are untrusted display text. Drops our own exact advertised name, sorts and caps.
-    nonisolated static func visible<T>(_ items: [T], endpoint: (T) -> NWEndpoint, excluding name: String?) -> [T] {
+    nonisolated static func visible<T>(_ items: [T], endpoint: (T) -> NWEndpoint, excluding name: String?, containing hint: String? = nil) -> [T] {
         let others = items.filter {
+            if let hint {
+                guard case .service(let candidate, _, _, _) = endpoint($0), candidate.contains(hint) else { return false }
+            }
             if let name, case .service(let peer, _, _, _) = endpoint($0) { return peer != name }
             return true
         }
@@ -251,7 +262,8 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         browser.browseResultsChangedHandler = { [weak self] results, _ in
             MainActor.assumeIsolated {
                 guard let self, self.generation == run, self.browser != nil else { return }
-                self.peers = Self.visible(Array(results), endpoint: \.endpoint, excluding: self.advertisedName)
+                self.peers = Self.visible(Array(results), endpoint: \.endpoint, excluding: self.advertisedName,
+                                          containing: self.discoveryNameContains)
             }
         }
         self.browser = browser

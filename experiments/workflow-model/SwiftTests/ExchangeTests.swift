@@ -400,3 +400,11 @@ private func header(_ length: UInt32) -> Data {
     #expect(throws: ExchangeTransportError.self) { try transport.start(name: String(repeating: "x", count: 64), browse: false) }
     #expect(!transport.active)
 }
+
+
+@Test func pinnedDiscoveryRoutingHintFiltersBeforePeerCap() {
+    let others = (0..<40).map { NWEndpoint.service(name: "A-other-\($0)", type: "_rescue-sec._tcp", domain: "local.", interface: nil) }
+    let expected = NWEndpoint.service(name: "Z-Responder-0123456789abcdef-live", type: "_rescue-sec._tcp", domain: "local.", interface: nil)
+    let visible = LocalExchangeTransport.visible(others + [expected], endpoint: { $0 }, excluding: nil, containing: "-0123456789abcdef-")
+    #expect(visible == [expected])
+}

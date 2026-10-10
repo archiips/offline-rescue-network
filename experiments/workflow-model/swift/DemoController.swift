@@ -133,7 +133,9 @@ private final class CoreHandle {
         stopLocalExchange()
         if secureMode { bindSecureEndpoint() }
         error = ""
-        do { try transport.start(name: "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")-\(UUID().uuidString.prefix(8))",
+        let identityHint = secureMode ? "-" + (secureCard?.fingerprint.prefix(16) ?? "") : ""
+        transport.discoveryNameContains = secureMode && !relayMode ? pairedCard.map { "-" + $0.fingerprint.prefix(16) + "-" } : nil
+        do { try transport.start(name: "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")\(identityHint)-\(UUID().uuidString.prefix(8))",
                                  advertise: !relayMode, browse: !relayMode, port: port) }
         catch { self.error = "Could not start local exchange: \(error)" }
         if secureMode && !relayMode && transport.active {

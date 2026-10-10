@@ -101,3 +101,8 @@ xcodebuild -project experiments/rescue-demo/iOS/RescueDemo.xcodeproj \
 ```
 
 Signed arm64 PersonalDebug build and iPhone installation are verified; the user confirmed opening it after developer trust/verification. This establishes installation, not physical message transfer or sensor accuracy.
+
+
+## Prepared-registration drill — 2026-10-10
+
+[Experimental enrolled discovery](REGISTERED_EXCHANGE.md) adds a separate native preparation/registered workspace: organizer-issued signed credentials and policy snapshots, automatic authenticated discovery, queued encrypted SOS/receipt/ack/reply, and no emergency-time manual endpoint pairing or Transfer. One public/responder conversation; synthetic organizer only, no UW account service. Preparation/file import is before an outage. Original Secure/Training/relay/location research remain available. Physical updated-version testing is deferred while the iPad is unavailable.

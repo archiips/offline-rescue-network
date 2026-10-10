@@ -1,11 +1,31 @@
 import SwiftUI
 import Foundation
 import CoreLocation
+import UniformTypeIdentifiers
 import RescueDemoState
 
 @main struct RescueDemoApp: App {
     @StateObject private var demo = DemoController(storageURL: URL.applicationSupportDirectory.appendingPathComponent("RescueDemo", isDirectory: true).appendingPathComponent("session.sqlite"))
-    var body: some Scene { WindowGroup { DemoShell().environmentObject(demo) } }
+    var body: some Scene { WindowGroup { RescueEntry().environmentObject(demo) } }
+}
+
+/// Read the prepared-drill preference once at launch, avoiding a mid-import root replacement.
+private struct RescueEntry: View {
+    @State private var registered = UserDefaults.standard.bool(forKey: "registeredDrillLaunch")
+    var body: some View {
+        if registered {
+            NavigationStack {
+                RegisteredDrillView()
+                    .toolbar { ToolbarItem(placement: .topBarTrailing) {
+                        Button("Other demo modes") {
+                            UserDefaults.standard.set(false, forKey: "registeredDrillLaunch")
+                            registered = false
+                        }
+                    } }
+            }
+            .preferredColorScheme(.dark).tint(Theme.accent)
+        } else { DemoShell() }
+    }
 }
 
 // MARK: - Visual language
@@ -569,6 +589,13 @@ struct SetupSheet: View {
                 } header: { Text("Location research") } footer: {
                     Text("Optional foreground sensor feasibility. Estimates never replace your reported floor or enter messages automatically.")
                 }
+                Section {
+                    NavigationLink { RegisteredDrillView() } label: {
+                        Label("Prepared registration drill", systemImage: "person.badge.shield.checkmark")
+                    }
+                } footer: {
+                    Text("Synthetic organizer-issued credentials. Prepare before an outage; enrolled devices discover and exchange automatically. One public/responder conversation; no UW authorization.")
+                }
                 sessionSection
             }
             .navigationTitle("Setup")
@@ -832,6 +859,191 @@ struct LocationSummary: View {
             if let observation = report.observation {
                 Text("Device observation\n" + observation.detail).font(.caption).foregroundStyle(.secondary)
                 Text("Building and floor are manually reported.").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - Prepared registration drill
+
+private struct RegistrationRequestDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.plainText] }
+    var text: String
+    init(text: String) { self.text = text }
+    init(configuration: ReadConfiguration) throws {
+        text = String(decoding: configuration.file.regularFileContents ?? Data(), as: UTF8.self)
+    }
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: Data(text.utf8))
+    }
+}
+
+@MainActor private final class RegisteredPreparation: ObservableObject {
+    @Published var role: EndpointRole = .publicUser
+    @Published var controller: RegisteredExchangeController?
+    @Published var draft: EnrollmentProfile?
+    @Published var error = ""
+    @Published var request = ""
+    private var secure: SecureEndpointController?
+    private var store: DefaultKeychainStore?
+    func select(_ role: EndpointRole) {
+        controller?.stop(); controller = nil; draft = nil; secure = nil; request = ""; error = ""; self.role = role
+        UserDefaults.standard.set(role.rawValue, forKey: "registeredDrillRole")
+        let root = URL.applicationSupportDirectory.appendingPathComponent("RescueDemo/registered-drill", isDirectory: true)
+        do {
+            let secure = try SecureEndpointController(rootURL: root, role: role,
+                recordStore: DefaultKeychainStore(rootURL: root, role: role, namespace: "native-registered-keys-v1"))
+            self.secure = secure; request = secure.card.base64
+            let store = DefaultKeychainStore(rootURL: root, role: role, namespace: "native-registered-profile-v1")
+            self.store = store
+            if let bytes = try store.read() {
+                let profile = try EnrollmentProfile.decode(bytes)
+                let trust = try profile.validate(card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
+                controller = try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust)
+            }
+        } catch { self.error = "Preparation unavailable; existing keys/history are retained. \(error)" }
+    }
+    func updatePreparation() {
+        controller?.stop(); controller = nil; draft = nil; error = ""
+    }
+    func read(_ url: URL) {
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        do {
+            guard let secure, controller == nil else { throw EnrollmentError.busy }
+            let file = try FileHandle(forReadingFrom: url); defer { try? file.close() }
+            let bytes = try file.read(upToCount: 4097) ?? Data()
+            let profile = try EnrollmentProfile.decode(bytes)
+            _ = try profile.validate(card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
+            draft = profile; error = ""
+        } catch { draft = nil; self.error = "Profile rejected; preparation unchanged. \(error)" }
+    }
+    func approve(issuerApproved: Bool) {
+        do {
+            guard let draft, let secure, let store else { throw EnrollmentError.wrongIdentity }
+            let trust = try draft.validate(card: secure.card, issuerApproved: issuerApproved, at: Int64(Date().timeIntervalSince1970))
+            let controller = try RegisteredExchangeController(secure: secure, credential: draft.credential, trust: trust)
+            try store.write(draft.encoded())
+            self.controller = controller; self.draft = nil; error = ""
+            UserDefaults.standard.set(true, forKey: "registeredDrillLaunch")
+        } catch { self.error = "Could not save preparation; nothing was replaced. \(error)" }
+    }
+}
+
+private struct RegisteredDrillView: View {
+    @EnvironmentObject private var demo: DemoController
+    @Environment(\.scenePhase) private var phase
+    @StateObject private var preparation = RegisteredPreparation()
+    @State private var importing = false
+    @State private var exporting = false
+    @State private var issuerChecked = false
+    var body: some View {
+        Group {
+            if let controller = preparation.controller {
+                RegisteredConversation(controller: controller)
+                    .toolbar { ToolbarItem(placement: .topBarTrailing) {
+                        Button("Update registration") { preparation.updatePreparation(); issuerChecked = false }
+                    } }
+            } else {
+                Form {
+                    Section {
+                        Text("Prepare before an outage").font(.headline)
+                        Text("This is a synthetic drill registrar, not a live campus account. An organizer issues a credential for this device. No names, emails or private keys are exported.")
+                        Picker("Device role", selection: Binding(get: { preparation.role.rawValue }, set: { preparation.select($0 == 1 ? .responder : .publicUser); issuerChecked = false })) {
+                            Text("Public").tag(0); Text("Responder").tag(1)
+                        }
+                        Button("Export registration request") { exporting = true }.disabled(preparation.request.isEmpty)
+                        Button("Import organizer-issued profile") { importing = true }.disabled(preparation.request.isEmpty)
+                    }
+                    if let draft = preparation.draft {
+                        Section("Verify organizer during preparation") {
+                            Text("Compare the entire issuer fingerprint with the drill organizer over a trusted channel.")
+                            Text(draft.issuerFingerprint).font(.caption.monospaced()).textSelection(.enabled)
+                            Toggle("I verified this issuer with the organizer", isOn: $issuerChecked)
+                            Button("Complete drill registration") { preparation.approve(issuerApproved: issuerChecked); issuerChecked = false }.disabled(!issuerChecked)
+                        }
+                    }
+                    if !preparation.error.isEmpty { Text(preparation.error).foregroundStyle(.red) }
+                }
+            }
+        }
+        .navigationTitle("Registered drill")
+        .onAppear { demo.stopLocalExchange(); preparation.select(EndpointRole(rawValue: UserDefaults.standard.integer(forKey: "registeredDrillRole")) ?? .publicUser) }
+        .onDisappear { preparation.controller?.stop() }
+        .onChange(of: phase) { _, phase in if phase == .background { preparation.controller?.stop() } }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
+            issuerChecked = false
+            switch result { case .success(let url): preparation.read(url); case .failure(let error): preparation.error = error.localizedDescription }
+        }
+        .fileExporter(isPresented: $exporting, document: RegistrationRequestDocument(text: preparation.request), contentType: .plainText, defaultFilename: "rescue-registration-request") { result in
+            if case .failure(let error) = result { preparation.error = error.localizedDescription }
+        }
+    }
+}
+
+private struct RegisteredConversation: View {
+    @Environment(\.scenePhase) private var phase
+    @State private var userStopped = false
+    @ObservedObject var controller: RegisteredExchangeController
+    @State private var error = ""
+    @State private var reviewing = false
+    @State private var reportedLocation = "Training Building A (sample) · Floor 1"
+    private var publicSide: Bool { controller.secure.role == .publicUser }
+    private func perform(_ action: DemoAction, value: String = "", reference: String = "") {
+        do { try controller.perform(action, value: value, reference: reference); error = "" }
+        catch { self.error = "Action not saved. \(error)" }
+    }
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text(publicSide ? "Public · registered drill" : "Responder · registered drill").font(.title2.bold())
+                Text("Synthetic exercise · does not contact emergency services").font(.caption)
+                Text(controller.status).font(.subheadline)
+                Button(controller.transport.active ? "Stop exchange" : "Resume foreground exchange") {
+                    if controller.transport.active { userStopped = true; controller.stop() }
+                    else { do { userStopped = false; try controller.start(); error = "" } catch { self.error = "Could not start. \(error)" } }
+                }.buttonStyle(.bordered)
+                if let snapshot = controller.snapshot {
+                    Text("\(snapshot.pendingTransfers) messages awaiting device receipt").font(.subheadline)
+                    if snapshot.state.hasRequest {
+                        Text(snapshot.state.reportedLocation).font(.headline)
+                        if publicSide {
+                            Text(deliveryText(snapshot.state.originalDelivery, publicSide: true))
+                            Button("Send sample follow-up") { perform(.followUp, value: "SYNTHETIC: assistance still requested") }
+                            Button("Send reported-location correction") { perform(.correction, value: reportedLocation) }
+                            Button("Request withdrawal") { perform(.withdrawal) }
+                        } else {
+                            Button("Acknowledge request") { perform(.acknowledge) }
+                            Button("Send sample reply") { perform(.reply, value: "SYNTHETIC: your request is being reviewed") }
+                            Menu("Handling actions") {
+                                Button("Assign sample team") { perform(.assign, value: "Synthetic team") }
+                                Button("Resolve request") { perform(.resolve) }
+                                Button("Reopen request") { perform(.reopen) }
+                            }
+                        }
+                        Text("Handling: \(handlingText(snapshot.state.handling))")
+                        Conversation(state: snapshot.state, publicSide: publicSide, acknowledge: publicSide ? nil : { reference in perform(.acknowledge, reference: reference) })
+                    }
+                    if publicSide {
+                        TextField("Reported place and floor", text: $reportedLocation).textFieldStyle(.roundedBorder)
+                            .onChange(of: reportedLocation) { _, _ in if reportedLocation.utf8.count > 256 { reportedLocation = String(reportedLocation.prefix(128)) } }
+                        Text("Building and floor are manually reported. This drill does not include automatic location research.").font(.caption).foregroundStyle(.secondary)
+                        if !snapshot.state.hasRequest { Button("Review sample SOS") { reviewing = true }.buttonStyle(PrimaryButtonStyle()) }
+                    }
+                }
+                if !error.isEmpty { Text(error).foregroundStyle(.red) }
+                Text("Keep this screen open. Registration expires; expired preparation blocks exchange. One public/responder conversation; no automatic relay or background delivery.").font(.caption).foregroundStyle(.secondary)
+            }.padding(20).frame(maxWidth: Theme.readableWidth).frame(maxWidth: .infinity)
+        }
+        .confirmationDialog("Send synthetic SOS with this reported location?", isPresented: $reviewing, titleVisibility: .visible) {
+            Button("Send sample SOS") { perform(.sos, value: reportedLocation) }
+        } message: { Text(reportedLocation) }
+        .onAppear { do { try controller.start() } catch { self.error = "Could not start. \(error)" } }
+        .onDisappear { controller.stop() }
+        .onChange(of: phase) { _, phase in
+            if phase == .background { controller.stop() }
+            else if phase == .active && !userStopped && !controller.transport.active {
+                do { try controller.start() } catch { self.error = "Could not resume. \(error)" }
             }
         }
     }
