@@ -177,3 +177,15 @@ Reuse the existing signed transport/RelayService/C++ queue from a separate Setup
 ### 2026-10-09 — Research floor estimates remain outside rescue payloads
 
 Use a separate foreground feasibility workspace with optional Apple logical floor and C++-owned relative-altitude baseline. Require an explicit known reference, measured uniform spacing and stable calibration; reject stale/noisy/transitional data with Unknown. Show sources separately and no numeric confidence claims. Do not infer absolute floors from GPS altitude, assume UW Wi-Fi mapping, or overwrite reported location. Synthetic fixtures remain visibly distinct; stop clears reference. [Evidence and unverified physical inputs](../experiments/rescue-demo/FLOOR_RESEARCH.md).
+
+
+## 2026-10-09 — Bothell-first cooperative localization evaluation
+
+User approved Wi-Fi + participating-phone cooperative localization as the intended enhancement, retaining automatic floor research, public iPhone and responder iPad. Bothell is the regular first campus test site; Seattle is the later generalization site; Tacoma is excluded. First physical messaging tests happen in a controlled accessible location near home, not a campus-wide exercise. [Protocol](PHYSICAL_TEST_PLAN.md) defines separate LAN-without-WAN, no-common-AP and later three-device relay tests.
+
+Existing Network-framework transport already opts into Apple peer-to-peer Wi-Fi and offers native nearby service selection; physical no-AP operation remains unverified. Reuse before replacing. Cooperative graph accuracy must beat matched sensor-only comparisons without hiding increased wrong-floor outputs. Connected SSID alone is not a localization anchor. No new hardware, infrastructure access, automatic mesh or accuracy claim follows from this choice. [Roadmap](UW_LOCALIZATION_ROADMAP.md) records missing evidence and the bounded next research milestone.
+
+
+## 2026-10-09 — cooperative graph foundation
+
+Use a bounded transparent difference-constraint graph before probabilistic/learned fusion. Contact does not create a floor relation; relative intervals need separate measurement evidence. Deduplicate original observations, reject contradictory reuse and retain Unknown for missing, ambiguous or inconsistent evidence. The first checkpoint is local synthetic replay only, with strict sensor/Wi-Fi/peer/combined comparisons. Hard logical-domain bounds and ten-second freshness are research defaults, not physical calibration. [Verified implementation and remaining adapter gates](../experiments/rescue-demo/COOPERATIVE_FLOOR_GRAPH.md).

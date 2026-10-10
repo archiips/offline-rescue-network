@@ -32,7 +32,7 @@ The recorded live demo shows actual review/send, queued waiting, device receipt,
 
 ## Location and reach today
 
-The public user can optionally capture a one-time device location and review its coordinates, accuracy and observation time before sending. Reported place and floor remain manual; new drafts start with Unknown floor. Both interfaces retain dated observations separately from those reports, including through corrections. Manual-only sending remains available. [Implementation and synthetic Simulator verification](experiments/rescue-demo/LOCATION_CAPTURE.md). Automatic floor detection is not implemented.
+The public user can optionally capture a one-time device location and review its coordinates, accuracy and observation time before sending. Reported place and floor remain manual; new drafts start with Unknown floor. Both interfaces retain dated observations separately from those reports, including through corrections. Manual-only sending remains available. [Implementation and synthetic Simulator verification](experiments/rescue-demo/LOCATION_CAPTURE.md). A separate [floor research mode](experiments/rescue-demo/FLOOR_RESEARCH.md) provides unvalidated sensor estimates. The new [cooperative graph replay](experiments/rescue-demo/COOPERATIVE_FLOOR_GRAPH.md) compares synthetic sensor, surveyed Wi-Fi and participating-phone constraints. Live Wi-Fi/phone positioning and real floor accuracy remain unverified.
 
 There is no verified range in metres. Current exchange requires a reachable local network path; simulator/Mac tests do not establish physical Wi-Fi or peer-to-peer range. Relay custody supports later contacts, but neither forwarding nor proximity guarantees delivery. Physical range and no-shared-access-point behavior remain separate test gates.
 
@@ -78,4 +78,4 @@ The video has its own [editable Remotion source and rendering commands](tools/de
 - [Research](docs/RESEARCH.md), [decisions](docs/DECISIONS.md), [backlog](docs/TODO.md)
 - [Portfolio script](docs/PORTFOLIO_DEMO.md) and [Earlier Figma draft](https://www.figma.com/design/KfslxdEf2XarwLbSEDzbJS?node-id=4-333)
 
-For a resumed session, start with [CURRENT_STATE.md](docs/CURRENT_STATE.md). Portfolio demonstrability is the priority; commercialization, sensors and AI remain deferred. Both public and responder audiences are part of the same system.
+For a resumed session, start with [CURRENT_STATE.md](docs/CURRENT_STATE.md). Portfolio demonstrability is the priority; commercialization and AI remain deferred; localization is separate experimental research. Both public and responder audiences are part of the same system.

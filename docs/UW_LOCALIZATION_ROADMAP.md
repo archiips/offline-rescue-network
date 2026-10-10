@@ -1,11 +1,11 @@
-# UW Seattle localization roadmap
+# UW Bothell and Seattle localization roadmap
 
-User discussion, 2026-10-09. Preserve these ideas for later experimentation; none is a verified positioning capability. One rescue product retains public iPhone and responder iPad interfaces, C++ workflow/storage and Swift platform adapters. UW Seattle is the first proposed research setting, not a confirmed deployment or a restriction of the reusable engine.
+User discussion, 2026-10-09. Preserve these ideas for later experimentation; none is a verified positioning capability. One rescue product retains public iPhone and responder iPad interfaces, C++ workflow/storage and Swift platform adapters. Bothell is the first proposed repeatable campus test site; Seattle is the later generalization site. Tacoma is outside the current scope. Neither is a confirmed deployment or a restriction of the reusable engine.
 
 ## Chosen progression
 
 1. Complete controlled foreground phone relay separately from location work.
-2. Build an automatic floor-detection research mode: baseline Core Location, phone motion/relative-altitude signals and iOS-accessible Wi-Fi information. Begin with repeatable labeled routes in one authorized multi-floor UW building, not campus-wide claims.
+2. Preserve the implemented automatic floor research baseline. Add a bounded cooperative research input path using permitted connected-network references and opted-in participating phones, alongside sensors. Begin with repeatable labeled routes in one accessible Bothell building, then test a separate Seattle building; no campus-wide claims.
 3. Evaluate cooperative localization: participating phones as moving reference points, graphing recent proximity/ranging and available anchor observations. Compare baseline versus cooperation on held-out routes/devices/days.
 4. If measurements show insufficient reliable floor reference evidence, evaluate a small authorized Bluetooth-beacon trial. No hardware purchase or placement is selected or authorized.
 
@@ -44,3 +44,20 @@ These sources support API constraints, not the hypothesis that the proposed fusi
 ## First research implementation checkpoint
 
 The [foreground floor research prototype](../experiments/rescue-demo/FLOOR_RESEARCH.md) now supplies a C++ relative-altitude baseline with stable known-level calibration, optional Apple logical floor and isolated synthetic cases. Simulator logic/lifecycle checks pass; real altitude, floor accuracy and UW infrastructure remain unverified. Wi-Fi, cooperative phones, beacons and UWB are still future input experiments, not implemented accuracy improvements. Estimates are not sent in rescue messages in this checkpoint.
+
+## Approved direction and first physical tests — 2026-10-09
+
+The intended enhancement is Wi-Fi + participating nearby phones + an uncertainty-aware graph, with automatic floor estimation still explicit. This is a research hypothesis, not an implemented or proven accuracy gain. Communication and positioning have separate acceptance tests. See [physical protocol](PHYSICAL_TEST_PLAN.md).
+
+The existing Network-framework transport already enables `includePeerToPeer` for listeners, browsers and connections and exposes nearby service selection. Preserve that implementation and its pinned encrypted exchange; first test its physical behavior before adding a second networking framework. Apple documents this opt-in path in [TN3151](https://developer.apple.com/documentation/technotes/tn3151-choosing-the-right-networking-api) (consulted 2026-10-09). The flag is not evidence that a physical transfer used peer-to-peer radio.
+
+Candid assessment: durable offline exchange is the stronger demonstrated part of this project. Cooperative positioning is potentially useful when a participant has an independent, recent known reference. A graph of uncertain phones does not produce a reliable absolute floor by itself. Connected SSID alone is not a floor feature; an accessible BSSID would still need a surveyed mapping and testing across access-point roaming. Missing Wi-Fi evidence must remain missing, without invented AP coordinates. Do not infer same-floor membership from contact reachability.
+
+The smallest cooperative milestone should represent origin, observation ID, observation time, reference type and uncertainty separately from contact edges. First implement bounded offline replay/evaluation with explicitly synthetic inputs; only then add an opt-in authenticated peer-observation exchange. Reject stale/future evidence, deduplicate original observations across forwarded copies and preserve contradictory/no-anchor outcomes as Unknown. Keep research observations out of SOS payloads until separately reviewed. The bounded synthetic replay/core is now [implemented and verified](../experiments/rescue-demo/COOPERATIVE_FLOOR_GRAPH.md); live opt-in input adapters remain unimplemented.
+
+Compare sensor-only, sensor + Wi-Fi, sensor + peer, and combined methods on the same independently labeled test sessions. Count wrong-floor outputs and Unknown separately; include adjacent-floor peers and deliberately bad/stale references. Select thresholds on development sessions and freeze them before held-out evaluation. If cooperation fails to improve useful coverage without increasing wrong-floor risk, simplify or drop that input rather than advertise an accuracy benefit.
+
+
+## Cooperative replay implementation checkpoint
+
+The first bounded graph core and native matched-input replay now exist; [evidence and limits](../experiments/rescue-demo/COOPERATIVE_FLOOR_GRAPH.md). This implements the logic foundation of the chosen approach, without a live UW Wi-Fi map, phone observations or measured accuracy improvement. The next adapter design must bind provenance, handle clock age and motion compatibility, and preserve Unknown before physical evaluation.

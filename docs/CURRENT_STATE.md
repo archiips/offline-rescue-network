@@ -183,3 +183,19 @@ The automatic floor feasibility prototype is now implemented below; do not rebui
 Three iPad simulator windows are intentional saved sessions: paired responder, Rescue Live Training, and Rescue Location Check. One paired iPhone is also open. This task reused only Location Check; all histories retained. Location Check is left in stopped device research; no need for another simulator or any resets.
 
 Next meaningful floor milestone requires physical supported hardware plus a known multi-floor building and measured spacing: evaluate Apple-floor availability and relative-altitude clock/pressure/transition behavior against independently recorded levels. Hardware is currently unavailable; do not repeatedly request it, claim accuracy, guess UW AP coordinates, or mark LOC-01 complete. See UW roadmap/evidence for the physical protocol. Remaining local portfolio work includes final live-film playback review when Computer Use playback works; a research-mode video can show fixtures only with visible synthetic labels.
+
+
+## Latest direction — Bothell, then Seattle cooperative research
+
+2026-10-09 user steering supersedes older Seattle-first and sensor-only next-step wording. Build toward UW Wi-Fi + opted-in participating-phone cooperative localization with automatic floor estimation; Bothell is the repeatable first campus site and Seattle the later separate evaluation site. Tacoma is excluded. Live Wi-Fi and participating-phone graph inputs are not connected yet; the synthetic cooperative replay checkpoint below is implemented. Preserve the existing floor baseline and both rescue audiences.
+
+Inspection found `LocalExchangeTransport.parameters()` already enables peer-to-peer Wi-Fi for listener/browser/connection, with nearby selection in the native direct-exchange UI. Do not rebuild this as an absent capability or claim physical router-free success. First physical test is a controlled place near home: two-device direct encrypted exchange, controlled LAN without WAN, then no-shared-AP variant. Three devices are needed for an actual relay trial. [Physical protocol](PHYSICAL_TEST_PLAN.md) and [updated roadmap](UW_LOCALIZATION_ROADMAP.md) define the gates and cooperative ablation comparison. Hardware remains unavailable/unconfirmed; local development can proceed on bounded replay and observation provenance without pretending to collect real campus evidence.
+
+Unused simulators were shut down without erasing histories; only Rescue Location Check was left booted at cleanup. Older paragraphs describing several intentionally open windows are historical. Recheck runtime state before Computer Use.
+
+
+## Cooperative floor graph replay checkpoint — 2026-10-09
+
+The first graph foundation for the user's Wi-Fi + participating-phone approach is implemented: bounded C++ difference constraints, Swift input adapter/ablation, provenance dedupe and seven native synthetic replay cases under Floor research. [Evidence](../experiments/rescue-demo/COOPERATIVE_FLOOR_GRAPH.md):53 sanitizer CTest /119 Swift Testing +6 XCTest /6 Release graph checks /signed build; native fixture outcomes and original histories inspected. This is graph inference over fictional supplied constraints, not live Wi-Fi or peer positioning. Contact alone never implies same floor; contradiction/ambiguity/expiry preserve Unknown. Reported floor and SOS remain separate.
+
+Next software checkpoint: reviewed opt-in authenticated peer-observation and permitted connected-network input adapters, with age/clock and compatible motion-snapshot rules before fusion. Preserve origin IDs without feeding derived estimates back as independent evidence. Physical benefits require matched comparisons in Bothell, then Seattle. Do not rebuild the replay or call it measured campus accuracy. Only Location Check is booted; histories preserved and sensors/networking not started by replay.

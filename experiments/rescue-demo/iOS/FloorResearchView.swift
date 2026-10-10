@@ -85,6 +85,10 @@ struct FloorResearchView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 } header: { Text("Known starting reference") }
             }
+            Section("Cooperative localization") {
+                NavigationLink("Wi-Fi + nearby-phone graph replay") { CooperativeGraphResearchView() }
+                Text("Synthetic references and constraints only. Live Wi-Fi and participating-phone inputs are not connected yet.").font(.caption).foregroundStyle(.secondary)
+            }
             Section("Wi-Fi and next validation") {
                 Text("No UW access-point map or Wi-Fi floor classifier is connected. Campus Wi-Fi coverage alone does not identify a floor.")
                 Text("Device sensors need physical stairs, elevator and stationary trials against independently recorded floors. Synthetic fixtures only verify inference logic. Leaving this screen or backgrounding stops sensor research.")
@@ -98,5 +102,83 @@ struct FloorResearchView: View {
         .onChange(of: floorHeight) { _, value in floorHeight = String(value.prefix(8)) }
         .onChange(of: phase) { _, value in if value == .background { probe.stop() } }
         .onDisappear { probe.stop() }
+    }
+}
+
+
+/// Isolated replay. No sensor callbacks, networking, history writes or SOS estimate attachment.
+private struct CooperativeGraphResearchView: View {
+    @State private var selection = 0
+    private var scenario: CooperativeFloorScenario { CooperativeFloorReplay.scenarios[selection] }
+
+    var body: some View {
+        Form {
+            Section {
+                Text("SYNTHETIC · Cooperative floor graph").font(.headline).foregroundStyle(.orange)
+                Text("Fictional observations, not your location. No live Wi-Fi or nearby-phone positioning. Confidence and physical accuracy are unvalidated.")
+                Text("One building/session · replay time 100 s · evidence expires after 10 s · logical level 0 = ground")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Section("Replay scenario") {
+                Picker("Scenario", selection: $selection) {
+                    ForEach(CooperativeFloorReplay.scenarios.indices, id: \.self) { index in
+                        Text(CooperativeFloorReplay.scenarios[index].title).tag(index)
+                    }
+                }.pickerStyle(.menu)
+                Text(scenario.explanation)
+            }
+            Section("Matched input comparison") {
+                let results = scenario.results
+                ForEach(CooperativeFloorMode.allCases, id: \.self) { mode in
+                    if let result = results[mode] {
+                        VStack(alignment: .leading, spacing: 4) {
+                            LabeledContent(mode.rawValue, value: result.level.map { "Candidate \($0)" } ?? "Unknown")
+                            Text(result.reason.message).font(.caption).foregroundStyle(.secondary)
+                            if let low = result.minimumLevel, let high = result.maximumLevel, low != high {
+                                Text("Possible logical levels: \(low)…\(high)").font(.caption)
+                            }
+                            if result.reason == .candidate || result.reason == .ambiguous || result.reason == .noReference {
+                                Text("Contributing origins: \(result.origins) · expired/future records: \(result.skipped) · not a confidence score")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            } else {
+                                Text("Evidence counts unavailable for rejected input · not a confidence score")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            Section("Graph inputs · target phone \(scenario.target)") {
+                Text("Nodes: \(scenario.nodes.map { String($0) }.joined(separator: ", "))").font(.caption)
+                ForEach(Array(scenario.observations.enumerated()), id: \.offset) { _, observation in
+                    VStack(alignment: .leading) {
+                        Text("Node \(observation.node) reference: level \(observation.minimumLevel)…\(observation.maximumLevel)")
+                        Text("\(sourceName(observation.source)) · origin \(observation.origin)/observation \(observation.observation) · observed t=\(observation.elapsed.formatted()) s")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                ForEach(Array(scenario.edges.enumerated()), id: \.offset) { _, edge in
+                    Text(edge.kind == .contact
+                         ? "\(edge.from) ↔ \(edge.to): contact only; no floor constraint"
+                         : "\(edge.from) → \(edge.to): synthetic relative levels \(edge.minimumDelta)…\(edge.maximumDelta)")
+                        .font(.caption)
+                }
+            }
+            Section("What remains") {
+                Text("Next: opt-in authenticated phone observations, permitted Wi-Fi references, and independent physical comparisons. First campus routes: Bothell; later evaluation: Seattle.")
+                Text("A phone contact or shared SSID never proves the same floor. Reported floor and rescue messages remain separate.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .navigationTitle("Cooperative graph")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func sourceName(_ source: GraphFloorSource) -> String {
+        switch source {
+        case .sensor: "Synthetic sensor"
+        case .surveyedWiFi: "Synthetic surveyed Wi-Fi reference"
+        case .knownReference: "Synthetic known reference"
+        }
     }
 }
