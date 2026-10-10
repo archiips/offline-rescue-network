@@ -159,3 +159,11 @@ The public interface now offers opt-in one-shot Core Location capture, manually 
 [Location checkpoint](../experiments/rescue-demo/LOCATION_CAPTURE.md) records 96 existing Swift checks plus4 new XCTest cases,43 sanitizer CTest and signed simulator build passing. Actual encrypted socket regression carries the structured report. Computer Use verified permission/capture/review/send, manual-only correction, restart and denied-permission manual sending on a separate iPad simulator. Fixed transient permission-prompt inactivity cancelling capture. Existing paired secure endpoints/film training history untouched. Local history remains unencrypted and is disclosed.
 
 Next coherent milestone: design a controlled foreground phone relay carrying opaque encrypted envelopes, then physical contact/range/lifecycle testing. Floor inference remains a later feasibility experiment. Do not treat the Mac relay proof as an existing arbitrary-phone mesh or Find My access.
+
+### User steering after location checkpoint
+
+Automatic floor detection remains an explicit intended milestone, not an optional idea to drop after relay work. Start with a feasibility prototype that separates estimated floor/confidence/time/provenance from the manually reported floor and returns Unknown when unsupported; physical validation remains necessary. The user again authorized delegating implementation/review to Claude Code on `claude-opus-5-5` with `--effort medium`, no fallback. NFC/Bluetooth/UWB location anchors are being discussed; no hardware choice, purchase or installation is authorized by that discussion.
+
+### UW localization discussion preserved
+
+[UW Seattle localization roadmap](UW_LOCALIZATION_ROADMAP.md) records rejected NFC, Wi-Fi/sensor-first automatic floor research, Bluetooth-anchor fallback and cooperative participating-phone graph/UWB ideas, with primary sources, privacy/lifecycle limits and physical evaluation gates. No Wi-Fi floor model, infrastructure access, equipment deployment or arbitrary-phone tracking is implemented. User requested documenting this and resuming the controlled foreground phone-relay milestone.
