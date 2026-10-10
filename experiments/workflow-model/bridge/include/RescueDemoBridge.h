@@ -10,6 +10,9 @@ enum rc_action { RC_SOS, RC_FOLLOWUP, RC_CORRECTION, RC_WITHDRAWAL, RC_ACKNOWLED
                  RC_REPLY, RC_ASSIGN, RC_RESOLVE, RC_REOPEN, RC_DISPOSITION };
 typedef struct rc_endpoint rc_endpoint;
 rc_endpoint* rc_endpoint_open(const char* path, int role);
+/* Immutable conversation binding, 1...256 bytes. New stores only; rejects existing
+   empty, unbound or differently bound stores. Not encrypted storage or tamper detection. */
+rc_endpoint* rc_endpoint_open_bound(const char* path, int role, const char* binding);
 void rc_endpoint_destroy(rc_endpoint*);
 int rc_endpoint_perform(rc_endpoint*, int action, const char* value, const char* reference);
 unsigned char* rc_endpoint_next(const rc_endpoint*, size_t* length);

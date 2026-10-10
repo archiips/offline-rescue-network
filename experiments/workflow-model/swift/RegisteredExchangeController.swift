@@ -86,7 +86,10 @@ import Combine
                 return false
             }
         }
-        if let destination, !candidates.contains(destination) { candidates.insert(destination, at: 0) }
+        // An old Bonjour service instance can disappear after responder restart. Keeping it
+        // ahead of live discoveries lets an idle public endpoint report success without
+        // ever proving possession to the new listener, leaving responder replies queued.
+        if let destination, !candidates.contains(destination) { self.destination = nil }
         for candidate in candidates {
             guard run == generation, !Task.isCancelled else { return }
             do {

@@ -28,7 +28,7 @@ import CryptoKit
     }
     var pendingCount: Int { pending.count }
     public private(set) var peerCredential: Data?
-    private let secure: SecureEndpointController
+    private let secure: any EnrollmentConversationContext
     private let credential: Data
     private let trust: EnrollmentTrust
     private let now: @MainActor () -> Int64
@@ -37,8 +37,12 @@ import CryptoKit
     private var pending: [Data: Pending] = [:]
     private var outgoing: Pending?
 
-    public init(secure: SecureEndpointController, credential: Data, trust: EnrollmentTrust,
+    public convenience init(secure: SecureEndpointController, credential: Data, trust: EnrollmentTrust,
                 now: @escaping @MainActor () -> Int64 = { Int64(Date().timeIntervalSince1970) }) throws {
+        try self.init(context: secure, credential: credential, trust: trust, now: now)
+    }
+    init(context secure: any EnrollmentConversationContext, credential: Data, trust: EnrollmentTrust,
+         now: @escaping @MainActor () -> Int64) throws {
         guard try trust.verify(credential, expectedRole: secure.role, at: now()).card == secure.card else { throw EnrollmentError.wrongIdentity }
         self.secure = secure; self.credential = credential; self.trust = trust; self.now = now
     }
@@ -71,7 +75,7 @@ import CryptoKit
     private func sign(_ domain: String, challenge: Data, transcript: Data) throws -> Data {
         let claims = Claims(domain: domain, credential: credential, challenge: challenge, transcript: transcript)
         return try EnrollmentWire.encode(Proof(domain: domain, credential: credential, challenge: challenge,
-            transcript: transcript, signature: secure.identity.signingKey.signature(for: EnrollmentWire.encode(claims))))
+            transcript: transcript, signature: secure.enrollmentIdentity().signingKey.signature(for: EnrollmentWire.encode(claims))))
     }
     private func verify(_ data: Data, domain: String) throws -> Proof {
         try validateSelf()
@@ -162,7 +166,7 @@ import CryptoKit
     public func nextPacket() throws -> Data? {
         let peer = try authorizedPeer()
         let envelope = try SecureEnvelope(identity: secure.enrollmentIdentity(), peer: peer)
-        return try secure.endpoint.nextPacket().map(envelope.seal)
+        return try secure.nextPlaintextPacket().map(envelope.seal)
     }
     public func confirm(_ receipt: Data) throws {
         guard secure.role == .publicUser || secure.peerCard != nil else { throw EnrollmentError.wrongRole }

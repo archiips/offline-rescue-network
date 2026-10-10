@@ -11,6 +11,8 @@ Only preset synthetic requests, locations and responses are exposed. One request
 
 ## Run in Xcode
 
+The optional [registered responder inbox](REGISTERED_INBOX.md) extends the prepared-registration drill to 16 isolated public conversations, with automatic foreground discovery, truthful receipt/acknowledgment states and preserved earlier single-pair history. Its verification uses synthetic local sockets; complete native trust and physical offline checks remain pending.
+
 Open `iOS/RescueDemo.xcodeproj`, select the `RescueDemo` scheme and an iPhone or iPad simulator, then Run. The local package dependency resolves to `../workflow-model`; no external packages are downloaded. Simulator signing is configured for Keychain; do not override CODE_SIGNING_ALLOWED to NO for secure-mode testing. Declared minimum iOS 18; actual UI verification below is on iPhone and iPad simulators running iOS 26.4. Physical installation/signing and older-device compatibility are unverified.
 
 ```sh

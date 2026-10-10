@@ -42,7 +42,7 @@ struct rc_endpoint {
  std::string actor,error;
  State state;
  SessionStore store;
- rc_endpoint(const char* path,int role):actor(role==0?"public":"command"),state(actor),store(path,actor){
+ rc_endpoint(const char* path,int role,const char* binding=""):actor(role==0?"public":"command"),state(actor),store(path,actor,binding){
   const auto saved=store.load();const auto& history=actor=="public"?saved.publicEvents:saved.responderEvents;
   if(!(actor=="public"?saved.responderEvents:saved.publicEvents).empty() || !saved.connected)throw std::runtime_error("Invalid endpoint store.");
   for(const auto& e:history){rescue_wire::decode(rescue_wire::encode(e));const auto r=e.author==actor?state.model.submit(e):state.model.receive(e);if(r!=Result::Accepted)throw std::runtime_error("Invalid endpoint history.");}
@@ -67,6 +67,7 @@ struct rc_endpoint {
  int fail(Result r){error=errorFor(r);return static_cast<int>(r);}
 };
 rc_endpoint* rc_endpoint_open(const char* path,int role){if(!bounded(path,4096) || !*path || (role!=0 && role!=1))return nullptr;try{return new rc_endpoint(path,role);}catch(...){return nullptr;}}
+rc_endpoint* rc_endpoint_open_bound(const char* path,int role,const char* binding){if(!bounded(path,4096) || !*path || (role!=0 && role!=1) || !bounded(binding,256) || !*binding)return nullptr;try{return new rc_endpoint(path,role,binding);}catch(...){return nullptr;}}
 void rc_endpoint_destroy(rc_endpoint* e){delete e;}
 int rc_endpoint_perform(rc_endpoint* e,int action,const char* value,const char* reference){
  if(!e)return -1;

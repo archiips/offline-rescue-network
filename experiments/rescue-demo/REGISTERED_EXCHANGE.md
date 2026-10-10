@@ -1,5 +1,7 @@
 # Prepared-registration drill
 
+The later [bounded registered responder inbox](REGISTERED_INBOX.md) adds up to 16 isolated public-device conversations, preparation validity summaries and an explicit preserved-legacy workspace selector. The single-conversation protocol and dated evidence below remain its foundation; physical and real-authority gates stay open.
+
 Status: experimental synthetic enrollment, one public/responder conversation. This is not UW authorization, a public account service, an audited security protocol or physical offline proof.
 
 ## What works

@@ -63,6 +63,8 @@ First admission, duplicate custody, first delivery, replay and reverse-receipt t
 
 Still open: physical-device compatibility and radio/lifecycle tests, agency enrollment, encrypted message storage and independent security audit. SQLite request bodies remain unencrypted. Use synthetic data only.
 
+The [prepared registered inbox](experiments/rescue-demo/REGISTERED_INBOX.md) now supports one responder with up to 16 independent public-device conversations and automatic foreground delivery without emergency pairing/Transfer. Synthetic local-socket tests cover recipient isolation, queued replies and restart recovery; this is not a live UW account service or physical offline proof.
+
 ## Run it
 
 Open `experiments/rescue-demo/iOS/RescueDemo.xcodeproj` in Xcode. Select `RescueDemo` and an iPhone or iPad simulator, then Run. Signing must remain enabled for Keychain. Deployment target: iOS/iPadOS 18.0; physical installation and older-version compatibility need validation.

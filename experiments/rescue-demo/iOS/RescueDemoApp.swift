@@ -594,7 +594,7 @@ struct SetupSheet: View {
                         Label("Prepared registration drill", systemImage: "person.badge.shield.checkmark")
                     }
                 } footer: {
-                    Text("Synthetic organizer-issued credentials. Prepare before an outage; enrolled devices discover and exchange automatically. One public/responder conversation; no UW authorization.")
+                    Text("Synthetic organizer-issued credentials. Prepare before an outage; enrolled devices discover and exchange automatically. One responder can retain up to 16 public conversations; no UW authorization.")
                 }
                 sessionSection
             }
@@ -881,36 +881,61 @@ private struct RegistrationRequestDocument: FileDocument {
 @MainActor private final class RegisteredPreparation: ObservableObject {
     @Published var role: EndpointRole = .publicUser
     @Published var controller: RegisteredExchangeController?
+    @Published var inbox: RegisteredResponderInbox?
+    @Published var readiness: EnrollmentReadiness?
     @Published var draft: EnrollmentProfile?
     @Published var error = ""
     @Published var request = ""
+    @Published var legacyAvailable = false
     private var secure: SecureEndpointController?
     private var store: DefaultKeychainStore?
+    private var approvedProfile: EnrollmentProfile?
     func select(_ role: EndpointRole) {
-        controller?.stop(); controller = nil; draft = nil; secure = nil; request = ""; error = ""; self.role = role
+        controller?.stop(); inbox?.stop(); controller = nil; inbox = nil; readiness = nil; draft = nil; secure = nil; approvedProfile = nil; legacyAvailable = false; request = ""; error = ""; self.role = role
         UserDefaults.standard.set(role.rawValue, forKey: "registeredDrillRole")
         let root = URL.applicationSupportDirectory.appendingPathComponent("RescueDemo/registered-drill", isDirectory: true)
         do {
             let secure = try SecureEndpointController(rootURL: root, role: role,
                 recordStore: DefaultKeychainStore(rootURL: root, role: role, namespace: "native-registered-keys-v1"))
             self.secure = secure; request = secure.card.base64
+            legacyAvailable = role == .responder && secure.peerCard != nil
             let store = DefaultKeychainStore(rootURL: root, role: role, namespace: "native-registered-profile-v1")
             self.store = store
             if let bytes = try store.read() {
                 let profile = try EnrollmentProfile.decode(bytes)
                 let trust = try profile.validate(card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
-                controller = try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust)
+                readiness = try EnrollmentReadiness(profile: profile, card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
+                approvedProfile = profile
+                try prepareWorkspace(secure: secure, profile: profile, trust: trust)
             }
         } catch { self.error = "Preparation unavailable; existing keys/history are retained. \(error)" }
     }
     func updatePreparation() {
-        controller?.stop(); controller = nil; draft = nil; error = ""
+        controller?.stop(); inbox?.stop(); controller = nil; inbox = nil; draft = nil; error = ""
+    }
+    private func prepareWorkspace(secure: SecureEndpointController, profile: EnrollmentProfile, trust: EnrollmentTrust) throws {
+        if role == .responder && (secure.peerCard == nil || UserDefaults.standard.bool(forKey: "registeredResponderInbox")) {
+            inbox = try RegisteredResponderInbox(secure: secure, credential: profile.credential, trust: trust)
+        } else {
+            controller = try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust)
+        }
+    }
+    func switchResponderWorkspace(inbox useInbox: Bool) {
+        do {
+            guard role == .responder, let secure, let profile = approvedProfile else { throw EnrollmentError.wrongIdentity }
+            let trust = try profile.validate(card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
+            let nextInbox = useInbox ? try RegisteredResponderInbox(secure: secure, credential: profile.credential, trust: trust) : nil
+            let nextController = useInbox ? nil : try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust)
+            controller?.stop(); inbox?.stop()
+            controller = nextController; inbox = nextInbox; error = ""
+            UserDefaults.standard.set(useInbox, forKey: "registeredResponderInbox")
+        } catch { self.error = "Workspace unchanged. \(error)" }
     }
     func read(_ url: URL) {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         do {
-            guard let secure, controller == nil else { throw EnrollmentError.busy }
+            guard let secure, controller == nil, inbox == nil else { throw EnrollmentError.busy }
             let file = try FileHandle(forReadingFrom: url); defer { try? file.close() }
             let bytes = try file.read(upToCount: 4097) ?? Data()
             let profile = try EnrollmentProfile.decode(bytes)
@@ -922,9 +947,14 @@ private struct RegistrationRequestDocument: FileDocument {
         do {
             guard let draft, let secure, let store else { throw EnrollmentError.wrongIdentity }
             let trust = try draft.validate(card: secure.card, issuerApproved: issuerApproved, at: Int64(Date().timeIntervalSince1970))
-            let controller = try RegisteredExchangeController(secure: secure, credential: draft.credential, trust: trust)
+            let readiness = try EnrollmentReadiness(profile: draft, card: secure.card, issuerApproved: issuerApproved, at: Int64(Date().timeIntervalSince1970))
+            // Validate workspace construction before replacing approved preparation.
+            let nextInbox = role == .responder && (secure.peerCard == nil || UserDefaults.standard.bool(forKey: "registeredResponderInbox"))
+                ? try RegisteredResponderInbox(secure: secure, credential: draft.credential, trust: trust) : nil
+            let nextController = nextInbox == nil
+                ? try RegisteredExchangeController(secure: secure, credential: draft.credential, trust: trust) : nil
             try store.write(draft.encoded())
-            self.controller = controller; self.draft = nil; error = ""
+            self.controller = nextController; self.inbox = nextInbox; self.readiness = readiness; approvedProfile = draft; self.draft = nil; error = ""
             UserDefaults.standard.set(true, forKey: "registeredDrillLaunch")
         } catch { self.error = "Could not save preparation; nothing was replaced. \(error)" }
     }
@@ -939,8 +969,27 @@ private struct RegisteredDrillView: View {
     @State private var issuerChecked = false
     var body: some View {
         Group {
-            if let controller = preparation.controller {
-                RegisteredConversation(controller: controller)
+            if let inbox = preparation.inbox {
+                VStack(spacing: 0) {
+                    if !preparation.error.isEmpty { Text(preparation.error).foregroundStyle(.red).padding(.horizontal) }
+                    if preparation.legacyAvailable {
+                        Button("Open saved single-pair conversation") { preparation.switchResponderWorkspace(inbox: false) }.padding(.vertical, 8)
+                        Text("Earlier paired history is preserved separately and is not imported into this inbox.").font(.caption).foregroundStyle(.secondary).padding(.horizontal)
+                    }
+                    RegisteredInboxWorkspace(inbox: inbox, readiness: preparation.readiness)
+                }
+                    .toolbar { ToolbarItem(placement: .topBarTrailing) {
+                        Button("Update registration") { preparation.updatePreparation(); issuerChecked = false }
+                    } }
+            } else if let controller = preparation.controller {
+                VStack(spacing: 0) {
+                    if !preparation.error.isEmpty { Text(preparation.error).foregroundStyle(.red).padding(.horizontal) }
+                    if preparation.legacyAvailable {
+                        Button("Open inbox for new public devices") { preparation.switchResponderWorkspace(inbox: true) }.padding(.vertical, 8)
+                        Text("This saved single-pair conversation stays here. New public devices use the separate inbox; earlier request histories are not migrated.").font(.caption).foregroundStyle(.secondary).padding(.horizontal)
+                    }
+                    RegisteredConversation(controller: controller, readiness: preparation.readiness)
+                }
                     .toolbar { ToolbarItem(placement: .topBarTrailing) {
                         Button("Update registration") { preparation.updatePreparation(); issuerChecked = false }
                     } }
@@ -957,6 +1006,10 @@ private struct RegisteredDrillView: View {
                     }
                     if let draft = preparation.draft {
                         Section("Verify organizer during preparation") {
+                            Text("\(preparation.role == .publicUser ? "Public" : "Responder") device · drill realm \(draft.realm.uuidString)").font(.caption)
+                            if let summary = try? EnrollmentReadiness(profile: draft, card: SecurePairingCard(base64: preparation.request), issuerApproved: true, at: Int64(Date().timeIntervalSince1970)) {
+                                Text("Prepared until \(Date(timeIntervalSince1970: TimeInterval(summary.validUntil)).formatted(date: .abbreviated, time: .shortened))").font(.caption)
+                            }
                             Text("Compare the entire issuer fingerprint with the drill organizer over a trusted channel.")
                             Text(draft.issuerFingerprint).font(.caption.monospaced()).textSelection(.enabled)
                             Toggle("I verified this issuer with the organizer", isOn: $issuerChecked)
@@ -969,8 +1022,8 @@ private struct RegisteredDrillView: View {
         }
         .navigationTitle("Registered drill")
         .onAppear { demo.stopLocalExchange(); preparation.select(EndpointRole(rawValue: UserDefaults.standard.integer(forKey: "registeredDrillRole")) ?? .publicUser) }
-        .onDisappear { preparation.controller?.stop() }
-        .onChange(of: phase) { _, phase in if phase == .background { preparation.controller?.stop() } }
+        .onDisappear { preparation.controller?.stop(); preparation.inbox?.stop() }
+        .onChange(of: phase) { _, phase in if phase == .background { preparation.controller?.stop(); preparation.inbox?.stop() } }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             issuerChecked = false
             switch result { case .success(let url): preparation.read(url); case .failure(let error): preparation.error = error.localizedDescription }
@@ -985,6 +1038,7 @@ private struct RegisteredConversation: View {
     @Environment(\.scenePhase) private var phase
     @State private var userStopped = false
     @ObservedObject var controller: RegisteredExchangeController
+    let readiness: EnrollmentReadiness?
     @State private var error = ""
     @State private var reviewing = false
     @State private var reportedLocation = "Training Building A (sample) · Floor 1"
@@ -998,6 +1052,7 @@ private struct RegisteredConversation: View {
             VStack(alignment: .leading, spacing: 20) {
                 Text(publicSide ? "Public · registered drill" : "Responder · registered drill").font(.title2.bold())
                 Text("Synthetic exercise · does not contact emergency services").font(.caption)
+                if let readiness { RegisteredReadinessSummary(readiness: readiness) }
                 Text(controller.status).font(.subheadline)
                 Button(controller.transport.active ? "Stop exchange" : "Resume foreground exchange") {
                     if controller.transport.active { userStopped = true; controller.stop() }
@@ -1045,6 +1100,95 @@ private struct RegisteredConversation: View {
             else if phase == .active && !userStopped && !controller.transport.active {
                 do { try controller.start() } catch { self.error = "Could not resume. \(error)" }
             }
+        }
+    }
+}
+
+private struct RegisteredInboxWorkspace: View {
+    @Environment(\.scenePhase) private var phase
+    @ObservedObject var inbox: RegisteredResponderInbox
+    let readiness: EnrollmentReadiness?
+    @State private var selectedID: String?
+    @State private var userStopped = false
+    @State private var error = ""
+    private func perform(_ id: String, _ action: DemoAction, value: String = "", reference: String = "") {
+        do { try inbox.perform(conversationID: id, action: action, value: value, reference: reference); error = "" }
+        catch { self.error = "Action not saved. \(error)" }
+    }
+    private func start() {
+        do { try inbox.start(); userStopped = false; error = "" }
+        catch { self.error = "Could not start. \(error)" }
+    }
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text("Responder inbox").font(.title.bold())
+                Text("Synthetic exercise · does not contact emergency services").font(.caption)
+                if let readiness { RegisteredReadinessSummary(readiness: readiness) }
+                Text(inbox.status).font(.subheadline)
+                Button(inbox.transport.active ? "Stop exchange" : "Resume foreground exchange") {
+                    if inbox.transport.active { userStopped = true; inbox.stop() } else { start() }
+                }.buttonStyle(.bordered)
+                Text("\(inbox.rows.count) of 16 public conversations").font(.headline)
+                if inbox.rows.isEmpty {
+                    ContentUnavailableView("Waiting for a registered request", systemImage: "tray", description: Text("Verified requests appear here when received locally. No request has arrived yet."))
+                }
+                ForEach(inbox.rows) { row in
+                    Button {
+                        selectedID = row.id
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(row.snapshot.state.reportedLocation).font(.headline)
+                            Text("Device \(row.id.prefix(8)) · \(handlingText(row.snapshot.state.handling))").font(.caption)
+                            Text("\(row.snapshot.pendingTransfers) replies or updates awaiting device receipt").font(.caption)
+                            if selectedID == row.id { Label("Selected conversation", systemImage: "checkmark.circle.fill").font(.caption) }
+                        }.frame(maxWidth: .infinity, alignment: .leading)
+                    }.buttonStyle(.bordered)
+                    .accessibilityLabel("Select request from device \(row.id.prefix(8)), \(row.snapshot.state.reportedLocation)")
+                }
+                if let id = selectedID, let row = inbox.rows.first(where: { $0.id == id }) {
+                    Divider()
+                    Text("Request from device \(id.prefix(8))").font(.title3.bold())
+                    LocationSummary(value: row.snapshot.state.reportedLocation)
+                    Text("Handling: \(handlingText(row.snapshot.state.handling))")
+                    Button("Acknowledge selected request") { perform(id, .acknowledge) }
+                    Button("Reply to selected request") { perform(id, .reply, value: "SYNTHETIC: your request is being reviewed") }
+                    Menu("Handling actions for selected request") {
+                        Button("Assign sample team") { perform(id, .assign, value: "Synthetic team") }
+                        Button("Resolve request") { perform(id, .resolve) }
+                        Button("Reopen request") { perform(id, .reopen) }
+                    }
+                    Conversation(state: row.snapshot.state, publicSide: false, acknowledge: { reference in perform(id, .acknowledge, reference: reference) })
+                }
+                if !error.isEmpty { Text(error).foregroundStyle(.red) }
+                Text("One saved request history per public device. Keep this screen open. No automatic relay or background delivery. Existing single-pair histories stay in their original workspace.").font(.caption).foregroundStyle(.secondary)
+            }.padding(20).frame(maxWidth: Theme.readableWidth).frame(maxWidth: .infinity)
+        }
+        .onAppear { start() }
+        .onDisappear { inbox.stop() }
+        .onChange(of: inbox.rows.map(\.id)) { _, ids in
+            if selectedID == nil || !ids.contains(selectedID ?? "") { selectedID = ids.first }
+        }
+        .onChange(of: phase) { _, phase in
+            if phase == .background { inbox.stop() }
+            else if phase == .active && !userStopped && !inbox.transport.active { start() }
+        }
+    }
+}
+
+private struct RegisteredReadinessSummary: View {
+    let readiness: EnrollmentReadiness
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let expiry = Date(timeIntervalSince1970: TimeInterval(readiness.validUntil))
+            VStack(alignment: .leading, spacing: 4) {
+                Label(context.date < expiry ? "Registration prepared" : "Registration expired — update before exchange", systemImage: context.date < expiry ? "checkmark.shield" : "exclamationmark.shield")
+                    .foregroundStyle(context.date < expiry ? Color.secondary : Color.orange)
+                Text("Valid until \(expiry.formatted(date: .abbreviated, time: .shortened)) · this device's clock").font(.caption)
+                Text("Drill realm \(readiness.realm.uuidString)").font(.caption2.monospaced())
+                Text("Preparation does not mean a responder is reachable. Keep the app open; queued messages wait for verified contact.").font(.caption).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .combine)
         }
     }
 }

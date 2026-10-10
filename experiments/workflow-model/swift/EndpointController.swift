@@ -25,11 +25,13 @@ public struct EndpointError: Error, Equatable, Sendable {
     public var onChange: (() -> Void)?
     public let storageURL: URL
     public let role: EndpointRole
+    private let storageBinding: String?
     nonisolated(unsafe) private var handle: OpaquePointer?
 
-    public init(storageURL: URL, role: EndpointRole) {
+    public init(storageURL: URL, role: EndpointRole, storageBinding: String? = nil) {
         self.storageURL = storageURL
         self.role = role
+        self.storageBinding = storageBinding
         open()
     }
     deinit { if let handle { rc_endpoint_destroy(handle) } }
@@ -140,7 +142,14 @@ public struct EndpointError: Error, Equatable, Sendable {
         } catch {
             refresh("Storage folder unavailable: \(error.localizedDescription)"); return
         }
-        handle = rc_endpoint_open(url.path, Int32(role.rawValue))
+        if let storageBinding {
+            guard !storageBinding.isEmpty, storageBinding.utf8.count <= 256, !storageBinding.contains("\0") else {
+                refresh("Invalid storage conversation binding"); return
+            }
+            handle = rc_endpoint_open_bound(url.path, Int32(role.rawValue), storageBinding)
+        } else {
+            handle = rc_endpoint_open(url.path, Int32(role.rawValue))
+        }
         refresh(handle == nil ? "Saved exchange could not be opened; existing data was not replaced" : nil)
     }
     private func refresh(_ failure: String?) {
