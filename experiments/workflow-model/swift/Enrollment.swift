@@ -72,6 +72,7 @@ public struct EnrollmentCredential: Sendable {
 public struct EnrollmentTrust: Sendable {
     public let realm: UUID
     public let validUntil: Int64
+    public var issuerBytes: Data { issuer.rawRepresentation }
     private let issuer: Curve25519.Signing.PublicKey
     private let revoked: Set<UUID>
     public init(realm: UUID, issuer: Data, validUntil: Int64, revoked: Set<UUID> = []) throws {

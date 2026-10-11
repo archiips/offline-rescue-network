@@ -8,8 +8,9 @@ struct PublicView: View {
     @Binding var reviewing: Bool
     @State private var updating = false
     @State private var withdrawing = false
+    @State private var researchingFloor = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private var location: String { (try? LocationReport(reported: capture.reported, floor: floor, observation: capture.observation).encoded()) ?? "" }
+    private var location: String { (try? LocationReport(reported: capture.reported, floor: floor, observation: capture.observation, estimatedFloor: capture.estimatedFloor).encoded()) ?? "" }
     private static let floors = ["Unknown floor", "Floor 1", "Floor 2", "Floor 3", "Floor 4"]
     private var hasRequest: Bool { demo.snapshot?.publicState.hasRequest ?? false }
 
@@ -33,6 +34,12 @@ struct PublicView: View {
         .onChange(of: hasRequest) { _, exists in if !exists { capture.clear() } }
         .sheet(isPresented: $reviewing) { reviewSheet }
         .sheet(isPresented: $updating) { updateSheet }
+        .sheet(isPresented: $researchingFloor) {
+            NavigationStack {
+                LiveCooperativeResearchView(onUseEstimate: { capture.estimatedFloor = $0; researchingFloor = false })
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { researchingFloor = false } } }
+            }.environmentObject(demo)
+        }
     }
 
     // MARK: Idle
@@ -97,6 +104,11 @@ struct PublicView: View {
                 Text("Device observation\n" + observation.detail).font(.subheadline)
                 Button("Remove device observation") { capture.clear() }
             }
+            if let estimate = capture.estimatedFloor {
+                Text(estimate.detail).font(.subheadline)
+                Button("Remove estimated floor") { capture.estimatedFloor = nil }
+            }
+            Button("Estimate floor from research inputs") { capture.cancel(); researchingFloor = true }
             if capture.busy {
                 ProgressView("Getting a one-time location…")
                 Button("Cancel capture") { capture.cancel() }

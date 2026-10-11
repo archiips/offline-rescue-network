@@ -12,16 +12,21 @@ import Combine
     @Published public private(set) var snapshot: EndpointSnapshot?
     private let credential: Data
     private let trust: EnrollmentTrust
+    private let responders: [Data]
     private let now: @MainActor () -> Int64
     private var bootstrap: EnrollmentBootstrap?
     private var destination: NWEndpoint?
     private var generation = UUID()
     private var worker: Task<Void, Never>?
+    @Published public private(set) var relayNetwork: RegisteredRelayEndpointNetwork?
+    private var relayActive = true
 
     public init(secure: SecureEndpointController, credential: Data, trust: EnrollmentTrust,
+                responders: [Data] = [],
                 now: @escaping @MainActor () -> Int64 = { Int64(Date().timeIntervalSince1970) }) throws {
+        guard responders.count <= 4 else { throw EnrollmentError.malformed }
         _ = try EnrollmentBootstrap(secure: secure, credential: credential, trust: trust, now: now)
-        self.secure = secure; self.credential = credential; self.trust = trust; self.now = now
+        self.secure = secure; self.credential = credential; self.trust = trust; self.now = now; self.responders = responders
         snapshot = secure.endpoint.snapshot
         secure.endpoint.onChange = { [weak self] in self?.snapshot = self?.secure.endpoint.snapshot }
     }
@@ -31,7 +36,7 @@ import Combine
     public func start() throws {
         stop()
         let bootstrap = try EnrollmentBootstrap(secure: secure, credential: credential, trust: trust, now: now)
-        self.bootstrap = bootstrap
+        self.bootstrap = bootstrap; relayActive = true
         let run = generation
         transport.onIncoming = { [weak self] packet in
             guard let self, run == self.generation, self.transport.active else { throw EnrollmentError.stopped }
@@ -52,6 +57,25 @@ import Combine
         do {
             try transport.start(name: "RescueRegistered-\(secure.role.rawValue)-\(secure.card.fingerprint.prefix(16))-\(UUID().uuidString.prefix(8))")
         } catch { stop(); throw error }
+        if secure.role == .publicUser && !responders.isEmpty {
+            let network = RegisteredRelayEndpointNetwork(card: secure.card,
+                routingHint: RegisteredRelayRouting.hint(realm: trust.realm, issuer: trust.issuerBytes),
+                validate: { [weak self] in
+                    guard let self, self.relayActive, self.transport.active else { throw EnrollmentError.stopped }
+                    _ = try self.secure.enrollmentIdentity()
+                    _ = try self.trust.verify(self.credential, expectedRole: .publicUser, at: self.now())
+                }, answerReadiness: { [weak self] query in
+                    guard let self else { throw EnrollmentError.stopped }
+                    return try RelayReadinessProbe.answer(query, identity: self.secure.enrollmentIdentity())
+                }, receive: { [weak self] bytes in
+                    guard let self else { throw EnrollmentError.stopped }
+                    return try self.receiveRegisteredRelay(bytes)
+                }, outgoing: { [weak self] in
+                    guard let self else { throw EnrollmentError.stopped }
+                    return try self.registeredRelayOutgoing().map { [$0] } ?? []
+                })
+            do { try network.start(); relayNetwork = network } catch { stop(); throw error }
+        }
         status = "Looking for enrolled drill peer; messages stay saved"
         worker = Task { [weak self] in
             while !Task.isCancelled {
@@ -62,6 +86,7 @@ import Combine
     }
     public func stop() {
         generation = UUID(); worker?.cancel(); worker = nil
+        relayNetwork?.stop(); relayNetwork = nil; relayActive = false
         bootstrap?.stop(); bootstrap = nil; destination = nil
         transport.stop(); busy = false; status = "Stopped; no background exchange"
     }
@@ -71,6 +96,46 @@ import Combine
         let saved = try secure.perform(action, value: value, reference: reference)
         snapshot = secure.endpoint.snapshot
         guard saved else { throw EndpointError(message: snapshot?.error ?? "Action was not saved") }
+    }
+    public func registeredRelayOutgoing() throws -> RegisteredRelayPacket? {
+        guard relayActive else { throw EnrollmentError.stopped }
+        guard let peer = try selectedRelayResponder() else { return nil }
+        return try relayEndpoint(peerCredential: peer).outgoing()
+    }
+    private func selectedRelayResponder() throws -> Data? {
+        try responders.first { bytes in
+            let card = try trust.verify(bytes, expectedRole: .responder, at: now()).card
+            return secure.peerCard == nil || secure.peerCard == card
+        }
+    }
+    public func receiveRegisteredRelay(_ bytes: Data) throws -> Data {
+        guard relayActive else { throw EnrollmentError.stopped }
+        let wrapper = try RegisteredRelayPacket(bytes: bytes)
+        let cards = try wrapper.authenticate(trust: trust, now: now())
+        guard let selected = try selectedRelayResponder(),
+              try EnrollmentCredential.decode(selected).card == cards.sender,
+              cards.recipient == secure.card, cards.sender.role == .responder else { throw EnrollmentError.wrongIdentity }
+        return try relayEndpoint(peerCredential: wrapper.senderCredential).receive(bytes)
+    }
+    private func relayEndpoint(peerCredential: Data) throws -> RegisteredRelayEndpoint {
+        let peer = try trust.verify(peerCredential, expectedRole: .responder, at: now()).card
+        let original = secure.card
+        let validate = { [weak self] in
+            guard let self, self.secure.card == original else { throw EnrollmentError.stopped }
+            guard try self.trust.verify(self.credential, expectedRole: .publicUser, at: self.now()).card == original,
+                  self.secure.peerCard == nil || self.secure.peerCard == peer else { throw EnrollmentError.wrongIdentity }
+            _ = try self.secure.enrollmentIdentity()
+        }
+        let adapter = RelayEndpointController(owner: secure, endpoint: secure.endpoint, peer: peer,
+            validate: validate, acceptPlaintext: { [weak self] plain in
+                guard let self else { throw EnrollmentError.stopped }
+                return try self.secure.endpoint.accept(plain)
+            }, onConfirmed: { [weak self] in
+                guard let self else { throw EnrollmentError.stopped }
+                try self.secure.pair(peer.base64)
+            }, clock: now)
+        return RegisteredRelayEndpoint(adapter: adapter, own: credential, peer: peerCredential, trust: trust,
+            storageURL: secure.endpoint.storageURL, now: now, validate: validate)
     }
     private func tick(_ run: UUID) async {
         guard run == generation, transport.active, !busy, let bootstrap else { return }

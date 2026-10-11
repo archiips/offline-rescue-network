@@ -12,10 +12,15 @@ public enum LiveResearchGraph {
         guard let first = readings.first, readings.allSatisfy({ $0.level == first.level }) else { return nil }
         return first
     }
-    public static func evaluate(local: [ResearchFloorReading], peer: ResearchPeerObservation?, now: Double) -> GraphFloorResult {
+    public static func evaluate(local: [ResearchFloorReading], peer: ResearchPeerObservation?, surveyedWiFi: SurveyedWiFiEvidence? = nil, now: Double) -> GraphFloorResult {
         var observations = local.filter { fresh($0, at: now) }.map {
             GraphFloorObservation(node: 1, origin: 1, observation: identifier($0.id), source: .sensor,
                                   minimumLevel: $0.level!, maximumLevel: $0.level!, elapsed: $0.sampledAt)
+        }
+        if let wifi = surveyedWiFi, now.isFinite, wifi.sampledAt.isFinite, wifi.sampledAt >= 0,
+           now >= wifi.sampledAt, now - wifi.sampledAt <= 10 {
+            observations.append(.init(node: 1, origin: 3, observation: identifier(wifi.observation), source: .surveyedWiFi,
+                minimumLevel: wifi.minimumLevel, maximumLevel: wifi.maximumLevel, elapsed: wifi.sampledAt))
         }
         var edges: [GraphFloorEdge] = []
         if let peer, peer.isFresh(at: now), peer.receivedAt.isFinite, peer.age(at: now).isFinite,

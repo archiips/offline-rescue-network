@@ -50,3 +50,27 @@ import Testing
     try await Task.sleep(for: .milliseconds(20))
     #expect(capture.observation == nil)
 }
+
+/// Synchronous by design: the timer's MainActor task cannot start until this helper returns.
+@MainActor private func delayWiFiTimerTaskStart() {
+    Thread.sleep(forTimeInterval: 1.1)
+}
+
+@MainActor @Test func connectedWiFiDeadlineIncludesDelayedTimerTaskStart() async throws {
+    let capture = ConnectedWiFiResearch(timeout: .seconds(1))
+    var pending: (@Sendable (String?, String?) -> Void)?
+    capture.capture(authorized: true) { pending = $0 }
+    delayWiFiTimerTaskStart()
+    // A timer that begins another relative one-second sleep after actor starvation stays busy here.
+    // The captured absolute deadline has already elapsed and should clear on its first actor turn.
+    let observationDeadline = ContinuousClock.now.advanced(by: .milliseconds(250))
+    await Task.yield()
+    while capture.busy && ContinuousClock.now < observationDeadline {
+        try await Task.sleep(for: .milliseconds(5))
+    }
+    #expect(!capture.busy && capture.observation == nil)
+    #expect(capture.status.contains("timed out"))
+    pending?("synthetic-network", "02:aa:bb:00:01:02")
+    try await Task.sleep(for: .milliseconds(20))
+    #expect(capture.observation == nil && !capture.busy)
+}

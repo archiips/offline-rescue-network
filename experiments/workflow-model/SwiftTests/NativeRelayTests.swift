@@ -220,3 +220,36 @@ private func address(_ port: UInt16) -> NWEndpoint { .hostPort(host: "127.0.0.1"
     #expect(pair.b.snapshot?.pendingTransfers == 0)
     #expect(try service.count() == 0)
 }
+
+@Test @MainActor func automaticPreparedRelayDiscoversSequentialContactsAndReturnsReceipts() async throws {
+    let pair = try NativePair(); defer { pair.stop() }
+    let host = NativeRelayHostController(rootURL: pair.root.appendingPathComponent("automatic-host"))
+    defer { host.stop() }
+    #expect(host.configure(publicCard: try #require(pair.a.secureCard).base64, responderCard: try #require(pair.b.secureCard).base64))
+    host.start(automatic: true); _ = try await ready(host.transport)
+    pair.a.perform(.sos, value: "SYNTHETIC automatic delayed contact")
+    pair.a.startLocalExchange(automaticRelay: true); _ = try await ready(pair.a.transport)
+    var deadline = ContinuousClock.now + .seconds(20)
+    while host.custodyCount != 1 && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(50)) }
+    #expect(host.custodyCount == 1)
+    #expect(pair.a.snapshot?.pendingTransfers == 1)
+    pair.a.stopLocalExchange()
+    pair.b.startLocalExchange(automaticRelay: true); _ = try await ready(pair.b.transport)
+    deadline = ContinuousClock.now + .seconds(20)
+    while pair.b.snapshot?.responderState.hasRequest != true && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(50)) }
+    #expect(pair.b.snapshot?.responderState.reportedLocation == "SYNTHETIC automatic delayed contact")
+    pair.b.stopLocalExchange()
+    #expect(pair.a.snapshot?.pendingTransfers == 1)
+    pair.a.startLocalExchange(automaticRelay: true)
+    deadline = ContinuousClock.now + .seconds(20)
+    while pair.a.snapshot?.pendingTransfers != 0 && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(50)) }
+    #expect(pair.a.snapshot?.pendingTransfers == 0)
+    pair.b.startLocalExchange(automaticRelay: true)
+    pair.b.perform(.acknowledge)
+    pair.b.perform(.reply, value: "SYNTHETIC automatic reply")
+    deadline = ContinuousClock.now + .seconds(30)
+    while (pair.a.snapshot?.publicState.messages.count != 3 || pair.b.snapshot?.pendingTransfers != 0) && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(50)) }
+    #expect(pair.a.snapshot?.publicState.originalDelivery == .humanAcknowledged)
+    #expect(pair.a.snapshot?.publicState.messages.last?.text == "SYNTHETIC automatic reply")
+    #expect(pair.b.snapshot?.pendingTransfers == 0)
+}

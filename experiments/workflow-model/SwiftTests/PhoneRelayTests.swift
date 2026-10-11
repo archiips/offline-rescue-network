@@ -295,3 +295,71 @@ private func files(_ url: URL) -> [String] {
     #expect(!host.status.lowercased().contains("listening"))
     #expect(host.transport.status.contains("failed"))
 }
+
+@Test @MainActor func phoneRelayAutomaticAbsentAndForgedDestinationKeepCustody() async throws {
+    let net = try PhoneNet(); defer { net.stop() }
+    let (host, _) = try await hostWithSOS(net)
+    defer { host.stop() }
+    host.start(automatic: true)
+    _ = try await ready(host.transport)
+    let held = try onlyItem(host)
+    // A discovered public endpoint cannot make an absent responder's SOS flow eligible.
+    let presentPublic = LocalExchangeTransport(relayTimeout: .seconds(1))
+    defer { presentPublic.stop() }
+    var wrongDirection = 0
+    let publicHandler = try #require(net.a.transport.onIncoming)
+    presentPublic.onIncoming = { bytes in
+        if !bytes.starts(with: Data("ORRQ1".utf8)) { wrongDirection += 1 }
+        return try publicHandler(bytes)
+    }
+    let publicCard = try #require(net.a.secureCard)
+    try presentPublic.start(name: "RescueRelayEndpoint-0-\(publicCard.fingerprint.prefix(16))-\(UUID().uuidString.prefix(8))", browse: false)
+    _ = try await ready(presentPublic)
+    let publicDiscovery = ContinuousClock.now + .seconds(5)
+    while !host.transport.peers.contains(where: {
+        if case .service(let name, _, _, _) = $0.endpoint { return name.hasPrefix("RescueRelayEndpoint-0-\(publicCard.fingerprint.prefix(16))-") }
+        return false
+    }) && ContinuousClock.now < publicDiscovery {
+        try await Task.sleep(for: .milliseconds(20))
+    }
+    // More than two worker ticks while the responder is absent must not consume an attempt.
+    try await Task.sleep(for: .milliseconds(4300))
+    #expect(try onlyItem(host) == held)
+    #expect(wrongDirection == 0)
+    #expect(host.transport.peers.contains(where: {
+        if case .service(let name, _, _, _) = $0.endpoint { return name.hasPrefix("RescueRelayEndpoint-0-\(publicCard.fingerprint.prefix(16))-") }
+        return false
+    }))
+    let fake = LocalExchangeTransport(relayTimeout: .seconds(1))
+    defer { fake.stop() }
+    var attempts = 0
+    fake.onIncoming = { _ in attempts += 1; return Data("not a signed destination acceptance".utf8) }
+    let responder = try #require(net.b.secureCard)
+    let name = "RescueRelayEndpoint-\(EndpointRole.responder.rawValue)-\(responder.fingerprint.prefix(16))-00000000"
+    try fake.start(name: name, browse: false)
+    _ = try await ready(fake)
+    let deadline = ContinuousClock.now + .seconds(12)
+    while attempts == 0 && ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
+    #expect(attempts > 0)
+    // More than eight scheduled opportunities with only a forged name must preserve all attempts.
+    try await Task.sleep(for: .seconds(18))
+    #expect(try onlyItem(host) == held)
+    net.b.startLocalExchange()
+    _ = try await ready(net.b.transport)
+    let legitimate = LocalExchangeTransport(relayTimeout: .seconds(1))
+    defer { legitimate.stop() }
+    legitimate.onIncoming = try #require(net.b.transport.onIncoming)
+    try legitimate.start(name: "RescueRelayEndpoint-1-\(responder.fingerprint.prefix(16))-zzzzzzzz", browse: false)
+    _ = try await ready(legitimate)
+    let delivered = ContinuousClock.now + .seconds(15)
+    // Origin receipt commit and the host's signed-acceptance removal complete separately.
+    while (net.a.snapshot?.pendingTransfers != 0 || host.custodyCount != 0) && ContinuousClock.now < delivered {
+        try await Task.sleep(for: .milliseconds(20))
+    }
+    #expect(net.b.snapshot?.responderState.hasRequest == true)
+    #expect(net.a.snapshot?.pendingTransfers == 0 && host.custodyCount == 0)
+    host.stop()
+    let stoppedAttempts = attempts
+    try await Task.sleep(for: .milliseconds(2300))
+    #expect(attempts == stoppedAttempts && host.custodyCount == 0)
+}

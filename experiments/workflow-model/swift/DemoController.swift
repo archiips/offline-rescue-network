@@ -86,6 +86,9 @@ private final class CoreHandle {
                 throw EndpointError(message: "Secure endpoint stopped")
             }
             if let relay {
+                if packet.starts(with: Data("ORRQ1".utf8)) {
+                    return try RelayReadinessProbe.answer(packet, identity: secure.enrollmentIdentity())
+                }
                 let acceptance = try relay.receive(packet)
                 self.relayStatus = "" // a custody hint must never outlive newer device facts
                 self.refreshEndpoint()
@@ -105,13 +108,17 @@ private final class CoreHandle {
               let number = UInt16(port), number > 0, let value = NWEndpoint.Port(rawValue: number) else {
             error = "Enter a relay host and a port from 1 to 65535."; relayStatus = ""; return
         }
+        await uploadViaRelay(to: .hostPort(host: NWEndpoint.Host(host), port: value))
+    }
+    private func uploadViaRelay(to destination: NWEndpoint) async {
+        guard relayMode, let relayEndpoint, transport.active, !exchangeBusy else { return }
         let run = exchangeGeneration, channel = transport
         exchangeBusy = true; error = ""; relayStatus = ""
         defer { if run == exchangeGeneration { exchangeBusy = false } }
         do {
             guard let packet = try relayEndpoint.outgoing() else { relayStatus = "No queued message to upload."; return }
             let original = try endpoint?.nextPacket()
-            let response = try await channel.exchange(packet.bytes, to: .hostPort(host: NWEndpoint.Host(host), port: value))
+            let response = try await channel.exchange(packet.bytes, to: destination)
             guard run == exchangeGeneration else { return }
             guard try RelayCustodyReceipt.id(from: response) == packet.id else { throw RelayProtocolError.wrongPacket }
             if try endpoint?.nextPacket() == original {
@@ -126,7 +133,7 @@ private final class CoreHandle {
         stopLocalExchange(); endpoint = nil; secureEndpoint = nil; relayEndpoint = nil; relayMode = false; secureMode = false; localRole = nil; transport = LocalExchangeTransport()
         retrySavedSession()
     }
-    public func startLocalExchange(port: UInt16? = nil) {
+    public func startLocalExchange(port: UInt16? = nil, automaticRelay: Bool = false) {
         guard let role = localRole, endpoint?.snapshot != nil else { return }
         guard !secureMode || pairedCard != nil else { error = "Pair with the opposite sample endpoint first."; return }
         // stop() invalidates callback generations; bind again for this explicit listener run.
@@ -135,10 +142,21 @@ private final class CoreHandle {
         error = ""
         let identityHint = secureMode ? "-" + (secureCard?.fingerprint.prefix(16) ?? "") : ""
         transport.discoveryNameContains = secureMode && !relayMode ? pairedCard.map { "-" + $0.fingerprint.prefix(16) + "-" } : nil
-        do { try transport.start(name: "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")\(identityHint)-\(UUID().uuidString.prefix(8))",
-                                 advertise: !relayMode, browse: !relayMode, port: port) }
+        let autoRelay = secureMode && relayMode && automaticRelay
+        let name = autoRelay
+            ? "RescueRelayEndpoint-\(role.rawValue)\(identityHint)-\(UUID().uuidString.prefix(8))"
+            : "\(secureMode ? "RescueSecure" : "RescueSample")-\(role == .publicUser ? "Public" : "Responder")\(identityHint)-\(UUID().uuidString.prefix(8))"
+        do { try transport.start(name: name, advertise: !relayMode || autoRelay, browse: !relayMode || autoRelay, port: port) }
         catch { self.error = "Could not start local exchange: \(error)" }
-        if secureMode && !relayMode && transport.active {
+        if autoRelay && transport.active {
+            let run = exchangeGeneration
+            automaticExchange = Task { [weak self] in
+                while !Task.isCancelled {
+                    await self?.uploadDiscoveredRelay(generation: run)
+                    do { try await Task.sleep(for: .seconds(4)) } catch { return }
+                }
+            }
+        } else if secureMode && !relayMode && transport.active {
             let run = exchangeGeneration
             automaticExchange = Task { [weak self] in
                 while !Task.isCancelled {
@@ -151,6 +169,21 @@ private final class CoreHandle {
     public func stopLocalExchange() {
         automaticExchange?.cancel(); automaticExchange = nil
         exchangeGeneration = UUID(); exchangeBusy = false; peer = nil; relayStatus = ""; transport.stop()
+    }
+    /// A matching host name is only a routing hint; custody never confirms a device receipt.
+    private func uploadDiscoveredRelay(generation run: UUID) async {
+        guard run == exchangeGeneration, transport.active, relayMode, !exchangeBusy,
+              (snapshot?.pendingTransfers ?? 0) > 0, let own = secureCard, let other = pairedCard else { return }
+        let pair = NativeRelayHostController.profileID(publicCard: own.role == .publicUser ? own : other,
+                                                       responderCard: own.role == .responder ? own : other)
+        let hint = "RescueRelayHost-" + pair.prefix(16) + "-"
+        for result in transport.peers {
+            guard run == exchangeGeneration, !Task.isCancelled else { return }
+            guard case .service(let name, _, _, _) = result.endpoint, name.hasPrefix(hint) else { continue }
+            await uploadViaRelay(to: result.endpoint)
+            // One contact per tick; exact cached packet is retried until a signed device receipt arrives.
+            return
+        }
     }
     /// Discovery is a routing hint only. SecureEndpointController still verifies every receipt.
     private func transferDiscoveredQueue(generation run: UUID) async {

@@ -16,6 +16,11 @@ import CryptoKit
     typealias Context = (identity: SecureIdentity, peer: SecurePairingCard, envelope: SecureEnvelope)
     public let secure: SecureEndpointController
     private let clock: () -> Int64
+    private let endpointProvider: () -> EndpointController
+    private var rawEndpoint: EndpointController { endpointProvider() }
+    private let contextProvider: () throws -> Context
+    private let acceptPlaintext: (Data) throws -> Data
+    private let onConfirmed: () throws -> Void
     private var cache: RelayQueue?
     private static let guardMagic = Data("ORG1".utf8)
 
@@ -23,25 +28,46 @@ import CryptoKit
     public init(secure: SecureEndpointController, clock: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970) }) {
         self.secure = secure
         self.clock = clock
+        endpointProvider = { secure.endpoint }
+        contextProvider = { try secure.relayContext() }
+        acceptPlaintext = { try secure.endpoint.accept($0) }
+        onConfirmed = {}
+    }
+
+    /// Registered conversations share owner keys while retaining separate C++ history/cache ownership.
+    /// Caller validation must enforce current enrollment and registry bindings on every operation.
+    init(owner: SecureEndpointController, endpoint: EndpointController, peer: SecurePairingCard,
+         validate: @escaping () throws -> Void, acceptPlaintext: @escaping (Data) throws -> Data,
+         onConfirmed: @escaping () throws -> Void,
+         clock: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970) }) {
+        secure = owner; endpointProvider = { endpoint }; self.clock = clock
+        let originalOwner = owner.card
+        self.acceptPlaintext = acceptPlaintext; self.onConfirmed = onConfirmed
+        contextProvider = {
+            try validate()
+            guard owner.card == originalOwner, owner.role == endpoint.role, peer.role != owner.role else { throw EnrollmentError.wrongIdentity }
+            let identity = try owner.enrollmentIdentity()
+            return (identity, peer, try SecureEnvelope(identity: identity, peer: peer))
+        }
     }
 
     /// Cache file for the endpoint's current epoch.
     var cacheURL: URL {
-        secure.endpoint.storageURL.deletingPathExtension().appendingPathExtension("relay-cache.sqlite")
+        rawEndpoint.storageURL.deletingPathExtension().appendingPathExtension("relay-cache.sqlite")
     }
 
     var cacheGuardURL: URL {
-        secure.endpoint.storageURL.deletingPathExtension().appendingPathExtension("relay-cache.guard")
+        rawEndpoint.storageURL.deletingPathExtension().appendingPathExtension("relay-cache.guard")
     }
 
     /// Saved cache rows; requires pairing and creates no cache before it.
-    public func cacheCount() throws -> Int { try openCache(secure.relayContext()).count() }
+    public func cacheCount() throws -> Int { try openCache(contextProvider()).count() }
 
     /// Signed ORL1 for the oldest pending event, or nil when nothing is pending. Does not change the outbox;
     /// only a validated reverse receipt does. Default priority: public events urgent, responder events ordinary.
     public func outgoing(priority: RelayPriority? = nil) throws -> RelayPacket? {
-        let context = try secure.relayContext()
-        guard let raw = try secure.endpoint.nextPacket() else { return nil }
+        let context = try contextProvider()
+        guard let raw = try rawEndpoint.nextPacket() else { return nil }
         return try packet(.event, raw: raw, correlation: Data(count: 32),
                           priority: priority ?? (secure.role == .publicUser ? .urgent : .ordinary), context: context, now: clock())
     }
@@ -50,7 +76,7 @@ import CryptoKit
     /// and then return their cached device receipt; receipts must correlate with this endpoint's saved event
     /// packet before C++ confirms them. Any throw means no acceptance, so the relay keeps custody.
     public func receive(_ bytes: Data) throws -> Data {
-        let context = try secure.relayContext()
+        let context = try contextProvider()
         _ = try openCache(context) // fail closed on a lost cache before committing anything
         let now = clock()
         let packet = try RelayPacket(bytes: bytes)
@@ -58,12 +84,13 @@ import CryptoKit
         let raw = try context.envelope.open(packet.sealed)
         switch packet.kind {
         case .event:
-            let receipt = try secure.endpoint.accept(raw)
+            let receipt = try acceptPlaintext(raw)
             let returned = try self.packet(.receipt, raw: receipt, correlation: packet.digest, priority: .ordinary, context: context, now: now)
             return try RelayAcceptance.make(original: packet, identity: context.identity, returning: returned).bytes
         case .receipt:
             try recordReceipt(packet, raw: raw, context: context, now: now)
-            try secure.endpoint.confirm(raw)
+            try rawEndpoint.confirm(raw)
+            try onConfirmed()
             return try RelayAcceptance.make(original: packet, identity: context.identity, returning: nil).bytes
         }
     }
@@ -83,7 +110,7 @@ import CryptoKit
             guard saved == packet else { throw RelayProtocolError.cacheMismatch }
             return
         }
-        guard let head = try secure.endpoint.confirmedOriginal(for: raw) ?? secure.endpoint.nextPacket() else { throw RelayProtocolError.correlation }
+        guard let head = try rawEndpoint.confirmedOriginal(for: raw) ?? rawEndpoint.nextPacket() else { throw RelayProtocolError.correlation }
         let sentID = Self.cacheID(kind: .event, own: own, peer: context.peer, raw: head, correlation: Data(count: 32))
         guard let sentItem = try cache.lookup(id: sentID) else { throw RelayProtocolError.correlation }
         // The saved event may have expired since delivery; its receipt still answers it.

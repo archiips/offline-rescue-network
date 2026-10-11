@@ -251,6 +251,9 @@ private struct SecureRecord: Codable {
     }
 
     /// Prepared enrollment may prove identity before a peer is pinned; retain saved-record/history fences.
+    public func organizerPreparationClient() throws -> OrganizerPreparationClient {
+        OrganizerPreparationClient(identity: try enrollmentIdentity())
+    }
     func enrollmentIdentity() throws -> SecureIdentity {
         try requireCurrent()
         try requireHistory()

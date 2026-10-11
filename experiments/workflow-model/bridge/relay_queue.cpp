@@ -266,7 +266,8 @@ rc_relay_result rc_relay_lookup(rc_relay* relay,const char* id,rc_relay_item** i
     }catch(...){return RC_RELAY_STORAGE;}
 }
 
-rc_relay_result rc_relay_select(rc_relay* relay,int64_t now,rc_relay_item** item){
+namespace {
+rc_relay_result selectEligible(rc_relay* relay,int64_t now,const std::set<std::string>* eligible,rc_relay_item** item){
     if(item)*item=nullptr;
     if(!relay)return RC_RELAY_NULL_HANDLE;
     if(!item)return RC_RELAY_INVALID;
@@ -275,7 +276,7 @@ rc_relay_result rc_relay_select(rc_relay* relay,int64_t now,rc_relay_item** item
         auto* db=relay->db.handle;prune(db,state,now);
         const Row* urgent=nullptr;const Row* ordinary=nullptr;std::set<std::string> flows;
         for(const auto& row:state.rows){
-            if(!flows.insert(row.flow).second || row.attempts>=maxAttempts)continue; // later items wait on their flow head
+            if(!flows.insert(row.flow).second || row.attempts>=maxAttempts || (eligible && !eligible->contains(row.flow)))continue; // later items wait on their flow head
             auto& oldest=row.urgency?urgent:ordinary;if(!oldest)oldest=&row;
         }
         const Row* chosen=urgent && (state.burst<urgentBurst || !ordinary)?urgent:ordinary;
@@ -290,6 +291,24 @@ rc_relay_result rc_relay_select(rc_relay* relay,int64_t now,rc_relay_item** item
     // write() commits before returning; selected bytes are published only after that commit.
     if(result==RC_RELAY_OK)*item=selected.release();
     return result;
+}
+
+}
+rc_relay_result rc_relay_select(rc_relay* relay,int64_t now,rc_relay_item** item){
+    return selectEligible(relay,now,nullptr,item);
+}
+rc_relay_result rc_relay_select_eligible(rc_relay* relay,int64_t now,const char* const* flows,size_t count,rc_relay_item** item){
+    if(item)*item=nullptr;
+    if(!relay)return RC_RELAY_NULL_HANDLE;
+    if(!item || count>32 || (count && !flows))return RC_RELAY_INVALID;
+    try{
+        std::set<std::string> eligible;
+        for(size_t i=0;i<count;++i){
+            if(!hex64(flows[i]))return RC_RELAY_INVALID;
+            eligible.insert(flows[i]);
+        }
+        return selectEligible(relay,now,&eligible,item);
+    }catch(...){return RC_RELAY_STORAGE;}
 }
 
 rc_relay_result rc_relay_remove(rc_relay* relay,const char* id){

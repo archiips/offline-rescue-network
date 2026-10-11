@@ -127,6 +127,16 @@ public enum ExchangeTransportError: Error, Equatable, Sendable {
         self.init(timeout: timeout, payloadLimit: 4276, discoveryType: "_rescue-reg._tcp")
     }
 
+    /// Advance organizer preparation only; discovery never grants issuer trust.
+    public convenience init(preparationTimeout timeout: Duration) {
+        self.init(timeout: timeout, payloadLimit: 4096, discoveryType: "_rescue-prep._tcp")
+    }
+
+    /// Credential-bearing delayed relay traffic is isolated from paired relay and direct enrollment.
+    public convenience init(registeredRelayTimeout timeout: Duration) {
+        self.init(timeout: timeout, payloadLimit: RegisteredRelayPacket.maximumSize, discoveryType: "_rescue-rreg._tcp")
+    }
+
     private init(timeout: Duration, payloadLimit: Int, discoveryType: String) {
         self.timeout = timeout
         self.payloadLimit = payloadLimit

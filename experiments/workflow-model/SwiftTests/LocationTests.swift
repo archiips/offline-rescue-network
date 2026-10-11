@@ -12,6 +12,45 @@ final class LocationTests: XCTestCase {
         XCTAssertEqual(fix.observedAt, now.addingTimeInterval(-60))
     }
 
+    func testEstimatedFloorRemainsSeparateAndRetainsOriginalTime() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let estimate = try EstimatedFloorObservation.capture(level: 2, source: .combinedGraph, observedAt: now, context: "Synthetic building", now: now)
+        var report = LocationReport(reported: "Sample building", floor: "Floor 3", estimatedFloor: estimate)
+        XCTAssertEqual(report.title, "Sample building · Floor 3")
+        let original = try report.encoded()
+        report.floor = "Floor 4"
+        let restored = LocationReport.display(try report.encoded())
+        XCTAssertEqual(restored.floor, "Floor 4")
+        XCTAssertEqual(restored.estimatedFloor, estimate)
+        XCTAssertEqual(LocationReport.display(original).estimatedFloor?.level, 2)
+        XCTAssertTrue(estimate.detail.contains("unvalidated"))
+        XCTAssertTrue(estimate.detail.contains("not live"))
+        let legacy = LocationReport.display(#"ORLOC1:{"floor":"Floor 3","reported":"Sample building"}"#)
+        XCTAssertEqual(legacy.floor, "Floor 3")
+        XCTAssertNil(legacy.estimatedFloor)
+    }
+
+    func testEstimatedFloorRejectsInvalidOrStaleCaptureAndMalformedHistory() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        for (level, age) in [(-21, 0.0), (201, 0), (2, 10.01), (2, -0.01)] {
+            XCTAssertThrowsError(try EstimatedFloorObservation.capture(level: level, source: .appleFloor, observedAt: now.addingTimeInterval(-age), now: now))
+        }
+        XCTAssertThrowsError(try EstimatedFloorObservation.capture(level: 2, source: .appleFloor, observedAt: Date(timeIntervalSince1970: .infinity), now: now))
+        XCTAssertThrowsError(try EstimatedFloorObservation.capture(level: 2, source: .appleFloor, observedAt: now, context: "bad\ncontext", now: now))
+        XCTAssertThrowsError(try EstimatedFloorObservation.capture(level: 2, source: .appleFloor, observedAt: now, context: String(repeating: "a", count: 257), now: now))
+        let malformed = #"ORLOC1:{"floor":"Floor 3","reported":"Sample building","estimatedFloor":{"level":201,"source":"appleFloor","observedAt":0}}"#
+        XCTAssertEqual(LocationReport.display(malformed).reported, "Location report unavailable")
+        let estimate = try EstimatedFloorObservation.capture(level: 2, source: .relativeAltitude, observedAt: now.addingTimeInterval(-10), now: now)
+        XCTAssertEqual(estimate.observedAt, now.addingTimeInterval(-10))
+        let bounded = try LocationReport(reported: String(repeating: "a", count: 512), floor: String(repeating: "f", count: 128), estimatedFloor: estimate).encoded()
+        XCTAssertLessThanOrEqual(bounded.utf8.count, 1800)
+        let escapedEstimate = try EstimatedFloorObservation.capture(level: 2, source: .combinedGraph, observedAt: now, context: String(repeating: "\"", count: 256), now: now)
+        XCTAssertThrowsError(try LocationReport(reported: String(repeating: "\"", count: 512), floor: String(repeating: "\"", count: 128), estimatedFloor: escapedEstimate).encoded())
+        let invalidEstimate = #"{"level":201,"source":"appleFloor","observedAt":0}"#
+        XCTAssertThrowsError(try JSONDecoder().decode(EstimatedFloorObservation.self, from: Data(invalidEstimate.utf8)))
+
+    }
+
     func testLegacyAndMalformedReportsNeverInventCoordinates() throws {
         XCTAssertEqual(LocationReport.display("Training Building A · Floor 3").reported, "Training Building A · Floor 3")
         XCTAssertNil(LocationReport.display("Training Building A · Floor 3").observation)
@@ -42,7 +81,8 @@ final class LocationTests: XCTestCase {
         let url = folder.appendingPathComponent("session.sqlite")
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let fix = try DeviceObservation.capture(latitude: 37.3349, longitude: -122.009, accuracy: 15, observedAt: now, approximate: false, now: now)
-        let original = try LocationReport(reported: "Sample building", floor: "Floor 3", observation: fix).encoded()
+        let estimate = try EstimatedFloorObservation.capture(level: 2, source: .surveyedWiFi, observedAt: now, context: "Synthetic route", now: now)
+        let original = try LocationReport(reported: "Sample building", floor: "Floor 3", observation: fix, estimatedFloor: estimate).encoded()
         let correction = try LocationReport(reported: "Sample building", floor: "Floor 4").encoded()
         do {
             let demo = DemoController(storageURL: url)
@@ -58,5 +98,7 @@ final class LocationTests: XCTestCase {
         let saved = try XCTUnwrap(reopened.snapshot?.responderState.messages.first { $0.kind == .request })
         XCTAssertEqual(LocationReport.display(saved.location).observation?.observedAt, now)
         XCTAssertEqual(LocationReport.display(saved.location).floor, "Floor 3")
+        XCTAssertEqual(LocationReport.display(saved.location).estimatedFloor, estimate)
+        XCTAssertNil(LocationReport.display(correction).estimatedFloor)
     }
 }

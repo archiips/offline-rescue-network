@@ -44,6 +44,12 @@ rc_relay_result rc_relay_enqueue(rc_relay*, const char* id, const char* flow, in
    unless 3 urgent selections occurred in a row and an ordinary head is eligible. Attempts and fairness
    commit before *item is set; on any failure *item is null. */
 rc_relay_result rc_relay_select(rc_relay*, int64_t now, rc_relay_item** item);
+/* Select only among the supplied destination flows, using the same FIFO, persisted fairness and
+   attempt rules as select. Up to 32 exact lowercase hex64 entries; duplicates are harmless. A null
+   vector is valid only when count is zero. Empty/unmatched eligibility consumes no attempts or
+   fairness, but expired rows are still pruned. Invalid arguments change nothing. */
+rc_relay_result rc_relay_select_eligible(rc_relay*, int64_t now, const char* const* flows,
+                                       size_t flow_count, rc_relay_item** item);
 /* Append-only cache admission: the same arguments, duplicate/conflict checks and 64-item/byte bounds as
    enqueue, but expired rows are never pruned or replaced. An expired ID therefore conflicts instead of
    being renewed, and expired rows keep occupying capacity. Use only with rc_relay_lookup on a cache file;

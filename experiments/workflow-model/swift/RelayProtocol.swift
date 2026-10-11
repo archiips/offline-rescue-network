@@ -231,3 +231,25 @@ public enum RelayCustodyReceipt {
         return RelayEndpointController.hex(bytes.suffix(32))
     }
 }
+
+/// Fresh possession probe before automatic queue selection. Discovery names never spend retry budget.
+/// This proves only the prepared target key is online; signed ORA1 still controls custody removal.
+public struct RelayReadinessProbe {
+    public let bytes: Data
+    public init(target: SecurePairingCard) {
+        var generator = SystemRandomNumberGenerator()
+        bytes = Data("ORRQ1".utf8) + target.digest + Data((0..<32).map { _ in UInt8.random(in: .min ... .max, using: &generator) })
+    }
+    public static func answer(_ query: Data, identity: SecureIdentity) throws -> Data {
+        guard query.count == 69, query.prefix(5) == Data("ORRQ1".utf8),
+              query[5..<37] == identity.card.digest else { throw RelayProtocolError.wrongRecipient }
+        let claims = Data("ORRP1".utf8) + query.dropFirst(5)
+        return claims + (try identity.signingKey.signature(for: claims))
+    }
+    public func verify(response: Data, card: SecurePairingCard) throws {
+        let claims = Data("ORRP1".utf8) + bytes.dropFirst(5)
+        guard response.count == claims.count + 64, response.prefix(claims.count) == claims,
+              bytes[5..<37] == card.digest,
+              card.signingKey.isValidSignature(response.suffix(64), for: claims) else { throw RelayProtocolError.badSignature }
+    }
+}

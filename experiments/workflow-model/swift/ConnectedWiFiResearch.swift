@@ -5,13 +5,14 @@ import Combine
 public struct ConnectedWiFiObservation: Sendable {
     public let ssid, bssid: String
     public let capturedAt: Double
-    public init?(ssid: String, bssid: String, capturedAt: Double) {
+    public let id: UUID
+    public init?(ssid: String, bssid: String, capturedAt: Double, id: UUID = UUID()) {
         let pieces = bssid.lowercased().split(separator: ":", omittingEmptySubsequences: false)
         guard (1...32).contains(ssid.utf8.count), !ssid.unicodeScalars.contains(where: { $0.properties.generalCategory == .control }),
               pieces.count == 6, pieces.allSatisfy({ $0.count == 2 && $0.allSatisfy { $0.isASCII && $0.isHexDigit } }),
               let first = UInt8(pieces[0], radix: 16), first & 1 == 0,
               pieces.contains(where: { $0 != "00" }), capturedAt.isFinite, capturedAt >= 0 else { return nil }
-        self.ssid = ssid; self.bssid = pieces.joined(separator: ":"); self.capturedAt = capturedAt
+        self.ssid = ssid; self.bssid = pieces.joined(separator: ":"); self.capturedAt = capturedAt; self.id = id
     }
     public func isFresh(at now: Double) -> Bool { now.isFinite && now >= capturedAt && now - capturedAt <= 10 }
 }
@@ -36,8 +37,11 @@ public struct ConnectedWiFiObservation: Sendable {
         let run = generation
         let expires = ContinuousClock.now.advanced(by: timeout)
         busy = true; status = "Reading connected network…"
-        deadline = Task { [weak self, timeout] in
-            do { try await Task.sleep(for: timeout) } catch { return }
+        deadline = Task { [weak self] in
+            // The capture deadline starts at invocation, even if this MainActor task starts late.
+            if ContinuousClock.now < expires {
+                do { try await Task.sleep(until: expires, clock: .continuous) } catch { return }
+            }
             guard let self, self.generation == run, self.busy else { return }
             self.clear(); self.status = "Unavailable: connected-network lookup timed out. Retry explicitly."
         }

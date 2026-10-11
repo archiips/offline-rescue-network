@@ -25,6 +25,9 @@ import CryptoKit
     @Published public private(set) var responderCard: SecurePairingCard?
     private var service: RelayService?
     private var generation = UUID()
+    private var worker: Task<Void, Never>?
+    private var probeOffsets: [EndpointRole: Int] = [:]
+    private var lastVerified: [EndpointRole: NWEndpoint] = [:]
 
     private struct Failure: Error, CustomStringConvertible { let description: String }
     private struct Profile: Codable { let version: Int; let publicCard: String; let responderCard: String }
@@ -54,6 +57,8 @@ import CryptoKit
             fail("Saved relay configuration unavailable; nothing was recreated or removed. \(error)")
         }
     }
+
+    deinit { worker?.cancel() }
 
     /// Deterministic profile name for one public/responder card pair.
     static func profileID(publicCard: SecurePairingCard, responderCard: SecurePairingCard) -> String {
@@ -109,9 +114,9 @@ import CryptoKit
         }
     }
 
-    /// Manual listener only: no advertising or browsing.
-    public func start(port: UInt16? = nil) {
-        guard configured, let service else { error = "Configure the relay pair first."; return }
+    /// Manual listener by default; automatic foreground mode discovers routing hints only.
+    public func start(port: UInt16? = nil, automatic: Bool = false) {
+        guard configured, let service, let publicCard, let responderCard else { error = "Configure the relay pair first."; return }
         stop()
         let run = generation
         transport.onIncoming = { [weak self] bytes in
@@ -124,9 +129,20 @@ import CryptoKit
             return custody
         }
         do {
-            try transport.start(name: "RescueRelayHost", advertise: false, browse: false, port: port)
+            let profile = Self.profileID(publicCard: publicCard, responderCard: responderCard)
+            let name = automatic ? "RescueRelayHost-\(profile.prefix(16))-\(UUID().uuidString.prefix(8))" : "RescueRelayHost"
+            transport.discoveryNameContains = automatic ? "RescueRelayEndpoint-" : nil
+            try transport.start(name: name, advertise: automatic, browse: automatic, port: port)
             error = ""
-            status = "Relay start requested; see connection status. Forwarding is manual. Holding \(custodyCount)."
+            status = automatic ? "Looking for prepared endpoints; holding \(custodyCount)." : "Relay start requested; see connection status. Forwarding is manual. Holding \(custodyCount)."
+            if automatic {
+                worker = Task { [weak self] in
+                    while !Task.isCancelled {
+                        await self?.tick(run)
+                        do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                    }
+                }
+            }
         } catch {
             transport.onIncoming = nil
             self.error = "Could not start relay host: \(error)"
@@ -136,6 +152,8 @@ import CryptoKit
     /// Fences callbacks, then closes sockets. Custody stays saved; an in-flight forward keeps `flushBusy` until it ends.
     public func stop() {
         generation = UUID()
+        worker?.cancel(); worker = nil
+        probeOffsets = [:]; lastVerified = [:]
         transport.onIncoming = nil
         transport.stop()
         if configured { status = "Stopped; \(custodyCount) held in relay custody. Not forwarding." }
@@ -149,15 +167,77 @@ import CryptoKit
               let responderContact = Self.contact(host: responderHost, port: responderPort) else {
             error = "Enter a host and a port from 1 to 65535 for both devices."; return
         }
+        await forward(contacts: [.publicUser: publicContact, .responder: responderContact])
+    }
+
+    private func tick(_ run: UUID) async {
+        guard run == generation, transport.active, !flushBusy, let publicCard, let responderCard else { return }
+        var contacts: [EndpointRole: NWEndpoint] = [:]
+        for card in [publicCard, responderCard] {
+            let hint = "RescueRelayEndpoint-\(card.role.rawValue)-\(card.fingerprint.prefix(16))-"
+            let discovered = transport.peers.compactMap { result -> NWEndpoint? in
+                if case .service(let name, _, _, _) = result.endpoint, name.hasPrefix(hint) { return result.endpoint }
+                return nil
+            }
+            guard !discovered.isEmpty else { lastVerified[card.role] = nil; continue }
+            var candidates: [NWEndpoint] = []
+            if let previous = lastVerified[card.role], discovered.contains(previous) { candidates.append(previous) }
+            var offset = (probeOffsets[card.role] ?? 0) % discovered.count
+            // At most two fresh proofs per role per cycle. Rotate across every discovered candidate;
+            // a forged first name cannot permanently hide a reachable authentic endpoint.
+            for _ in 0..<discovered.count {
+                let candidate = discovered[offset]
+                offset = (offset + 1) % discovered.count
+                if !candidates.contains(candidate) { candidates.append(candidate) }
+                if candidates.count == 2 { break }
+            }
+            probeOffsets[card.role] = offset
+            lastVerified[card.role] = nil
+            for candidate in candidates {
+                guard run == generation, transport.active, !Task.isCancelled else { return }
+                do {
+                    let probe = RelayReadinessProbe(target: card)
+                    let response = try await readiness(probe.bytes, to: candidate)
+                    guard run == generation, transport.active, !Task.isCancelled else { return }
+                    try probe.verify(response: response, card: card)
+                    contacts[card.role] = candidate
+                    lastVerified[card.role] = candidate
+                    break
+                } catch {
+                    guard run == generation, transport.active, !Task.isCancelled else { return }
+                }
+            }
+        }
+        guard !contacts.isEmpty else { return }
+        await forward(contacts: contacts, eligibleDestinations: Set(contacts.keys))
+    }
+
+    private func readiness(_ bytes: Data, to endpoint: NWEndpoint) async throws -> Data {
+        let channel = transport
+        return try await withThrowingTaskGroup(of: Data.self) { group in
+            group.addTask { try await channel.exchange(bytes, to: endpoint) }
+            group.addTask {
+                try await Task.sleep(for: .seconds(3))
+                throw Failure(description: "Prepared destination readiness timed out")
+            }
+            defer { group.cancelAll() }
+            guard let response = try await group.next() else { throw Failure(description: "Readiness stopped") }
+            return response
+        }
+    }
+
+    private func forward(contacts: [EndpointRole: NWEndpoint], eligibleDestinations: Set<EndpointRole>? = nil) async {
+        guard !flushBusy else { return }
         guard configured, let service, transport.active else { error = "Start the relay host first."; return }
         let run = generation, channel = transport
         flushBusy = true; error = ""
         defer { flushBusy = false }
         let outcome: RelayFlushOutcome
         do {
-            outcome = try await service.flush { [weak self] bytes, role in
+            outcome = try await service.flush(eligibleDestinations: eligibleDestinations) { [weak self] bytes, role in
                 guard let self, self.generation == run, self.service === service, channel.active else { throw Failure(description: "Relay host stopped") }
-                let response = try await channel.exchange(bytes, to: role == .publicUser ? publicContact : responderContact)
+                guard let contact = contacts[role] else { throw Failure(description: "Destination absent") }
+                let response = try await channel.exchange(bytes, to: contact)
                 // Stop may land after the response but before this resumes; RelayService must then keep custody.
                 guard self.generation == run, self.service === service, channel.active else { throw Failure(description: "Relay host stopped") }
                 return response
@@ -170,13 +250,13 @@ import CryptoKit
         if self.service === service { refreshCount() }
         guard run == generation else { return } // stopped: never publish a stale result
         switch outcome {
-        case .empty: status = "Nothing held to forward."
+        case .empty: status = custodyCount == 0 ? "Nothing held to forward." : "Holding \(custodyCount); waiting for an eligible prepared destination."
         case .delivered(_, _, let returned):
             status = "Destination device accepted one held message; removed from relay custody."
                 + (returned == nil ? "" : " Its device receipt is now held for the sender.")
                 + " Holding \(custodyCount)."
         case .failed(_, _, let reason):
-            error = "Not accepted by the destination; the message stays in relay custody for a later manual retry. \(reason)"
+            error = "Not accepted by the destination; the message stays in relay custody for a later retry. \(reason)"
             status = "Holding \(custodyCount) in relay custody."
         case .dropped: status = "Response ignored; holding \(custodyCount) in relay custody."
         }

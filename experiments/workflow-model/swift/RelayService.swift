@@ -43,13 +43,22 @@ public enum RelayFlushOutcome: Equatable, Sendable {
     }
 
     /// Selects one item (committing its attempt), sends it to its pinned destination and validates the reply
-    /// again after the await. `dropResponse` is a diagnostic that ignores a received reply.
-    public func flush(dropResponse: Bool = false,
+    /// again after the await. Optional destination eligibility filters exact directional flows before
+    /// selection consumes an attempt. `dropResponse` deliberately ignores a received reply.
+    public func flush(eligibleDestinations: Set<EndpointRole>? = nil, dropResponse: Bool = false,
                       send: (Data, EndpointRole) async throws -> Data) async throws -> RelayFlushOutcome {
         guard !flushing else { throw RelayProtocolError.busy }
         flushing = true
         defer { flushing = false }
-        guard let item = try queue.select(now: clock()) else { return .empty }
+        let selected: RelayItem?
+        if let eligibleDestinations {
+            let flows = cards.filter { eligibleDestinations.contains($0.role) }.map { destination in
+                let origin = destination.role == .publicUser ? cards[1] : cards[0]
+                return RelayEndpointController.hex(Data(SHA256.hash(data: origin.digest + destination.digest)))
+            }
+            selected = try queue.select(now: clock(), eligibleFlows: flows)
+        } else { selected = try queue.select(now: clock()) }
+        guard let item = selected else { return .empty }
         do {
             let packet = try RelayPacket(bytes: item.payload)
             let (from, to) = try route(packet)

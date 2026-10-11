@@ -724,3 +724,14 @@ private func execute(_ url: URL, _ sql: String, blob: Data? = nil) throws {
     try execute(url, "UPDATE relay_items SET urgency=1 WHERE id='\(sos.id)'")
     guard case .delivered(sos.id, 7, _?) = try await net.flush() else { Issue.record("genuine row not delivered"); return }
 }
+
+@Test func relayReadinessRequiresFreshTargetKeyPossession() throws {
+    let target = SecureIdentity(role: .responder), other = SecureIdentity(role: .responder)
+    let first = RelayReadinessProbe(target: target.card), second = RelayReadinessProbe(target: target.card)
+    let response = try RelayReadinessProbe.answer(first.bytes, identity: target)
+    try first.verify(response: response, card: target.card)
+    #expect(throws: (any Error).self) { try second.verify(response: response, card: target.card) }
+    #expect(throws: (any Error).self) { try first.verify(response: response, card: other.card) }
+    #expect(throws: (any Error).self) { try RelayReadinessProbe.answer(first.bytes, identity: other) }
+    #expect(throws: (any Error).self) { try first.verify(response: response + Data([0]), card: target.card) }
+}

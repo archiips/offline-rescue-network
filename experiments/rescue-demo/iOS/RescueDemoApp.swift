@@ -695,18 +695,20 @@ struct RelayConnectionSections: View {
     @ObservedObject var transport: LocalExchangeTransport
     @AppStorage("sampleRelayHost") private var host = "127.0.0.1"
     @AppStorage("sampleRelayPort") private var port = ""
+    @AppStorage("sampleRelayAutomatic") private var automatic = true
     var body: some View {
         Section {
             Text(demo.localRole == .responder ? "Responder" : "Public")
+            Toggle("Automatic foreground relay contacts", isOn: $automatic).disabled(transport.active)
             Button(transport.active ? "Stop relay exchange" : "Start relay exchange") {
-                if transport.active { demo.stopLocalExchange() } else { demo.startLocalExchange() }
+                if transport.active { demo.stopLocalExchange() } else { demo.startLocalExchange(automaticRelay: automatic) }
             }.disabled(demo.snapshot == nil || demo.pairedCard == nil)
             if let listening = transport.hostPort {
                 LabeledContent("Listening port", value: "\(listening.rawValue)").textSelection(.enabled)
             }
             LabeledContent("Status", value: transport.status)
         } header: { Text("Relay exchange") } footer: {
-            Text("Configure the Mac relay with both public pairing cards and each endpoint's listening port. Restarting the listener may change its port.")
+            Text("Prepare the relay pair beforehand. Automatic contacts discover a matching foreground relay; manual addresses remain available for diagnostics.")
         }
         Section {
             TextField("Relay host", text: $host)
@@ -798,6 +800,7 @@ private func formattedFingerprint(_ fingerprint: String) -> String {
 // The imported delegate protocol predates actor annotations; retain runtime isolation checks.
 @MainActor final class NativeLocationCapture: NSObject, ObservableObject, @preconcurrency CLLocationManagerDelegate {
     @Published var observation: DeviceObservation?
+    @Published var estimatedFloor: EstimatedFloorObservation?
     @Published var status = ""
     @Published var busy = false
     @Published var reported = "Training Building A (sample)"
@@ -847,7 +850,7 @@ private func formattedFingerprint(_ fingerprint: String) -> String {
         timeout?.cancel(); timeout = nil; busy = false
         if wasBusy { status = "Capture cancelled. No location was sent." }
     }
-    func clear() { cancel(); observation = nil; status = ""; frozenReview = "" }
+    func clear() { cancel(); observation = nil; estimatedFloor = nil; status = ""; frozenReview = "" }
     private func finish(_ message: String) { cancel(); status = message }
 }
 
@@ -857,6 +860,9 @@ struct LocationSummary: View {
         let report = LocationReport.display(value)
         VStack(alignment: .leading, spacing: 6) {
             Label(report.title, systemImage: "mappin.and.ellipse")
+            if let estimate = report.estimatedFloor {
+                Text(estimate.detail).font(.caption).foregroundStyle(.secondary)
+            }
             if let observation = report.observation {
                 Text("Device observation\n" + observation.detail).font(.caption).foregroundStyle(.secondary)
                 Text("Building and floor are manually reported.").font(.caption).foregroundStyle(.secondary)
@@ -891,8 +897,41 @@ private struct RegistrationRequestDocument: FileDocument {
     private var secure: SecureEndpointController?
     private var store: DefaultKeychainStore?
     private var approvedProfile: EnrollmentProfile?
+    @Published var fetchingProfile = false
+    @Published var relayHost: RegisteredRelayHostNetwork?
+    func openRelayHost() {
+        do {
+            guard let secure, let profile = approvedProfile else { throw EnrollmentError.wrongIdentity }
+            let trust = try profile.validate(card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
+            let url = secure.rootURL.appendingPathComponent("registered-custody", isDirectory: true)
+                .appendingPathComponent(profile.realm.uuidString).appendingPathComponent("relay.sqlite")
+            let service = try RegisteredRelayService(storageURL: url, trust: trust)
+            controller?.stop(); inbox?.stop()
+            relayHost = RegisteredRelayHostNetwork(service: service, routingHint: RegisteredRelayRouting.hint(realm: profile.realm, issuer: profile.issuer))
+        } catch { self.error = "Relay unavailable. \(error)" }
+    }
+    func closeRelayHost() { relayHost?.stop(); relayHost = nil }
+
+    private let organizerNetwork = OrganizerPreparationNetworkClient()
+    private var organizerGeneration = UUID()
+    func cancelOrganizerRequest() {
+        organizerGeneration = UUID(); organizerNetwork.stop(); fetchingProfile = false
+    }
+    func requestOrganizerProfile(host: String, port: String) async {
+        guard !fetchingProfile, let secure, controller == nil, inbox == nil,
+              let number = UInt16(port), number > 0 else { error = "Enter an organizer address and valid port during preparation."; return }
+        let run = organizerGeneration
+        fetchingProfile = true; error = ""
+        defer { if run == organizerGeneration { fetchingProfile = false } }
+        do {
+            let bytes = try await organizerNetwork.request(host: host, port: number, client: secure.organizerPreparationClient())
+            guard run == organizerGeneration else { return }
+            stage(bytes)
+        } catch { if run == organizerGeneration { self.error = "Organizer request unavailable; preparation unchanged. \(error)" } }
+    }
     func select(_ role: EndpointRole) {
-        controller?.stop(); inbox?.stop(); controller = nil; inbox = nil; readiness = nil; draft = nil; secure = nil; approvedProfile = nil; legacyAvailable = false; request = ""; error = ""; self.role = role
+        cancelOrganizerRequest()
+        closeRelayHost(); controller?.stop(); inbox?.stop(); controller = nil; inbox = nil; readiness = nil; draft = nil; secure = nil; approvedProfile = nil; legacyAvailable = false; request = ""; error = ""; self.role = role
         UserDefaults.standard.set(role.rawValue, forKey: "registeredDrillRole")
         let root = URL.applicationSupportDirectory.appendingPathComponent("RescueDemo/registered-drill", isDirectory: true)
         do {
@@ -912,13 +951,13 @@ private struct RegistrationRequestDocument: FileDocument {
         } catch { self.error = "Preparation unavailable; existing keys/history are retained. \(error)" }
     }
     func updatePreparation() {
-        controller?.stop(); inbox?.stop(); controller = nil; inbox = nil; draft = nil; error = ""
+        closeRelayHost(); controller?.stop(); inbox?.stop(); controller = nil; inbox = nil; draft = nil; error = ""
     }
     private func prepareWorkspace(secure: SecureEndpointController, profile: EnrollmentProfile, trust: EnrollmentTrust) throws {
         if role == .responder && (secure.peerCard == nil || UserDefaults.standard.bool(forKey: "registeredResponderInbox")) {
             inbox = try RegisteredResponderInbox(secure: secure, credential: profile.credential, trust: trust)
         } else {
-            controller = try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust)
+            controller = try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust, responders: profile.responders ?? [])
         }
     }
     func switchResponderWorkspace(inbox useInbox: Bool) {
@@ -926,7 +965,7 @@ private struct RegistrationRequestDocument: FileDocument {
             guard role == .responder, let secure, let profile = approvedProfile else { throw EnrollmentError.wrongIdentity }
             let trust = try profile.validate(card: secure.card, issuerApproved: true, at: Int64(Date().timeIntervalSince1970))
             let nextInbox = useInbox ? try RegisteredResponderInbox(secure: secure, credential: profile.credential, trust: trust) : nil
-            let nextController = useInbox ? nil : try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust)
+            let nextController = useInbox ? nil : try RegisteredExchangeController(secure: secure, credential: profile.credential, trust: trust, responders: profile.responders ?? [])
             controller?.stop(); inbox?.stop()
             controller = nextController; inbox = nextInbox; error = ""
             UserDefaults.standard.set(useInbox, forKey: "registeredResponderInbox")
@@ -957,7 +996,7 @@ private struct RegistrationRequestDocument: FileDocument {
             let nextInbox = role == .responder && (secure.peerCard == nil || UserDefaults.standard.bool(forKey: "registeredResponderInbox"))
                 ? try RegisteredResponderInbox(secure: secure, credential: draft.credential, trust: trust) : nil
             let nextController = nextInbox == nil
-                ? try RegisteredExchangeController(secure: secure, credential: draft.credential, trust: trust) : nil
+                ? try RegisteredExchangeController(secure: secure, credential: draft.credential, trust: trust, responders: draft.responders ?? []) : nil
             try store.write(draft.encoded())
             self.controller = nextController; self.inbox = nextInbox; self.readiness = readiness; approvedProfile = draft; self.draft = nil; error = ""
             UserDefaults.standard.set(true, forKey: "registeredDrillLaunch")
@@ -1009,15 +1048,20 @@ private struct RegisteredDrillView: View {
     @State private var exporting = false
     @State private var issuerChecked = false
     @State private var issuedProfile = ""
+    @State private var organizerHost = ""
+    @State private var organizerPort = ""
     var body: some View {
         Group {
-            if let inbox = preparation.inbox {
+            if let relay = preparation.relayHost {
+                RegisteredRelayHostWorkspace(host: relay, close: preparation.closeRelayHost)
+            } else if let inbox = preparation.inbox {
                 VStack(spacing: 0) {
                     if !preparation.error.isEmpty { Text(preparation.error).foregroundStyle(.red).padding(.horizontal) }
                     if preparation.legacyAvailable {
                         Button("Open saved single-pair conversation") { preparation.switchResponderWorkspace(inbox: false) }.padding(.vertical, 8)
                         Text("Earlier paired history is preserved separately and is not imported into this inbox.").font(.caption).foregroundStyle(.secondary).padding(.horizontal)
                     }
+                    Button("Participate as encrypted relay") { preparation.openRelayHost() }.padding(.vertical, 8)
                     RegisteredInboxWorkspace(inbox: inbox, readiness: preparation.readiness)
                 }
                     .toolbar { ToolbarItem(placement: .topBarTrailing) {
@@ -1030,6 +1074,7 @@ private struct RegisteredDrillView: View {
                         Button("Open inbox for new public devices") { preparation.switchResponderWorkspace(inbox: true) }.padding(.vertical, 8)
                         Text("This saved single-pair conversation stays here. New public devices use the separate inbox; earlier request histories are not migrated.").font(.caption).foregroundStyle(.secondary).padding(.horizontal)
                     }
+                    Button("Participate as encrypted relay") { preparation.openRelayHost() }.padding(.vertical, 8)
                     RegisteredConversation(controller: controller, readiness: preparation.readiness)
                 }
                     .toolbar { ToolbarItem(placement: .topBarTrailing) {
@@ -1045,6 +1090,22 @@ private struct RegisteredDrillView: View {
                         }
                         Button("Export registration request") { exporting = true }.disabled(preparation.request.isEmpty)
                         Button("Import organizer-issued profile") { importing = true }.disabled(preparation.request.isEmpty)
+                        DisclosureGroup("Register with local organizer service") {
+                            Text("Before an outage, connect to an explicitly opened organizer service. This proves this device owns its keys. Responders require prior organizer approval; this is not a UW account service.").font(.caption)
+                            TextField("Organizer host", text: $organizerHost).textInputAutocapitalization(.never).autocorrectionDisabled()
+                                .onChange(of: organizerHost) { _, value in organizerHost = String(value.prefix(253)) }
+                            TextField("Organizer port", text: $organizerPort).keyboardType(.numberPad)
+                                .onChange(of: organizerPort) { _, value in organizerPort = String(value.prefix(5)) }
+                            Button("Request device registration profile") {
+                                issuerChecked = false
+                                Task { await preparation.requestOrganizerProfile(host: organizerHost, port: organizerPort) }
+                            }.disabled(preparation.fetchingProfile || preparation.request.isEmpty)
+                            if preparation.fetchingProfile {
+                                ProgressView("Requesting organizer profile")
+                                Button("Cancel organizer request") { preparation.cancelOrganizerRequest() }
+                            }
+                            Text("Receiving a profile does not trust its issuer. Compare the full organizer fingerprint below before completing preparation. No personal account information is sent.").font(.caption)
+                        }
                         DisclosureGroup("Organizer preparation options") {
                             Text("Use these options only before an outage. Your request contains public device keys; it grants no responder authority by itself.").font(.caption)
                             Text(preparation.request).font(.caption.monospaced()).textSelection(.enabled).accessibilityLabel("Public registration request")
@@ -1075,8 +1136,9 @@ private struct RegisteredDrillView: View {
         }
         .navigationTitle("Registered drill")
         .onAppear { demo.stopLocalExchange(); preparation.select(EndpointRole(rawValue: UserDefaults.standard.integer(forKey: "registeredDrillRole")) ?? .publicUser) }
-        .onDisappear { preparation.controller?.stop(); preparation.inbox?.stop() }
-        .onChange(of: phase) { _, phase in if phase == .background { preparation.controller?.stop(); preparation.inbox?.stop() } }
+        .onDisappear { preparation.controller?.stop(); preparation.inbox?.stop(); preparation.relayHost?.stop() }
+        .onChange(of: phase) { _, phase in if phase == .background { preparation.controller?.stop(); preparation.inbox?.stop(); preparation.relayHost?.stop(); preparation.cancelOrganizerRequest() } }
+        .onDisappear { preparation.cancelOrganizerRequest() }
         .fileImporter(isPresented: $importing, allowedContentTypes: [.json]) { result in
             issuerChecked = false
             switch result { case .success(let url): preparation.read(url); case .failure(let error): preparation.error = error.localizedDescription }
@@ -1087,14 +1149,49 @@ private struct RegisteredDrillView: View {
     }
 }
 
+private struct RegisteredRelayEndpointStatus: View {
+    @ObservedObject var network: RegisteredRelayEndpointNetwork
+    var body: some View { Text(network.status).font(.caption).foregroundStyle(.secondary) }
+}
+
+private struct RegisteredRelayHostWorkspace: View {
+    @ObservedObject var host: RegisteredRelayHostNetwork
+    let close: () -> Void
+    @Environment(\.scenePhase) private var phase
+    @State private var error = ""
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            Text("Encrypted registered relay").font(.title2.bold())
+            Text("Synthetic drill. This device holds encrypted packets until a verified participant is reachable. Custody is not delivery or human acknowledgment.")
+            Text(host.status)
+            Button(host.transport.active ? "Stop relay" : "Start foreground relay") {
+                if host.transport.active { host.stop() }
+                else { do { try host.start(); error = "" } catch { self.error = String(describing: error) } }
+            }.buttonStyle(.borderedProminent)
+            Button("Return to request workspace") { close() }
+            if !error.isEmpty { Text(error).foregroundStyle(.red) }
+            Text("Keep the app open. Backgrounding stops relay contacts. No guaranteed range, delivery, or UW authorization.").font(.caption)
+        }.padding(24)
+        .onDisappear { host.stop() }
+        .onChange(of: phase) { _, phase in if phase == .background { host.stop() } }
+    }
+}
+
 private struct RegisteredConversation: View {
+    @EnvironmentObject private var demo: DemoController
     @Environment(\.scenePhase) private var phase
     @State private var userStopped = false
     @ObservedObject var controller: RegisteredExchangeController
     let readiness: EnrollmentReadiness?
     @State private var error = ""
     @State private var reviewing = false
-    @State private var reportedLocation = "Training Building A (sample) · Floor 1"
+    @State private var reportedLocation = "Training Building A (sample)"
+    @State private var reportedFloor = "Unknown floor"
+    @State private var estimatedFloor: EstimatedFloorObservation?
+    @State private var researchingFloor = false
+    private var reviewedLocation: String {
+        (try? LocationReport(reported: reportedLocation, floor: reportedFloor, estimatedFloor: estimatedFloor).encoded()) ?? ""
+    }
     private var publicSide: Bool { controller.secure.role == .publicUser }
     private func perform(_ action: DemoAction, value: String = "", reference: String = "") {
         do { try controller.perform(action, value: value, reference: reference); error = "" }
@@ -1107,6 +1204,7 @@ private struct RegisteredConversation: View {
                 Text("Synthetic exercise · does not contact emergency services").font(.caption)
                 if let readiness { RegisteredReadinessSummary(readiness: readiness) }
                 Text(controller.status).font(.subheadline)
+                if let relay = controller.relayNetwork { RegisteredRelayEndpointStatus(network: relay) }
                 Button(controller.transport.active ? "Stop exchange" : "Resume foreground exchange") {
                     if controller.transport.active { userStopped = true; controller.stop() }
                     else { do { userStopped = false; try controller.start(); error = "" } catch { self.error = "Could not start. \(error)" } }
@@ -1114,11 +1212,11 @@ private struct RegisteredConversation: View {
                 if let snapshot = controller.snapshot {
                     Text("\(snapshot.pendingTransfers) messages awaiting device receipt").font(.subheadline)
                     if snapshot.state.hasRequest {
-                        Text(snapshot.state.reportedLocation).font(.headline)
+                        LocationSummary(value: snapshot.state.reportedLocation)
                         if publicSide {
                             Text(deliveryText(snapshot.state.originalDelivery, publicSide: true))
                             Button("Send sample follow-up") { perform(.followUp, value: "SYNTHETIC: assistance still requested") }
-                            Button("Send reported-location correction") { perform(.correction, value: reportedLocation) }
+                            Button("Send reported-location correction") { perform(.correction, value: reviewedLocation) }
                             Button("Request withdrawal") { perform(.withdrawal) }
                         } else {
                             Button("Acknowledge request") { perform(.acknowledge) }
@@ -1135,22 +1233,39 @@ private struct RegisteredConversation: View {
                     if publicSide {
                         TextField("Reported place and floor", text: $reportedLocation).textFieldStyle(.roundedBorder)
                             .onChange(of: reportedLocation) { _, _ in if reportedLocation.utf8.count > 256 { reportedLocation = String(reportedLocation.prefix(128)) } }
-                        Text("Building and floor are manually reported. This drill does not include automatic location research.").font(.caption).foregroundStyle(.secondary)
-                        if !snapshot.state.hasRequest { Button("Review sample SOS") { reviewing = true }.buttonStyle(PrimaryButtonStyle()) }
+                        TextField("Reported floor", text: $reportedFloor).textFieldStyle(.roundedBorder)
+                            .onChange(of: reportedFloor) { _, _ in reportedFloor = String(reportedFloor.prefix(64)) }
+                        if let estimatedFloor {
+                            Text(estimatedFloor.detail).font(.caption)
+                            Button("Remove estimated floor") { self.estimatedFloor = nil }
+                        }
+                        Button("Estimate floor from research inputs") { controller.stop(); researchingFloor = true }
+                        Text("Reported place and floor stay manual. Optional research estimates are separate, dated and unvalidated.").font(.caption).foregroundStyle(.secondary)
+                        if !snapshot.state.hasRequest { Button("Review sample SOS") { reviewing = true }.buttonStyle(PrimaryButtonStyle()).disabled(reviewedLocation.isEmpty) }
                     }
                 }
                 if !error.isEmpty { Text(error).foregroundStyle(.red) }
-                Text("Keep this screen open. Registration expires; expired preparation blocks exchange. One public/responder conversation; no automatic relay or background delivery.").font(.caption).foregroundStyle(.secondary)
+                Text("Keep this screen open. Registration expires; expired preparation blocks exchange. One public/responder conversation. Prepared responder directories enable automatic relay contacts; no background delivery.").font(.caption).foregroundStyle(.secondary)
             }.padding(20).frame(maxWidth: Theme.readableWidth).frame(maxWidth: .infinity)
         }
         .confirmationDialog("Send synthetic SOS with this reported location?", isPresented: $reviewing, titleVisibility: .visible) {
-            Button("Send sample SOS") { perform(.sos, value: reportedLocation) }
-        } message: { Text(reportedLocation) }
+            Button("Send sample SOS") { perform(.sos, value: reviewedLocation) }
+        } message: {
+            Text(LocationReport.display(reviewedLocation).title + (estimatedFloor.map { "\n" + $0.detail } ?? ""))
+        }
+        .sheet(isPresented: $researchingFloor, onDismiss: {
+            if !userStopped && phase == .active { do { try controller.start() } catch { self.error = "Could not resume. \(error)" } }
+        }) {
+            NavigationStack {
+                LiveCooperativeResearchView(onUseEstimate: { estimatedFloor = $0; researchingFloor = false })
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { researchingFloor = false } } }
+            }.environmentObject(demo)
+        }
         .onAppear { do { try controller.start() } catch { self.error = "Could not start. \(error)" } }
         .onDisappear { controller.stop() }
         .onChange(of: phase) { _, phase in
             if phase == .background { controller.stop() }
-            else if phase == .active && !userStopped && !controller.transport.active {
+            else if phase == .active && !userStopped && !researchingFloor && !controller.transport.active {
                 do { try controller.start() } catch { self.error = "Could not resume. \(error)" }
             }
         }
@@ -1179,6 +1294,7 @@ private struct RegisteredInboxWorkspace: View {
                 Text("Synthetic exercise · does not contact emergency services").font(.caption)
                 if let readiness { RegisteredReadinessSummary(readiness: readiness) }
                 Text(inbox.status).font(.subheadline)
+                if let relay = inbox.relayNetwork { RegisteredRelayEndpointStatus(network: relay) }
                 Button(inbox.transport.active ? "Stop exchange" : "Resume foreground exchange") {
                     if inbox.transport.active { userStopped = true; inbox.stop() } else { start() }
                 }.buttonStyle(.bordered)
@@ -1191,7 +1307,7 @@ private struct RegisteredInboxWorkspace: View {
                         selectedID = row.id
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(row.snapshot.state.reportedLocation).font(.headline)
+                            LocationSummary(value: row.snapshot.state.reportedLocation)
                             Text("Device \(row.id.prefix(8)) · \(handlingText(row.snapshot.state.handling))").font(.caption)
                             Text("\(row.snapshot.pendingTransfers) replies or updates awaiting device receipt").font(.caption)
                             if selectedID == row.id { Label("Selected conversation", systemImage: "checkmark.circle.fill").font(.caption) }
@@ -1214,7 +1330,7 @@ private struct RegisteredInboxWorkspace: View {
                     Conversation(state: row.snapshot.state, publicSide: false, acknowledge: { reference in perform(id, .acknowledge, reference: reference) })
                 }
                 if !error.isEmpty { Text(error).foregroundStyle(.red) }
-                Text("One saved request history per public device. Keep this screen open. No automatic relay or background delivery. Existing single-pair histories stay in their original workspace.").font(.caption).foregroundStyle(.secondary)
+                Text("One saved request history per public device. Keep this screen open. Automatic relay contacts require another participating foreground device; no background delivery. Existing single-pair histories stay in their original workspace.").font(.caption).foregroundStyle(.secondary)
             }.padding(20).frame(maxWidth: Theme.readableWidth).frame(maxWidth: .infinity)
         }
         .onAppear { start() }

@@ -27,14 +27,68 @@ public struct DeviceObservation: Codable, Equatable, Sendable {
     }
 }
 
+public enum EstimatedFloorSource: String, Codable, Equatable, Sendable {
+    case appleFloor, relativeAltitude, surveyedWiFi, combinedGraph
+}
+
+/// A dated experimental estimate, independent of the person's reported building/floor.
+public struct EstimatedFloorObservation: Codable, Equatable, Sendable {
+    public let level: Int
+    public let source: EstimatedFloorSource
+    public let observedAt: Date
+    public let context: String?
+
+    fileprivate func validate() throws {
+        guard (-20...200).contains(level), observedAt.timeIntervalSince1970.isFinite else {
+            throw LocationReportError.invalidObservation
+        }
+        if let context {
+            guard !context.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  context.utf8.count <= 256,
+                  !context.unicodeScalars.contains(where: { $0.properties.generalCategory == .control }) else {
+                throw LocationReportError.invalidObservation
+            }
+        }
+    }
+    public static func capture(level: Int, source: EstimatedFloorSource, observedAt: Date,
+                               context: String? = nil, now: Date = Date()) throws -> Self {
+        let value = Self(level: level, source: source, observedAt: observedAt, context: context)
+        try value.validate()
+        let age = now.timeIntervalSince(observedAt)
+        guard now.timeIntervalSince1970.isFinite, age.isFinite, age >= 0, age <= 10 else {
+            throw LocationReportError.invalidObservation
+        }
+        return value
+    }
+    public var detail: String {
+        "Estimated logical level \(level) · \(source.rawValue) · unvalidated"
+        + (context.map { " · " + $0 } ?? "")
+        + "\nObserved " + observedAt.formatted(date: .abbreviated, time: .standard)
+        + " " + (TimeZone.current.abbreviation(for: observedAt) ?? "") + " · not live"
+    }
+}
+
+extension EstimatedFloorObservation {
+    private enum CodingKeys: String, CodingKey { case level, source, observedAt, context }
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(level: try values.decode(Int.self, forKey: .level),
+                  source: try values.decode(EstimatedFloorSource.self, forKey: .source),
+                  observedAt: try values.decode(Date.self, forKey: .observedAt),
+                  context: try values.decodeIfPresent(String.self, forKey: .context))
+        try validate()
+    }
+}
+
 /// Versioned native presentation data inside the existing C++ bounded location field.
 public struct LocationReport: Codable, Equatable, Sendable {
     public var reported: String
     public var floor: String
     public var observation: DeviceObservation?
+    public var estimatedFloor: EstimatedFloorObservation?
     private static let prefix = "ORLOC1:"
-    public init(reported: String, floor: String, observation: DeviceObservation? = nil) {
-        self.reported = reported; self.floor = floor; self.observation = observation
+    public init(reported: String, floor: String, observation: DeviceObservation? = nil, estimatedFloor: EstimatedFloorObservation? = nil) {
+        self.reported = reported; self.floor = floor; self.observation = observation; self.estimatedFloor = estimatedFloor
     }
     public var title: String { floor.isEmpty ? reported : "\(reported) · \(floor)" }
     private func validate() throws {
@@ -42,6 +96,7 @@ public struct LocationReport: Codable, Equatable, Sendable {
               reported.utf8.count <= 512, floor.utf8.count <= 128,
               !reported.contains("\0"), !floor.contains("\0") else { throw LocationReportError.invalidReport }
         try observation?.validate()
+        try estimatedFloor?.validate()
     }
     public func encoded() throws -> String {
         try validate()

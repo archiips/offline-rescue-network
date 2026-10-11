@@ -6,8 +6,41 @@ import RescueDemoState
 /// Only public cards/profiles are file-based; the issuer private key stays in Mac Keychain.
 @main struct EnrollmentRegistrar {
     struct IssuerRecord: Codable { let realm: UUID; let key: Data; var revoked: [UUID]? }
-    static func main() throws {
+    @MainActor static func main() async throws {
         let args = Array(CommandLine.arguments.dropFirst())
+        if args.first == "--serve-local-network" {
+            guard args.count >= 2, let port = UInt16(args[1]), port > 0,
+                  (args.count - 2) % 2 == 0 else { throw EnrollmentError.malformed }
+            var cards = Set<Data>()
+            var index = 2
+            while index < args.count {
+                guard args[index] == "--authorize-responder-card", cards.count < 4 else { throw EnrollmentError.malformed }
+                let file = try FileHandle(forReadingFrom: URL(fileURLWithPath: args[index + 1]))
+                defer { try? file.close() }
+                let input = try file.read(upToCount: 257) ?? Data()
+                guard input.count <= 256, let text = String(data: input, encoding: .utf8) else { throw EnrollmentError.malformed }
+                let card = try SecurePairingCard(base64: text.trimmingCharacters(in: .whitespacesAndNewlines))
+                guard card.role == .responder else { throw EnrollmentError.wrongRole }
+                cards.insert(card.bytes); index += 2
+            }
+            // Serve only an already-created organizer identity. Ordinary attended issuance creates it.
+            let root = URL.applicationSupportDirectory.appendingPathComponent("RescueSyntheticRegistrar")
+            let store = DefaultKeychainStore(rootURL: root, role: .responder, namespace: "synthetic-registrar-v1")
+            guard let saved = try store.read(), saved.count <= 65536,
+                  let record = try? JSONDecoder().decode(IssuerRecord.self, from: saved), record.key.count == 32 else {
+                throw NSError(domain: "Synthetic registrar", code: 2, userInfo: [NSLocalizedDescriptionKey: "Prepare the organizer issuer using attended file issuance before starting its local service."])
+            }
+            let issuer = try Curve25519.Signing.PrivateKey(rawRepresentation: record.key)
+            let service = OrganizerPreparationService(issuer: issuer, realm: record.realm,
+                revoked: Set(record.revoked ?? []), authorizedResponderCards: cards)
+            let host = OrganizerPreparationHost(service: service)
+            try host.start(port: port)
+            defer { host.stop() }
+            print("Synthetic preparation service explicitly listening on local-network interfaces, port \(port). Public self-registration is open; \(cards.count) responder cards are authorized. No UW or agency enrollment.")
+            print("Compare entire issuer fingerprint during advance preparation: \(SHA256.hash(data: issuer.publicKey.rawRepresentation).map { String(format: "%02x", $0) }.joined())")
+            while !Task.isCancelled { try await Task.sleep(for: .seconds(1)) }
+            return
+        }
         if args.count == 2, args[0] == "revoke" {
             guard let serial = UUID(uuidString: args[1]) else { throw EnrollmentError.malformed }
             let root = URL.applicationSupportDirectory.appendingPathComponent("RescueSyntheticRegistrar")
@@ -25,7 +58,7 @@ import RescueDemoState
         guard args.count == 3 || args.count == 4,
               args[0] == "public" || args[0] == "responder",
               (args[0] == "public" && args.count == 3) || (args[0] == "responder" && args.count == 4 && args[3] == "--authorize-responder") else {
-            throw NSError(domain: "Synthetic registrar", code: 1, userInfo: [NSLocalizedDescriptionKey: "Usage: rescue-enrollment-registrar public REQUEST.txt OUTPUT.json | responder REQUEST.txt OUTPUT.json --authorize-responder. Run only for organizer-approved synthetic drill devices."])
+            throw NSError(domain: "Synthetic registrar", code: 1, userInfo: [NSLocalizedDescriptionKey: "Usage: rescue-enrollment-registrar public REQUEST.txt OUTPUT.json | responder REQUEST.txt OUTPUT.json --authorize-responder. Or: --serve-local-network PORT [--authorize-responder-card REQUEST.txt]... (explicit LAN exposure; existing issuer required). Run only for organizer-approved synthetic drill devices."])
         }
         let requestURL = URL(fileURLWithPath: args[1]), outputURL = URL(fileURLWithPath: args[2])
         let input = try Data(contentsOf: requestURL, options: .mappedIfSafe)

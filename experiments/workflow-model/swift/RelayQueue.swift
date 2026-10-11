@@ -67,6 +67,22 @@ public struct RelayError: Error, Equatable, Sendable, CustomStringConvertible {
         try item { rc_relay_select(handle, now, &$0) }
     }
 
+    /// Selects only heads whose flow has a currently usable destination. Empty/unmatched flows
+    /// consume no attempt or fairness budget. Up to 32 exact hex64 flows; expired rows still prune.
+    public func select(now: Int64, eligibleFlows: [String]) throws -> RelayItem? {
+        guard eligibleFlows.count <= 32,
+              eligibleFlows.allSatisfy({ $0.utf8.count == 64 && !$0.contains("\0") }) else {
+            throw Self.error(RC_RELAY_INVALID)
+        }
+        let storage = eligibleFlows.flatMap { Array($0.utf8CString) }
+        return try storage.withUnsafeBufferPointer { buffer in
+            let pointers: [UnsafePointer<CChar>?] = eligibleFlows.indices.map { buffer.baseAddress?.advanced(by: $0 * 65) }
+            return try pointers.withUnsafeBufferPointer { flows in
+                try item { rc_relay_select_eligible(handle, now, flows.baseAddress, flows.count, &$0) }
+            }
+        }
+    }
+
     /// Exact stored copy (attempts as stored, expired or not), or nil when absent. Mutates nothing.
     public func lookup(id: String) throws -> RelayItem? {
         guard !id.contains("\0") else { throw Self.error(RC_RELAY_INVALID) }

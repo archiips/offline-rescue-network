@@ -24,6 +24,7 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
     private var active = true
     private var generation = UUID()
     private var worker: Task<Void, Never>?
+    @Published public private(set) var relayNetwork: RegisteredRelayEndpointNetwork?
     private var candidateOffsets: [String: Int] = [:]
     var elapsed: @MainActor () -> Double = { ProcessInfo.processInfo.systemUptime }
     private struct Registry: Codable {
@@ -32,6 +33,7 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
         var admitted: [Data] = []
         // Admission journal survives C++ commit / registry-finalization interruption.
         var journal: [Data] = []
+        var relayCredentials: [String: Data]?
     }
     private struct Session {
         let context: Conversation
@@ -104,7 +106,7 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
         else { files = [] }
         let record: Registry
         if let stored {
-            guard stored.count <= 8192, let decoded = try? JSONDecoder().decode(Registry.self, from: stored),
+            guard stored.count <= 65536, let decoded = try? JSONDecoder().decode(Registry.self, from: stored),
                   decoded.format == 1, decoded.responder == secure.card.bytes,
                   decoded.admitted.count + decoded.journal.count <= 16 else { throw SecureExchangeError.recordInvalid }
             record = decoded
@@ -120,8 +122,11 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
                 throw SecureExchangeError.historyMissing
             }
         }
+        for (id, bytes) in record.relayCredentials ?? [:] {
+            guard ids.contains(id), try EnrollmentCredential.decode(bytes).card.fingerprint == id else { throw SecureExchangeError.recordInvalid }
+        }
         let knownFiles = Set(ids.flatMap { id in
-            [".sqlite", ".sqlite-journal", ".sqlite-wal", ".sqlite-shm"].map { id + $0 }
+            [".sqlite", ".sqlite-journal", ".sqlite-wal", ".sqlite-shm", ".relay-cache.sqlite", ".relay-cache.sqlite-journal", ".relay-cache.sqlite-wal", ".relay-cache.sqlite-shm", ".relay-cache.guard", ".registered-relay.sqlite", ".registered-relay.sqlite-journal", ".registered-relay.sqlite-wal", ".registered-relay.sqlite-shm", ".registered-relay.sqlite.guard"].map { id + $0 }
         })
         for file in files {
             guard file == ".DS_Store" || knownFiles.contains(file) else { throw SecureExchangeError.recordInvalid }
@@ -145,6 +150,7 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
     }
     private func save(_ next: Registry) throws {
         let data = try JSONEncoder().encode(next)
+        guard data.count <= 65536 else { throw SecureExchangeError.recordInvalid }
         try registryStore.write(data)
         registry = next; savedRegistry = data
     }
@@ -202,6 +208,61 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
         guard let endpoint = context.endpoint else { throw SecureExchangeError.historyMissing }
         return try endpoint.accept(plaintext)
     }
+    /// Delayed first contact uses issuer authorization, never an extended direct handshake lease.
+    public func receiveRegisteredRelay(_ bytes: Data) throws -> Data {
+        try validate(); prune()
+        let wrapper = try RegisteredRelayPacket(bytes: bytes)
+        let cards = try wrapper.authenticate(trust: trust, now: now())
+        guard cards.sender.role == .publicUser, cards.recipient == secure.card else { throw EnrollmentError.wrongIdentity }
+        let context: Conversation
+        if let existing = sessions[cards.sender.fingerprint] { context = existing.context }
+        else {
+            guard wrapper.packet.kind == .event, sessions.values.filter({ !$0.context.admitted }).count < 4, registry.admitted.count + registry.journal.count < 16 else { throw EnrollmentError.busy }
+            context = try makeSession(cards.sender, admitted: false).context
+        }
+        if !context.admitted {
+            guard wrapper.packet.kind == .event else { throw EnrollmentError.wrongIdentity }
+            let plain = try SecureEnvelope(identity: secure.enrollmentIdentity(), peer: cards.sender).open(wrapper.packet.sealed)
+            _ = try commit(context, plain) // Finalize admission before creating a durable relay cache or returning receipt.
+        }
+        var next = registry
+        var credentials = next.relayCredentials ?? [:]
+        credentials[cards.sender.fingerprint] = wrapper.senderCredential
+        next.relayCredentials = credentials
+        try save(next)
+        return try relayEndpoint(context, peerCredential: wrapper.senderCredential).receive(bytes)
+    }
+    public func registeredRelayOutgoing(conversationID: String) throws -> RegisteredRelayPacket? {
+        try validate()
+        guard let context = sessions[conversationID]?.context, context.admitted,
+              let peer = registry.relayCredentials?[conversationID] else { return nil }
+        return try relayEndpoint(context, peerCredential: peer).outgoing()
+    }
+    func registeredRelayBatch() throws -> [RegisteredRelayPacket] {
+        try validate()
+        var packets: [RegisteredRelayPacket] = []
+        for row in rows {
+            do { if let packet = try registeredRelayOutgoing(conversationID: row.id) { packets.append(packet) } }
+            catch { status = "One relay conversation is unavailable; its work stays saved. \(error)" }
+        }
+        return packets
+    }
+    private func relayEndpoint(_ context: Conversation, peerCredential: Data) throws -> RegisteredRelayEndpoint {
+        try context.open()
+        guard let endpoint = context.endpoint else { throw SecureExchangeError.historyMissing }
+        let validate = { [weak self] in
+            guard let self else { throw EnrollmentError.stopped }
+            try self.validate()
+            guard self.registry.admitted.contains(context.peer.bytes) else { throw EnrollmentError.wrongIdentity }
+        }
+        let adapter = RelayEndpointController(owner: secure, endpoint: endpoint, peer: context.peer,
+            validate: validate, acceptPlaintext: { [weak self] plain in
+                guard let self else { throw EnrollmentError.stopped }
+                return try self.commit(context, plain)
+            }, onConfirmed: {}, clock: now)
+        return RegisteredRelayEndpoint(adapter: adapter, own: credential, peer: peerCredential, trust: trust,
+            storageURL: context.url, now: now, validate: validate)
+    }
     public func receive(_ packet: Data) throws -> Data {
         try validate(); prune()
         if packet.starts(with: Data("ORS1".utf8)) {
@@ -251,6 +312,23 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
         }
         do { try transport.start(name: "RescueRegistered-responder-\(secure.card.fingerprint.prefix(16))-\(UUID().uuidString.prefix(8))") }
         catch { stop(); throw error }
+        let network = RegisteredRelayEndpointNetwork(card: secure.card,
+            routingHint: RegisteredRelayRouting.hint(realm: trust.realm, issuer: trust.issuerBytes),
+            validate: { [weak self] in
+                guard let self else { throw EnrollmentError.stopped }
+                try self.validate()
+            }, answerReadiness: { [weak self] query in
+                guard let self else { throw EnrollmentError.stopped }
+                return try RelayReadinessProbe.answer(query, identity: self.secure.enrollmentIdentity())
+            }, receive: { [weak self] bytes in
+                guard let self else { throw EnrollmentError.stopped }
+                return try self.receiveRegisteredRelay(bytes)
+            }, outgoing: { [weak self] in
+                guard let self else { throw EnrollmentError.stopped }
+                try self.validate()
+                return try self.registeredRelayBatch()
+            })
+        do { try network.start(); relayNetwork = network } catch { stop(); throw error }
         status = "Looking for enrolled public devices; messages stay saved"
         worker = Task { [weak self] in
             while !Task.isCancelled {
@@ -261,6 +339,7 @@ public struct RegisteredInboxRow: Identifiable, Sendable {
     }
     public func stop() {
         generation = UUID(); worker?.cancel(); worker = nil
+        relayNetwork?.stop(); relayNetwork = nil
         for session in sessions.values { session.bootstrap.stop() }
         sessions = sessions.filter { $0.value.context.admitted }
         candidateOffsets = [:]

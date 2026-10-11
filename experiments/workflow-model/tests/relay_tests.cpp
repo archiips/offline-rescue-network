@@ -34,6 +34,12 @@ Item select(rc_relay* r,int64_t now=0,int expected=RC_RELAY_OK){
     rc_relay_item* raw=reinterpret_cast<rc_relay_item*>(1);check(rc_relay_select(r,now,&raw)==expected,"select result");
     Item item(raw,rc_relay_item_free);check(expected==RC_RELAY_OK?item!=nullptr:item==nullptr,"selected output only on success");return item;
 }
+Item eligible(rc_relay* r,const std::vector<std::string>& flows,int expected=RC_RELAY_OK){
+    std::vector<const char*> pointers;for(const auto& flow:flows)pointers.push_back(flow.c_str());
+    rc_relay_item* raw=reinterpret_cast<rc_relay_item*>(1);
+    check(rc_relay_select_eligible(r,0,pointers.data(),pointers.size(),&raw)==expected,"eligible select result");
+    Item item(raw,rc_relay_item_free);check(expected==RC_RELAY_OK?item!=nullptr:item==nullptr,"eligible output only on success");return item;
+}
 std::size_t count(rc_relay* r){std::size_t n=999;check(rc_relay_count(r,&n)==RC_RELAY_OK,"count");return n;}
 bool is(const Item& item,unsigned id){return item && std::string(item->id)==hex(id);}
 std::size_t descriptors(){std::size_t n=0;for(int fd=0;fd<4096;++fd)if(fcntl(fd,F_GETFD)!=-1)++n;return n;}
@@ -44,7 +50,32 @@ int main(int argc,char** argv){
     std::filesystem::create_directories(dir);const auto path=(dir/"relay.sqlite").string();
     auto relay=open(path);auto* r=relay.get();
     const auto sealed=payload(181,1);
-    if(scenario=="durable"){
+    if(scenario=="eligible"){
+        check(enqueue(r,1,10,1,sealed)==0 && enqueue(r,2,20,0,sealed)==0 && enqueue(r,3,20,1,sealed)==0,"eligible setup");
+        for(int i=0;i<12;++i){eligible(r,{},RC_RELAY_EMPTY);eligible(r,{hex(99)},RC_RELAY_EMPTY);}
+        rc_relay_item* raw=nullptr;
+        check(rc_relay_lookup(r,hex(1).c_str(),&raw)==0 && raw->attempts==0,"absent destinations consume no attempts");rc_relay_item_free(raw);
+        auto first=eligible(r,{hex(20)});check(is(first,2) && first->attempts==1,"eligible ordinary bypasses absent urgent; FIFO keeps urgent successor blocked");
+        relay.reset();relay=open(path);r=relay.get();
+        for(int attempt=2;attempt<=8;++attempt){auto next=eligible(r,{hex(20),hex(20)});check(is(next,2) && next->attempts==attempt,"eligible attempts persist across reopen");}
+        eligible(r,{hex(20)},RC_RELAY_EMPTY);
+        auto urgent=eligible(r,{hex(10),hex(20)});check(is(urgent,1) && urgent->attempts==1,"exhausted eligible head blocks only its own flow");
+        check(rc_relay_remove(r,hex(2).c_str())==0,"remove exhausted predecessor");
+        check(is(eligible(r,{hex(20)}),3),"eligible successor released after predecessor removed");
+        const char* invalid="bad";raw=reinterpret_cast<rc_relay_item*>(1);
+        check(rc_relay_select_eligible(r,0,&invalid,1,&raw)==RC_RELAY_INVALID && !raw,"invalid eligible flow clears output");
+        check(rc_relay_select_eligible(r,0,nullptr,1,&raw)==RC_RELAY_INVALID && !raw,"null eligible vector rejected");
+        const auto boundedFlow=hex(20);std::vector<const char*> tooMany(33,boundedFlow.c_str());
+        check(rc_relay_select_eligible(r,0,tooMany.data(),tooMany.size(),&raw)==RC_RELAY_INVALID && !raw,"eligible flow bound checked before reading entries");
+        check(rc_relay_select_eligible(nullptr,0,nullptr,0,&raw)==RC_RELAY_NULL_HANDLE && !raw,"eligible null handle");
+        check(rc_relay_select_eligible(r,0,nullptr,0,nullptr)==RC_RELAY_INVALID,"eligible null output");
+        auto fairness=open((dir/"eligible-fairness.sqlite").string());auto* f=fairness.get();
+        check(enqueue(f,10,30,1,sealed)==0 && enqueue(f,11,40,0,sealed)==0,"eligible fairness setup");
+        for(int i=0;i<3;++i)check(is(eligible(f,{hex(30),hex(40)}),10),"three eligible urgent attempts");
+        for(int i=0;i<5;++i)eligible(f,{},RC_RELAY_EMPTY);
+        fairness.reset();fairness=open((dir/"eligible-fairness.sqlite").string());
+        check(is(eligible(fairness.get(),{hex(30),hex(40)}),11),"empty eligibility preserves persisted fairness");
+    }else if(scenario=="durable"){
         check(count(r)==0,"new queue empty");check(enqueue(r,1,10,1,sealed)==RC_RELAY_OK,"enqueue");
         auto other=open(path);check(count(other.get())==1,"independent handle sees committed item");
         auto item=select(other.get());check(is(item,1) && std::string(item->flow)==hex(10) && item->urgency==1 && item->expiry==later && item->remaining_hops==1 && item->attempts==1,"selected fields");

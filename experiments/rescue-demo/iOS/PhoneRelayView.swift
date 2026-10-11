@@ -20,6 +20,7 @@ private struct PhoneRelayForm: View {
     @State private var publicText = ""
     @State private var responderText = ""
     @State private var checked = false
+    @AppStorage("phoneRelayAutomatic") private var automatic = true
     @AppStorage("phoneRelayListenPort") private var listenPort = "47100"
     @AppStorage("phoneRelayPublicHost") private var publicHost = "127.0.0.1"
     @AppStorage("phoneRelayPublicPort") private var publicPort = ""
@@ -30,7 +31,7 @@ private struct PhoneRelayForm: View {
         Form {
             Section {
                 Text("Carry encrypted messages between two checked endpoints. This device cannot read their private message bodies.")
-                Text("Keep this screen open. Listening and forwarding are manual; leaving it or backgrounding stops networking.")
+                Text("Keep this screen open. Automatic contacts work while this screen is open; leaving it or backgrounding stops networking.")
                     .foregroundStyle(.secondary)
             } header: { Text("Controlled foreground relay") }
             Section {
@@ -40,12 +41,13 @@ private struct PhoneRelayForm: View {
                 Text(transport.status).font(.caption).foregroundStyle(.secondary)
                 if !relay.status.isEmpty { Text(relay.status).font(.subheadline) }
                 if !relay.error.isEmpty { Text(relay.error).foregroundStyle(.red) }
+                Toggle("Automatic foreground contacts", isOn: $automatic).disabled(transport.active || relay.flushBusy)
                 TextField("Listen port", text: $listenPort).keyboardType(.numberPad)
                     .disabled(transport.active || relay.flushBusy)
                 if transport.active {
                     Button("Stop relay", role: .destructive) { relay.stop() }
                 } else {
-                    Button("Start relay listener") { relay.start(port: UInt16(listenPort)) }
+                    Button("Start relay listener") { relay.start(port: UInt16(listenPort), automatic: automatic) }
                         .disabled(!relay.configured || relay.flushBusy || UInt16(listenPort) == nil || UInt16(listenPort) == 0)
                 }
             } header: { Text("Custody and connection") } footer: {
@@ -90,7 +92,7 @@ private struct PhoneRelayForm: View {
                     Task { await relay.flushOne(publicHost: publicHost, publicPort: publicPort, responderHost: responderHost, responderPort: responderPort) }
                 }.disabled(!relay.configured || !transport.active || relay.flushBusy)
             } footer: {
-                Text("A tap attempts one eligible packet, including reverse receipts. No automatic retry or forwarding. Interrupted attempts retain custody but consume the bounded attempt budget.")
+                Text("A tap attempts one eligible packet, including reverse receipts. Automatic mode forwards to discovered destinations. Absent destinations consume no attempt; failed contacts retain custody within the bounded attempt budget.")
             }
         }
         .onAppear {

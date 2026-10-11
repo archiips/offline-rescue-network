@@ -47,9 +47,11 @@
 		<string>_rescue-demo._tcp</string>
 		<string>_rescue-sec._tcp</string>
 		<string>_rescue-reg._tcp</string>
+		<string>_rescue-relay._tcp</string>
+		<string>_rescue-rreg._tcp</string>
 		<string>_rescue-floor._tcp</string>
 	</array>
 	<key>NSMotionUsageDescription</key>
-	<string>Optionally study relative altitude changes from a known starting floor in foreground research. Estimates are unvalidated and are not sent in rescue messages.</string>
+	<string>Optionally study relative altitude changes from a known starting floor in foreground research. Estimates are unvalidated and enter a rescue message only when you explicitly add a dated estimate during review.</string>
 </dict>
 </plist>
