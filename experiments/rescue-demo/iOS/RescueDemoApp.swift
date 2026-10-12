@@ -927,7 +927,7 @@ private struct RegistrationRequestDocument: FileDocument {
             let bytes = try await organizerNetwork.request(host: host, port: number, client: secure.organizerPreparationClient())
             guard run == organizerGeneration else { return }
             stage(bytes)
-        } catch { if run == organizerGeneration { self.error = "Organizer request unavailable; preparation unchanged. \(error)" } }
+        } catch { if run == organizerGeneration { self.error = "Could not obtain an organizer profile. Check the organizer service and address, then retry. Existing preparation is unchanged." } }
     }
     func select(_ role: EndpointRole) {
         cancelOrganizerRequest()
@@ -948,7 +948,9 @@ private struct RegistrationRequestDocument: FileDocument {
                 approvedProfile = profile
                 try prepareWorkspace(secure: secure, profile: profile, trust: trust)
             }
-        } catch { self.error = "Preparation unavailable; existing keys/history are retained. \(error)" }
+        } catch EnrollmentError.expired {
+            self.error = "Registration expired. Obtain a fresh organizer profile before exchange. Existing keys and history are retained."
+        } catch { self.error = "Preparation unavailable. Check the organizer profile and retry. Existing keys and history are retained." }
     }
     func updatePreparation() {
         closeRelayHost(); controller?.stop(); inbox?.stop(); controller = nil; inbox = nil; draft = nil; error = ""

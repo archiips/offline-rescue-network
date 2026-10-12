@@ -8,6 +8,12 @@ An organizer prepares a public profile and explicitly approves responder device 
 
 The registrar supports `--serve-local-network PORT` and up to four `--authorize-responder-card REQUEST.txt` entries; for example, `rescue-enrollment-registrar --serve-local-network 8787 --authorize-responder-card responder-request.txt`. Ordinary attended file issuance creates the organizer identity first; service mode requires that existing Keychain identity. This explicitly launched local service is advance preparation, not an internet account backend. It does not verify UW membership. Renewed credentials retain device keys/history. Revocations are prepared snapshots of credential serials; removing a card from the allowlist prevents fresh authorization, and disconnected devices cannot learn later policy changes automatically.
 
+## Build/install readiness
+
+The current source compiles for real-device arm64 with the shared `RescuePersonal` scheme and `PersonalDebug` configuration. The verification used `CODE_SIGNING_ALLOWED=NO`; installation still requires your normal Xcode signing/device setup. Select RescuePersonal for the existing free-account test path. Its Wi-Fi Information entitlement is intentionally omitted, so connected-AP capture can remain unavailable. That does not prevent the communication or separate sensor research paths. A compiled device binary does not establish physical transport or sensor behavior.
+
+The previously approved synthetic Simulator drill profile has expired. Prepare a fresh profile before the next enrolled walkthrough; retain the device keys/history, and review organizer trust as usual. No renewal, purchase or account change was performed during unattended readiness checks.
+
 ## Communication
 
 Opening the prepared request workspace starts foreground direct discovery and, where a responder directory is available, registered relay discovery. Saving an SOS commits C++ work before network sending. Unreachable contacts leave it queued. A participating device can choose **Participate as encrypted relay**, then **Start foreground relay**. Returning to the request workspace ends relay participation. Backgrounding or Stop ends contacts; restart retains histories/custody.
