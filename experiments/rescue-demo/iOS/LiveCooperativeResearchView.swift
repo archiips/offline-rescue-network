@@ -148,7 +148,7 @@ struct LiveCooperativeResearchView: View {
                 surveyMap = loaded
                 surveyCampus = ""; surveyBuilding = ""
                 surveyStatus = "Loaded \(loaded.entries.count) references. Select the exact surveyed campus and building."
-            } catch { surveyStatus = "Survey rejected; existing map retained. \(error)" }
+            } catch { surveyStatus = "Could not import survey. Choose a valid survey JSON file up to 64 KiB. Existing map retained." }
         }
         .onAppear { demo.stopLocalExchange() }
         .onDisappear { stopAll() }
@@ -207,7 +207,7 @@ struct LiveCooperativeResearchView: View {
             entries.append(entry)
             surveyMap = try SurveyedWiFiMap(entries: entries)
             surveyStatus = "Session reference recorded for 24 hours. Capture Wi-Fi again to evaluate it; survey accuracy is unvalidated."
-        } catch { surveyStatus = "Survey rejected; existing map retained. \(error)" }
+        } catch { surveyStatus = "Reference not saved. Check the survey context, floor interval and fresh Wi-Fi observation. Existing map retained." }
     }
     private func syncReading() {
         if let localReading { peer.updateLocalReading(localReading) }
